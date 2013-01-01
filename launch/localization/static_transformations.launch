@@ -14,7 +14,7 @@
 
     <!-- This is just for testing and should be dynamically updated -->
     <node pkg="tf" type="static_transform_publisher" name="map_to_car"
-        args="-1 0 0 0 0 0 map car/base_link 100" />
+        args="-1 0 0 -0.00599 0.0144 0.546 0.8357 map car/base_link 100" />
 
     <!-- Car doesn't actually have odom -->
     <!-- <node pkg="tf" type="static_transform_publisher" name="car_odom" -->
