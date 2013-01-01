@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="cam_topics" value="/camera/camera_info /camera/image_rect/compressed"/>
-    <arg name="pos_topics" value="/imu/data /mavros/px4flow/raw/optical_flow_rad"/>
+    <arg name="pos_topics" value="/imu/data /mavros/px4flow/raw/optical_flow_rad /mavros/local_position/pose /mavros/vision_pose/pose /mavros/setpoint_position/local"/>
     <arg name="tf_topics" value="/tf /tf_static"/>
     <node type="record" pkg="rosbag" name="bagger"
-        args="-j -O $(find foresight)/data/flight-data -e '/mavros/*' $(arg cam_topics) $(arg pos_topics) $(arg tf_topics)"/>
+        args="-j -O $(find foresight)/data/flight-data $(arg cam_topics) $(arg pos_topics) $(arg tf_topics)"/>
 </launch>
