@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find hector_gazebo_worlds)/launch/start.launch"/>
+    <include file="$(find foresight)/launch/spawn_youbot.launch" ns="youbot">
+        <arg name="x" default="0.0"/>
+        <arg name="y" default="0.0"/>
+        <arg name="z" default="0.0"/>
+    </include>
+
+    <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="quadrotor">
+        <arg name="model" value="$(find hector_quadrotor_description)/urdf/quadrotor_hokuyo_utm30lx.gazebo.xacro"/>
+        <arg name="x" value="0.0"/>
+        <arg name="y" value="0.0"/>
+        <arg name="z" value="0.4"/>
+        <arg name="name" value="quadrotor"/>
+    </include>
+
+    <include file="$(find foresight)/launch/xbox_controller.launch">
+        <arg name="cmd_vel_topic" value="/youbot/cmd_vel"/>
+    </include>
+</launch>
