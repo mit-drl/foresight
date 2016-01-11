@@ -17,6 +17,6 @@
     </include>
 
     <include file="$(find foresight)/launch/xbox_controller.launch">
-        <arg name="cmd_vel_topic" value="/youbot/cmd_vel"/>
+        <arg name="cmd_vel_topic" value="/quadrotor/cmd_vel"/>
     </include>
 </launch>
