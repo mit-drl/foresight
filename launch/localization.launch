@@ -23,5 +23,4 @@
     <node pkg="lsd_slam_core" type="live_slam" name="live_slam" output="screen"
         args="/image:=/image_rect /camera_info:=/camera_info"/>
     <node pkg="foresight" type="localization.py" name="localization" output="screen"/>
-
 </launch>
