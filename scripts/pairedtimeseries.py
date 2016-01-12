@@ -11,11 +11,11 @@ class PairedTimeSeries(object):
         self.Y = OrderedDict()
 
     def add_x(self, x, t):
-        self.X[t / 15] = x
+        self.X[t] = x
         return self
 
     def add_y(self, y, t):
-        self.Y[t / 15] = y
+        self.Y[t] = y
         return self
 
     def get_time_series(self):
@@ -25,5 +25,4 @@ class PairedTimeSeries(object):
         for t in ts:
             xs.append(self.X[t])
             ys.append(self.Y[t])
-        print len(xs)
         return np.array(xs), np.array(ys)
