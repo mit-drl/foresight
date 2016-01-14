@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+    <remap from="/usb_cam/camera_info" to="/camera_info"/>
+    <remap from="/usb_cam/image_raw" to="/image_rect"/>
+    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+        <param name="video_device" value="/dev/video1"/>
+        <param name="image_width" value="640" />
+        <param name="image_height" value="480" />
+        <param name="pixel_format" value="yuyv" />
+        <param name="camera_frame_id" value="usb_cam" />
+        <param name="io_method" value="mmap"/>
+    </node>
+    <node pkg="apriltags_ros" type="apriltag_detector_node"
+        name="at_node" output="screen">
+        <rosparam param="tag_descriptions">
+            [{id: 0, size: 0.163513}]
+             <!-- {id: 1, size: 0.163513}, -->
+             <!-- {id: 2, size: 0.163513}, -->
+             <!-- {id: 3, size: 0.163513}, -->
+             <!-- {id: 4, size: 0.163513}] -->
+        </rosparam>
+    </node>
+    <node pkg="lsd_slam_core" type="live_slam" name="live_slam" output="screen"
+        args="/image:=/image_rect /camera_info:=/camera_info"/>
+    <node pkg="foresight" type="lsd_localization.py" name="lsd_localization" output="screen"/>
+</launch>

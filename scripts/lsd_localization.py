@@ -8,7 +8,7 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseArray
 
 
-class Localization(object):
+class LSDLocalization(object):
 
     def __init__(self, K):
         self.K = K
@@ -53,10 +53,6 @@ class Localization(object):
             self.p_x = np.polyfit(x_xs, x_ys, 1)
             self.p_y = np.polyfit(y_xs, y_ys, 1)
             self.p_z = np.polyfit(z_xs, z_ys, 1)
-            print self.p_x
-            print self.p_y
-            print self.p_z
-            print "----"
             x = self.p_x[0] * self.lsd_pose.position.x + self.p_x[1]
             y = self.p_y[0] * self.lsd_pose.position.y + self.p_y[1]
             z = self.p_z[0] * self.lsd_pose.position.z + self.p_z[1]
@@ -72,7 +68,7 @@ class Localization(object):
 
 def main():
     rospy.init_node("fs_localization", anonymous=False)
-    loc = Localization(200)
+    loc = LSDLocalization(200)
     rospy.Subscriber("/lsd_slam/pose", PoseStamped, loc.lsd_callback)
     rospy.Subscriber("/tag_detections_pose", PoseArray, loc.apriltags_callback)
     pub = rospy.Publisher("/localization/lsd_pose", PoseStamped, queue_size=10)
