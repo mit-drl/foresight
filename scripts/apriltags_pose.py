@@ -5,6 +5,9 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseArray
 
 
+NODE_NAME = "apriltags_pose"
+POSE_TOPIC = "/mavros/mocap/pose"
+TAG_DETECTIONS_TOPIC = "/tag_detections_pose"
 pub = None
 
 
@@ -18,9 +21,9 @@ def apriltags_callback(pose_array):
 
 def main():
     global pub
-    rospy.init_node("fs_localization", anonymous=False)
-    pub = rospy.Publisher("/mavros/mocap/pose", PoseStamped, queue_size=10)
-    rospy.Subscriber("/tag_detections_pose", PoseArray, apriltags_callback)
+    rospy.init_node(NODE_NAME, anonymous=False)
+    pub = rospy.Publisher(POSE_TOPIC, PoseStamped, queue_size=10)
+    rospy.Subscriber(TAG_DETECTIONS_TOPIC, PoseArray, apriltags_callback)
     rospy.spin()
 
 
