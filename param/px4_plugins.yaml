@@ -1,0 +1,15 @@
+plugin_blacklist:
+    - safety_area
+    - image_pub
+    - vibration
+    - distance_sensor
+    - 3dr_radio
+    - setpoint_position
+    - setpoint_attitude
+    - setpoint_accel
+    - actuator_control
+    - cam_imu_sync
+    - global_position
+    - setpoint_raw
+    - vision_pose_estimate
+    - vision_speed_estimate
