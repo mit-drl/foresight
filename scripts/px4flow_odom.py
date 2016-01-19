@@ -2,6 +2,7 @@
 
 import rospy
 import math
+import tf
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from mavros_msgs.msg import OpticalFlowRad
@@ -22,9 +23,10 @@ class OpticalFlowOdom(object):
         self.optical_flow_topic = optical_flow_topic
         self.imu_topic = imu_topic
         self.odom_topic = odom_topic
-        self.odom_pub = rospy.Publisher(
-            odom_topic, Odometry, queue_size=10)
+        self.odom_pub = rospy.Publisher(odom_topic, Odometry, queue_size=10)
+        self.br = tf.TransformBroadcaster()
         self.optical_flow_sub = None
+        self.imu_sub = None
         self.odom = Odometry()
         self.odom.header.frame_id = odom_frame_id
         self.odom.child_frame_id = odom_child_frame_id
@@ -65,6 +67,16 @@ class OpticalFlowOdom(object):
     def publish_odom(self):
         self.odom.pose.covariance = self.covariance_matrix(
             1, 1, 1e6, self.o_cov[0], self.o_cov[4], self.o_cov[8])
+        self.br.sendTransform((self.odom.pose.pose.position.x,
+                               self.odom.pose.pose.position.y,
+                               self.odom.pose.pose.position.z),
+                              (self.odom.pose.pose.orientation.x,
+                               self.odom.pose.pose.orientation.y,
+                               self.odom.pose.pose.orientation.z,
+                               self.odom.pose.pose.orientation.w),
+                              rospy.Time.now(),
+                              "base_link",
+                              "odom")
         self.odom_pub.publish(self.odom)
 
 
@@ -76,10 +88,10 @@ def main():
     odom_topic = rospy.get_param("~odom_topic", ODOM_TOPIC)
     odom_frame_id = rospy.get_param("~odom_frame_id", ODOM_FRAME_ID)
     odom_child_frame_id = rospy.get_param("~odom_child_frame_id", ODOM_FRAME_ID)
+    r = rospy.Rate(hz)
     ofo = OpticalFlowOdom(
         optical_flow_topic, imu_topic, odom_topic,
         odom_frame_id, odom_child_frame_id).start()
-    r = rospy.Rate(hz)
     while not rospy.is_shutdown():
         ofo.publish_odom()
         r.sleep()
