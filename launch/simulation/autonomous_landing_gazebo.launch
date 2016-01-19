@@ -2,7 +2,7 @@
 <launch>
 
     <include file="$(find hector_gazebo_worlds)/launch/start.launch"/>
-    <include file="$(find foresight)/launch/spawn_youbot.launch" ns="youbot">
+    <include file="$(find foresight)/launch/simulation/spawn_youbot.launch" ns="youbot">
         <arg name="x" default="0.0"/>
         <arg name="y" default="0.0"/>
         <arg name="z" default="0.0"/>
@@ -16,7 +16,7 @@
         <arg name="name" value="quadrotor"/>
     </include>
 
-    <include file="$(find foresight)/launch/xbox_controller.launch">
+    <include file="$(find foresight)/launch/util/xbox_controller.launch">
         <arg name="cmd_vel_topic" value="/quadrotor/cmd_vel"/>
     </include>
 </launch>
