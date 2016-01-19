@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 import rospy
-import numpy as np
-from pairedtimeseries import PairedTimeSeries
-from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseArray
 
