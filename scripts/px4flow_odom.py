@@ -17,7 +17,8 @@ ODOM_CHILD_FRAME_ID = "base_link"
 
 class OpticalFlowOdom(object):
 
-    def __init__(self, optical_flow_topic, imu_topic, odom_topic):
+    def __init__(self, optical_flow_topic, imu_topic, odom_topic,
+                 odom_frame_id, odom_child_frame_id):
         self.optical_flow_topic = optical_flow_topic
         self.imu_topic = imu_topic
         self.odom_topic = odom_topic
@@ -25,8 +26,8 @@ class OpticalFlowOdom(object):
             odom_topic, Odometry, queue_size=10)
         self.optical_flow_sub = None
         self.odom = Odometry()
-        self.odom.header.frame_id = ODOM_FRAME_ID
-        self.odom.child_frame_id = ODOM_CHILD_FRAME_ID
+        self.odom.header.frame_id = odom_frame_id
+        self.odom.child_frame_id = odom_child_frame_id
         self.o_cov = [0] * 9
 
     def start(self):
@@ -69,8 +70,16 @@ class OpticalFlowOdom(object):
 
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
-    ofo = OpticalFlowOdom(OPTICAL_FLOW_TOPIC, IMU_TOPIC, ODOM_TOPIC).start()
-    r = rospy.Rate(30)
+    hz = rospy.get_param("~frequency", 30)
+    optical_flow_topic = rospy.get_param("~optical_flow_topic", OPTICAL_FLOW_TOPIC)
+    imu_topic = rospy.get_param("~imu_topic", IMU_TOPIC)
+    odom_topic = rospy.get_param("~odom_topic", ODOM_TOPIC)
+    odom_frame_id = rospy.get_param("~odom_frame_id", ODOM_FRAME_ID)
+    odom_child_frame_id = rospy.get_param("~odom_child_frame_id", ODOM_FRAME_ID)
+    ofo = OpticalFlowOdom(
+        optical_flow_topic, imu_topic, odom_topic,
+        odom_frame_id, odom_child_frame_id).start()
+    r = rospy.Rate(hz)
     while not rospy.is_shutdown():
         ofo.publish_odom()
         r.sleep()
