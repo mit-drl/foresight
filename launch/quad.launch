@@ -10,5 +10,5 @@
         <arg name="log_output" value="screen" />
     </include>
     <!-- <include file="$(find foresight)/launch/localization/apriltags_pose.launch"/> -->
-    <include file="$(find foresight)/launch/localization/px4flow_odom.launch"/>
+    <!-- <include file="$(find foresight)/launch/localization/px4flow_odom.launch"/> -->
 </launch>

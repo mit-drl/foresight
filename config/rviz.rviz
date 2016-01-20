@@ -55,17 +55,23 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_link:
+          Value: true
+        odom:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        base_link:
+          odom:
+            {}
       Update Interval: 0
       Value: true
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /tag_detections_image
       Max Value: 1
       Median window: 5
@@ -74,7 +80,7 @@ Visualization Manager:
       Normalize Range: true
       Queue Size: 2
       Transport Hint: compressed
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.1
@@ -92,13 +98,13 @@ Visualization Manager:
     - Angle Tolerance: 0
       Class: rviz/Odometry
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Keep: 1
       Length: 0.3
       Name: Odometry
       Position Tolerance: 0
       Topic: /foresight/px4flow/odom
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -123,22 +129,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.01662
+      Distance: 1.79163
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.064272
-        Y: -0.231926
-        Z: 1.29578
+        X: 0.282907
+        Y: 0.456804
+        Z: 1.08709
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.5698
+      Pitch: 0.769797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.57178
+      Yaw: 1.72178
     Saved: ~
 Window Geometry:
   Displays:

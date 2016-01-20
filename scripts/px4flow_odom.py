@@ -3,6 +3,7 @@
 import rospy
 import math
 import tf
+# import numpy as np
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from mavros_msgs.msg import OpticalFlowRad
@@ -51,10 +52,19 @@ class OpticalFlowOdom(object):
         h = ofr.distance
         r_x = ofr.integrated_x
         r_y = ofr.integrated_y
+        x_rel = -2 * h * math.tan(r_x / 2.0)
+        y_rel = -2 * h * math.tan(r_y / 2.0)
+        _, _, yaw = tf.transformations.euler_from_quaternion(
+            (self.odom.pose.pose.orientation.x,
+             self.odom.pose.pose.orientation.y,
+             self.odom.pose.pose.orientation.z,
+             self.odom.pose.pose.orientation.w))
+        x_abs = x_rel * math.cos(yaw) - y_rel * math.sin(yaw)
+        y_abs = x_rel * math.sin(yaw) + y_rel * math.cos(yaw)
         self.odom.header.seq += 1
         self.odom.header.stamp = rospy.Time.now()
-        self.odom.pose.pose.position.x -= 2 * h * math.tan(r_y / 2.0)
-        self.odom.pose.pose.position.y += 2 * h * math.tan(r_x / 2.0)
+        self.odom.pose.pose.position.x += x_abs
+        self.odom.pose.pose.position.y += y_abs
         self.odom.pose.pose.position.z = ofr.distance
 
     def imu_callback(self, imu):
@@ -83,11 +93,13 @@ class OpticalFlowOdom(object):
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
     hz = rospy.get_param("~frequency", 30)
-    optical_flow_topic = rospy.get_param("~optical_flow_topic", OPTICAL_FLOW_TOPIC)
+    optical_flow_topic = rospy.get_param(
+        "~optical_flow_topic", OPTICAL_FLOW_TOPIC)
     imu_topic = rospy.get_param("~imu_topic", IMU_TOPIC)
     odom_topic = rospy.get_param("~odom_topic", ODOM_TOPIC)
     odom_frame_id = rospy.get_param("~odom_frame_id", ODOM_FRAME_ID)
-    odom_child_frame_id = rospy.get_param("~odom_child_frame_id", ODOM_FRAME_ID)
+    odom_child_frame_id = rospy.get_param(
+        "~odom_child_frame_id", ODOM_FRAME_ID)
     r = rospy.Rate(hz)
     ofo = OpticalFlowOdom(
         optical_flow_topic, imu_topic, odom_topic,
