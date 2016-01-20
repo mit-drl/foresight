@@ -36,17 +36,19 @@ def apriltags_callback(pose_array):
         ps.pose.pose.position.z = pose_array.poses[0].position.z
         ps.pose.covariance = covariance_matrix(1e-2, 1e-2, 1e-2, 0, 0, 0)
 
-    try:
-        trans, rot = listener.lookupTransform("/odom", "/base_link",
-                                              rospy.Time(0))
-        br.sendTransform((trans[0] - ps.pose.pose.position.x,
-                          trans[1] + ps.pose.pose.position.y,
-                          trans[2] - ps.pose.pose.position.z),
-                         (0, 0, 0, 1), rospy.Time.now(),
-                         "odom", "map")
-    except (tf.LookupException, tf.ConnectivityException,
-            tf.ExtrapolationException):
-        pass
+    # try:
+    (xm, ym, zm), rm = listener.lookupTransform("/base_link",
+                                                "/landing_pad",
+                                                rospy.Time(0))
+    (xo, yo, zo), ro = listener.lookupTransform("/odom", "/base_link",
+                                                rospy.Time(0))
+    br.sendTransform((xo - xm,
+                        yo - ym,
+                        zo - zm),
+                        (0, 0, 0, 1), rospy.Time.now(),
+                        "odom", "map")
+    # except (tf.LookupException, tf.ConnectivityException,
+    #         tf.ExtrapolationException):
 
 
 def main():
