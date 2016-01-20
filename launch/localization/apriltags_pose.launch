@@ -4,7 +4,7 @@
     <remap from="/usb_cam/image_raw" to="/image_rect"/>
 
     <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
-        <param name="video_device" value="/dev/video0"/>
+        <param name="video_device" value="/dev/video1"/>
         <param name="image_width" value="640" />
         <param name="image_height" value="480" />
         <param name="pixel_format" value="yuyv" />
@@ -15,7 +15,7 @@
     <node pkg="apriltags_ros" type="apriltag_detector_node"
         name="at_node" output="screen">
         <rosparam param="tag_descriptions">
-            [{id: 0, size: 0.163513}]
+            [{id: 0, size: 0.085, frame_id: landing_pad}]
         </rosparam>
     </node>
 

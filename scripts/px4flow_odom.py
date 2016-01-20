@@ -65,7 +65,7 @@ class OpticalFlowOdom(object):
         self.odom.header.stamp = rospy.Time.now()
         self.odom.pose.pose.position.x -= x_abs
         self.odom.pose.pose.position.y -= y_abs
-        self.odom.pose.pose.position.z = ofr.distance
+        self.odom.pose.pose.position.z = h
 
     def imu_callback(self, imu):
         self.odom.pose.pose.orientation.x = imu.orientation.x
