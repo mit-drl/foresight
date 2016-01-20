@@ -77,8 +77,6 @@ class OpticalFlowOdom(object):
     def publish_odom(self):
         self.odom.pose.covariance = self.covariance_matrix(
             1e-2, 1e-2, 1e-2, self.o_cov[0], self.o_cov[4], self.o_cov[8])
-        self.br.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(),
-                              "fcu", "base_link")
         self.odom_pub.publish(self.odom)
 
 

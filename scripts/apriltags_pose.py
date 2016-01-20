@@ -40,7 +40,7 @@ def apriltags_callback(pose_array):
         trans, rot = listener.lookupTransform("/odom", "/base_link",
                                               rospy.Time(0))
         br.sendTransform((trans[0] - ps.pose.pose.position.x,
-                          trans[1] - ps.pose.pose.position.y,
+                          trans[1] + ps.pose.pose.position.y,
                           trans[2] - ps.pose.pose.position.z),
                          (0, 0, 0, 1), rospy.Time.now(),
                          "odom", "map")
