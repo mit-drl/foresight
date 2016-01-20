@@ -52,8 +52,8 @@ class OpticalFlowOdom(object):
         h = ofr.distance
         r_x = ofr.integrated_x
         r_y = ofr.integrated_y
-        x_rel = -2 * h * math.tan(r_x / 2.0)
-        y_rel = -2 * h * math.tan(r_y / 2.0)
+        x_rel = 2 * h * math.tan(r_x / 2.0)
+        y_rel = 2 * h * math.tan(r_y / 2.0)
         _, _, yaw = tf.transformations.euler_from_quaternion(
             (self.odom.pose.pose.orientation.x,
              self.odom.pose.pose.orientation.y,
@@ -63,8 +63,9 @@ class OpticalFlowOdom(object):
         y_abs = x_rel * math.sin(yaw) + y_rel * math.cos(yaw)
         self.odom.header.seq += 1
         self.odom.header.stamp = rospy.Time.now()
-        self.odom.pose.pose.position.x += x_abs
-        self.odom.pose.pose.position.y += y_abs
+        # beware, magic below
+        self.odom.pose.pose.position.x -= x_abs
+        self.odom.pose.pose.position.y -= y_abs
         self.odom.pose.pose.position.z = ofr.distance
 
     def imu_callback(self, imu):
