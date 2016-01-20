@@ -29,13 +29,16 @@ def apriltags_callback(pose_array):
         ps = PoseWithCovarianceStamped()
         ps.header.stamp = rospy.Time.now()
         ps.header.seq = seq
-        ps.header.frame_id = "odom"
+        ps.header.frame_id = "map"
         ps.pose.pose.position.x = -pose_array.poses[0].position.x
         ps.pose.pose.position.y = -pose_array.poses[0].position.y
         ps.pose.pose.position.z = pose_array.poses[0].position.z
         ps.pose.covariance = covariance_matrix(1e-2, 1e-2, 1e-2, 0, 0, 0)
         # pub.publish(ps)
         seq += 1
+    br.sendTransform((0, 0, 0),
+                     (0, 0, 0, 1), rospy.Time.now(),
+                     "odom", "map")
 
 
 def main():

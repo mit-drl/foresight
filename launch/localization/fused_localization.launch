@@ -18,7 +18,6 @@
 
         <param name="odom0" value="/foresight/px4flow/odom"/>
         <param name="imu0" value="/mavros/imu/data"/>
-        <param name="pose0" value="/foresight/landing_pad/pose"/>/
 
         <rosparam param="odom0_config">[true, true, true,
                                         false, false, false,
@@ -32,19 +31,11 @@
                                        true, true, true,
                                        true, true, true]</rosparam>
 
-        <rosparam param="pose0_config">[true, true, true,
-                                        false, false, false,
-                                        false, false, false,
-                                        false, false, false,
-                                        false, false, false]</rosparam>
-
         <param name="odom0_differential" value="false"/>
         <param name="imu0_differential" value="false"/>
-        <param name="pose0_differential" value="false"/>
 
         <param name="odom0_relative" value="false"/>
         <param name="imu0_relative" value="false"/>
-        <param name="pose0_relative" value="false"/>
 
         <param name="imu0_remove_gravitational_acceleration" value="true"/>
 
@@ -52,7 +43,6 @@
 
         <param name="odom0_queue_size" value="2"/>
         <param name="imu0_queue_size" value="10"/>
-        <param name="pose0_queue_size" value="2"/>
 
         <param name="debug"           value="false"/>
         <param name="debug_out_file"  value="debug_ekf_localization.txt"/>
