@@ -37,7 +37,6 @@ class AprilTagsTransformer(object):
 
     def apriltags_cb(self, tag_array):
         tags = tag_array.detections
-        print tags
         try:
             tob_args = [ODOM_ID, BASE_LINK_ID, rospy.Time(0)]
             (xo, yo, zo), _ = self.listener.lookupTransform(*tob_args)
