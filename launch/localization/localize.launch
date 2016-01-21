@@ -2,6 +2,6 @@
 <launch>
     <include file="$(find foresight)/launch/localization/static_transformations.launch"/>
     <include file="$(find foresight)/launch/localization/px4flow_odom.launch"/>
-    <include file="$(find foresight)/launch/localization/apriltags_pose.launch"/>
+    <include file="$(find foresight)/launch/localization/apriltags_tf.launch"/>
     <include file="$(find foresight)/launch/localization/ukf_fuser.launch"/>
 </launch>

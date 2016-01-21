@@ -2,10 +2,6 @@
 <launch>
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_fcu"
         args="0 0 0 0 0 0 base_link fcu 100" />
-    <!-- <node pkg="tf" type="static_transform_publisher" name="base_link_to_usb_cam" -->
-    <!--     args="0 0 0 0 0 0 base_link usb_cam 100" /> -->
-    <node pkg="tf" type="static_transform_publisher" name="map_to_landing_pad"
-        args="0 0 0 0 0 0 map landing_pad 100" />
-    <!-- <node pkg="tf" type="static_transform_publisher" name="tag_1_to_tag_0" -->
-    <!--     args="0 0 0 0 0 0 base_link fcu 100" /> -->
+    <node pkg="tf" type="static_transform_publisher" name="landing_pad_to_map"
+        args="0 0 0 0 0 0 landing_pad map 100" />
 </launch>
