@@ -15,10 +15,11 @@
     <node pkg="apriltags_ros" type="apriltag_detector_node"
         name="at_node" output="screen">
         <rosparam param="tag_descriptions">
-            [{id: 0, size: 0.085, frame_id: landing_pad}]
+            [{id: 0, size: 0.085, frame_id: landing_pad},
+             {id: 1, size: 0.085, frame_id: "1"}]
         </rosparam>
     </node>
 
     <node pkg="foresight" type="apriltags_tf.py"
-        name="apriltags_pose" output="screen"/>
+        name="apriltags_tf" output="screen"/>
 </launch>

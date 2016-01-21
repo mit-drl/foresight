@@ -78,6 +78,7 @@ class OpticalFlowOdom(object):
         self.odom.pose.covariance = self.covariance_matrix(
             1e-2, 1e-2, 1e-2, self.o_cov[0], self.o_cov[4], self.o_cov[8])
         self.odom_pub.publish(self.odom)
+        return self
 
 
 def main():
