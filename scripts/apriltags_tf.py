@@ -31,9 +31,6 @@ class AprilTagsTransformer(object):
         self.sub = rospy.Subscriber(
             TAG_DETECTIONS_TOPIC, AprilTagDetectionArray, self.apriltags_cb)
         return self
-        # while not rospy.is_shutdown():
-        #     self.run()
-        #     self.rate.sleep()
 
     def apriltags_cb(self, tag_array):
         tags = tag_array.detections
@@ -53,7 +50,8 @@ class AprilTagsTransformer(object):
                 xt = tags[0].pose.pose.position.x
                 yt = tags[0].pose.pose.position.y
                 zt = tags[0].pose.pose.position.z
-                self.latest_odom_tf = (xo + xtl - xt, yo + ytl - yt,
+                self.latest_odom_tf = (xo + xtl - xt,
+                                       yo + ytl - yt,
                                        (ztl + zt) - zo)
         except tf.Exception:
             rospy.loginfo("No AprilTags found")
