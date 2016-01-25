@@ -68,10 +68,7 @@ class OpticalFlowOdom(object):
         self.odom.pose.pose.position.z = h
 
     def imu_callback(self, imu):
-        self.odom.pose.pose.orientation.x = imu.orientation.x
-        self.odom.pose.pose.orientation.y = imu.orientation.y
-        self.odom.pose.pose.orientation.z = imu.orientation.z
-        self.odom.pose.pose.orientation.w = imu.orientation.w
+        self.odom.pose.pose.orientation = imu.orientation
         self.o_cov = imu.orientation_covariance
 
     def publish_odom(self):

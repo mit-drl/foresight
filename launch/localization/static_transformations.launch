@@ -3,7 +3,7 @@
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_fcu"
         args="0 0 0 0 0 0 base_link fcu 100" />
     <node pkg="tf" type="static_transform_publisher" name="landing_pad_to_map"
-        args="0 0 0 0 0 0 landing_pad map 100" />
+        args="0 0 0 0.960886836052 0 0 landing_pad map 100" />
     <node pkg="tf" type="static_transform_publisher" name="one_to_landing_pad"
         args="0.0825 -0.10 0 0 0 0 landing_pad 1 100" />
 </launch>

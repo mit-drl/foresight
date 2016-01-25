@@ -51,7 +51,7 @@ class AprilTagsTransformer(object):
                 yt = tags[0].pose.pose.position.y
                 zt = tags[0].pose.pose.position.z
                 self.latest_odom_tf = (-xo - xt - xtl,
-                                       yo + yt - ytl,
+                                       -yo - yt - ytl,
                                        (ztl + zt) - zo)
         except tf.Exception:
             rospy.loginfo("No AprilTags found")
