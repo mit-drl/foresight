@@ -42,7 +42,7 @@ class AprilTagsTransformer(object):
             delta_t = (rospy.Time.now() - common_time).to_sec()
             if delta_t < TF_TIMEOUT:
                 tlc_args = [LANDING_PAD_ID, USB_CAM_ID, rospy.Time(0)]
-                (xm, ym, zm), _ = self.listener.lookupTransform(*tlc_args)
+                (xm, ym, zm), q = self.listener.lookupTransform(*tlc_args)
                 self.latest_odom_tf = (xo + xm, yo + ym, zm - zo)
             elif len(tags) > 0 and tags[0].id > 0:
                 ttl = [str(tags[0].id), LANDING_PAD_ID, rospy.Time(0)]
@@ -50,8 +50,8 @@ class AprilTagsTransformer(object):
                 xt = tags[0].pose.pose.position.x
                 yt = tags[0].pose.pose.position.y
                 zt = tags[0].pose.pose.position.z
-                self.latest_odom_tf = (xo + xtl - xt,
-                                       yo + ytl - yt,
+                self.latest_odom_tf = (-xo - xt - xtl,
+                                       yo + yt - ytl,
                                        (ztl + zt) - zo)
         except tf.Exception:
             rospy.loginfo("No AprilTags found")
