@@ -7,16 +7,17 @@
         <param name="video_device" value="/dev/video1"/>
         <param name="image_width" value="640" />
         <param name="image_height" value="480" />
-        <param name="pixel_format" value="yuyv" />
+        <param name="pixel_format" value="mjpeg" />
         <param name="camera_frame_id" value="usb_cam"/>
         <param name="io_method" value="mmap"/>
+        <param name="camera_info_url" value="file://$(find foresight)/param/head_camera.yaml"/>
     </node>
 
     <node pkg="apriltags_ros" type="apriltag_detector_node"
         name="at_node" output="screen">
         <rosparam param="tag_descriptions">
-            [{id: 0, size: 0.085, frame_id: landing_pad},
-             {id: 1, size: 0.085, frame_id: "1"}]
+            [{id: 0, size: 0.163513, frame_id: landing_pad},
+             {id: 1, size: 0.163513, frame_id: "1"}]
         </rosparam>
     </node>
 
