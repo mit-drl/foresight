@@ -1,20 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-    <remap from="/usb_cam/camera_info" to="/camera_info"/>
-    <remap from="/usb_cam/image_raw" to="/image_rect"/>
-
-    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
-        <param name="video_device" value="/dev/video1"/>
-        <param name="image_width" value="640" />
-        <param name="image_height" value="480" />
-        <param name="pixel_format" value="mjpeg" />
-        <param name="camera_frame_id" value="usb_cam"/>
-        <param name="io_method" value="mmap"/>
-        <param name="camera_info_url" value="file://$(find foresight)/param/head_camera.yaml"/>
-    </node>
-
     <node pkg="apriltags_ros" type="apriltag_detector_node"
         name="at_node" output="screen">
+        <remap to="/camera/camera_info" from="/camera_info"/>
+        <remap to="/camera/image_rect" from="/image_rect"/>
         <rosparam param="tag_descriptions">
             [{id: 0, size: 0.163513, frame_id: landing_pad},
              {id: 1, size: 0.163513, frame_id: "1"}]

@@ -54,7 +54,8 @@ class AprilTagsTransformer(object):
                                        -yo - yt - ytl,
                                        (ztl + zt) - zo)
         except tf.Exception:
-            rospy.loginfo("No AprilTags found")
+            pass
+            # rospy.loginfo("No AprilTags found")
 
         self.br.sendTransform(self.latest_odom_tf,
                               (0, 0, 0, 1),

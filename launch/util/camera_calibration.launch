@@ -1,13 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
-        <param name="video_device" value="/dev/video1"/>
-        <param name="image_width" value="640" />
-        <param name="image_height" value="480" />
-        <param name="pixel_format" value="yuyv" />
-        <param name="camera_frame_id" value="usb_cam" />
-        <param name="io_method" value="mmap"/>
+    <node name="camera_calibration" pkg="camera_calibration" type="cameracalibrator.py" output="screen"
+        args="--size 8x6 --square 0.08934">
+        <!-- <arg name="size" value="7x5"/> -->
+        <!-- <arg name="square" value="0.0319"/> -->
+        <remap from="image" to="/camera/image_raw"/>
+        <remap from="camera" to="/camera"/>
     </node>
-    <node name="camera_calibration" pkg="camera_calibration" type="cameracalibrator.py"
-        args="--size 8x6 --square 0.108 image:=/usb_cam/image_raw camera:=/usb_cam"/>
 </launch>

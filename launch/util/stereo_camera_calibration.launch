@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="camera_calibration" pkg="camera_calibration" type="cameracalibrator.py"
+        args="--approximate=0.1 --size 7x5 --square 0.03186 right:=/stereo/right/image_raw right_camera:=/stereo/right left:=/stereo/left/image_raw left_camera:=/stereo/left" output="screen"/>
+</launch>
