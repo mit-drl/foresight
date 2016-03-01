@@ -27,7 +27,7 @@
 
             <param name="auto_exposure" value="0"/>
             <param name="auto_exposure_priority" value="0"/>
-            <param name="exposure_absolute" value="0.004"/>
+            <param name="exposure_absolute" value="0.006"/>
             <param name="auto_white_balance" value="false"/>
         </node>
         <node pkg="image_proc" type="image_proc" name="image_proc"/>

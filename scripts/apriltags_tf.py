@@ -34,52 +34,14 @@ class AprilTagsTransformer(object):
 
     def apriltags_cb(self, tag_array):
         tags = tag_array.detections
-        try:
-            tob_args = [ODOM_ID, BASE_LINK_ID, rospy.Time(0)]
-            (xo, yo, zo), _ = self.listener.lookupTransform(*tob_args)
-            ct_args = [USB_CAM_ID, LANDING_PAD_ID]
-            common_time = self.listener.getLatestCommonTime(*ct_args)
-            delta_t = (rospy.Time.now() - common_time).to_sec()
-            if delta_t < TF_TIMEOUT:
-                tlc_args = [LANDING_PAD_ID, USB_CAM_ID, rospy.Time(0)]
-                (xm, ym, zm), q = self.listener.lookupTransform(*tlc_args)
-                self.latest_odom_tf = (xo + xm, yo + ym, zm - zo)
-            elif len(tags) > 0 and tags[0].id > 0:
-                ttl = [str(tags[0].id), LANDING_PAD_ID, rospy.Time(0)]
-                (xtl, ytl, ztl), _ = self.listener.lookupTransform(*ttl)
-                xt = tags[0].pose.pose.position.x
-                yt = tags[0].pose.pose.position.y
-                zt = tags[0].pose.pose.position.z
-                self.latest_odom_tf = (-xo - xt - xtl,
-                                       -yo - yt - ytl,
-                                       (ztl + zt) - zo)
-        except tf.Exception:
-            pass
-            # rospy.loginfo("No AprilTags found")
-
-        self.br.sendTransform(self.latest_odom_tf,
-                              (0, 0, 0, 1),
-                              rospy.Time.now(),
-                              ODOM_ID, MAP_ID)
-
-    def run(self):
-        try:
-            ct_args = [USB_CAM_ID, LANDING_PAD_ID]
-            common_time = self.listener.getLatestCommonTime(*ct_args)
-            delta_t = (rospy.Time.now() - common_time).to_sec()
-            if delta_t < TF_TIMEOUT:
-                tlc_args = [LANDING_PAD_ID, USB_CAM_ID, rospy.Time(0)]
-                tob_args = [ODOM_ID, BASE_LINK_ID, rospy.Time(0)]
-                (xm, ym, zm), _ = self.listener.lookupTransform(*tlc_args)
-                (xo, yo, zo), _ = self.listener.lookupTransform(*tob_args)
-                self.latest_odom_tf = (xo + xm, yo + ym, zm - zo)
-        except tf.Exception:
-            rospy.loginfo("No AprilTags found")
-        self.br.sendTransform(self.latest_odom_tf,
-                              (0, 0, 0, 1),
-                              rospy.Time.now(),
-                              ODOM_ID, MAP_ID)
-        return self
+        if len(tags) > 0:
+            tag = tags[0]
+            ps = self.listener.transformPose("odom", tag.pose)
+            pos = ps.pose.position
+            quat = ps.pose.orientation
+            self.br.sendTransform((-pos.x, -pos.y, 0),
+                                  (0, 0, 0, 1),
+                                  rospy.Time.now(), "odom", "car/hood_link")
 
 
 def main():
