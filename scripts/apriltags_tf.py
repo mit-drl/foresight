@@ -2,7 +2,9 @@
 
 import rospy
 import tf
+from geometry_msgs.msg import PoseStamped
 from apriltags_ros.msg import AprilTagDetectionArray
+
 
 NODE_NAME = "apriltags_pose"
 FREQUENCY = 30
@@ -19,29 +21,45 @@ class AprilTagsTransformer(object):
 
     def __init__(self, frequency):
         self.br = tf.TransformBroadcaster()
-        self.listener = tf.TransformListener()
+        self.tfl = tf.TransformListener()
         self.rate = rospy.Rate(frequency)
-        self.tf_exs = (tf.LookupException,
-                       tf.ConnectivityException,
-                       tf.ExtrapolationException)
         self.sub = None
-        self.latest_odom_tf = (0, 0, 0)
+        self.trans = (0, 0, 0)
+        self.quat = (0, 0, 0, 1)
 
     def start(self):
         self.sub = rospy.Subscriber(
             TAG_DETECTIONS_TOPIC, AprilTagDetectionArray, self.apriltags_cb)
+        self.run()
         return self
 
     def apriltags_cb(self, tag_array):
         tags = tag_array.detections
         if len(tags) > 0:
             tag = tags[0]
-            ps = self.listener.transformPose("odom", tag.pose)
+            odom_org = PoseStamped()
+            odom_org.pose.orientation.w = 1
+            odom_org.header.frame_id = "odom"
+            ps = tag.pose
             pos = ps.pose.position
             quat = ps.pose.orientation
-            self.br.sendTransform((-pos.x, -pos.y, 0),
-                                  (0, 0, 0, 1),
-                                  rospy.Time.now(), "odom", "car/hood_link")
+            self.br.sendTransform((pos.x, pos.y, pos.z),
+                                  (quat.x, quat.y, quat.z, quat.w),
+                                  rospy.Time.now(), "car/hood_tag",
+                                  "quad/back_camera_link")
+            tp = self.tfl.transformPose("car/hood_tag", odom_org)
+            pos = tp.pose.position
+            quat = tp.pose.orientation
+            self.trans = (pos.x, pos.y, pos.z)
+            self.quat = (quat.x, quat.y, quat.z, quat.w)
+
+    def run(self):
+        while not rospy.is_shutdown():
+            self.br.sendTransform(self.trans, self.quat,
+                                  rospy.Time.now(),
+                                  "odom", "car/hood_link")
+            self.rate.sleep()
+
 
 
 def main():
