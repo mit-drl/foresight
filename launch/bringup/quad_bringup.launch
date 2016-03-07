@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <include file="$(find mavros)/launch/bringup/pixhawk.launch"/>
+    <include file="$(find foresight)/launch/bringup/pixhawk.launch"/>
     <include file="$(find foresight)/launch/sensors/camera.launch"/>
     <include file="$(find foresight)/launch/localization/localize.launch"/>
 </launch>

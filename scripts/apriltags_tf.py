@@ -61,7 +61,6 @@ class AprilTagsTransformer(object):
             self.rate.sleep()
 
 
-
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
     att = AprilTagsTransformer(30)
