@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+    <node pkg="foresight" type="stabilized_tf.py" name="stabilized_tf"/>
     <node pkg="apriltags_ros" type="apriltag_detector_node"
         name="at_node" output="screen">
         <remap to="/camera/camera_info" from="/camera_info"/>
@@ -10,7 +11,6 @@
             [{id: 0, size: 0.157163, frame_id: car/tag_0}]
         </rosparam>
     </node>
-
     <node pkg="foresight" type="apriltags_tf.py"
         name="apriltags_tf" output="screen"/>
 </launch>

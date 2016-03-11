@@ -53,34 +53,14 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        1:
-          Value: true
         All Enabled: false
-        base_link:
-          Value: true
-        fcu:
-          Value: true
-        landing_pad:
-          Value: true
-        map:
-          Value: true
-        odom:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        landing_pad:
-          1:
-            {}
-          map:
-            {}
-        odom:
-          base_link:
-            fcu:
-              {}
+        {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0
@@ -96,13 +76,13 @@ Visualization Manager:
     - Angle Tolerance: 0
       Class: rviz/Odometry
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Keep: 1
       Length: 0.3
       Name: Odometry
       Position Tolerance: 0
       Topic: /odom
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /tag_detections_image
@@ -158,7 +138,7 @@ Visualization Manager:
         Z: 1.09299
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.0198
+      Pitch: 1.0298
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
       Yaw: 2.63678

@@ -2,8 +2,12 @@
 
 import rospy
 import tf
-from geometry_msgs.msg import PoseStamped
 from apriltags_ros.msg import AprilTagDetectionArray
+from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import PoseStamped
+from sensor_msgs.msg import Imu
+from tf.transformations import euler_from_quaternion
+from tf.transformations import quaternion_from_euler
 
 
 NODE_NAME = "apriltags_pose"
@@ -24,29 +28,52 @@ class AprilTagsTransformer(object):
         self.tfl = tf.TransformListener()
         self.rate = rospy.Rate(frequency)
         self.sub = None
+        self.imu_sub = 0
         self.trans = (0, 0, 0)
         self.quat = (0, 0, 0, 1)
+        self.quad_quat = Quaternion()
 
     def start(self):
         self.sub = rospy.Subscriber(
             TAG_DETECTIONS_TOPIC, AprilTagDetectionArray, self.apriltags_cb)
+        self.imu_sub = rospy.Subscriber("/mavros/imu/data", Imu, self.imu_cb)
         self.run()
         return self
+
+    def imu_cb(self, imu):
+        self.quad_quat = imu.orientation
+
+    def quat_to_list(self, quat):
+        return [quat.x, quat.y, quat.z, quat.w]
+
+    def only_yaw(self, quat):
+        _, _, yaw = euler_from_quaternion(self.quat_to_list(quat))
+        quat_yaw = quaternion_from_euler(0, 0, yaw)
+        ret_quat = Quaternion()
+        ret_quat.x = quat_yaw[0]
+        ret_quat.y = quat_yaw[1]
+        ret_quat.z = quat_yaw[2]
+        ret_quat.w = quat_yaw[3]
+        return ret_quat
 
     def apriltags_cb(self, tag_array):
         tags = tag_array.detections
         if len(tags) > 0:
             tag = tags[0]
-            odom_org = PoseStamped()
-            odom_org.pose.orientation.w = 1
-            odom_org.header.frame_id = "odom"
             ps = tag.pose
             pos = ps.pose.position
-            quat = ps.pose.orientation
+            ps.pose.position.x, ps.pose.position.y = pos.y, -pos.x
+            ps_bls = self.tfl.transformPose("quad/base_link_stab", ps)
+            pos = ps_bls.pose.position
+            quat = self.only_yaw(ps.pose.orientation)
             self.br.sendTransform((pos.x, pos.y, pos.z),
                                   (quat.x, quat.y, quat.z, quat.w),
                                   rospy.Time.now(), "car/hood_tag",
-                                  "quad/back_camera_link")
+                                  "quad/base_link_stab")
+            odom_org = PoseStamped()
+            odom_org.header.stamp = rospy.Time.now() - rospy.Duration(0.1)
+            odom_org.header.frame_id = "odom"
+            odom_org.pose.orientation.w = 1
             tp = self.tfl.transformPose("car/hood_tag", odom_org)
             pos = tp.pose.position
             quat = tp.pose.orientation

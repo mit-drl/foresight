@@ -55,10 +55,10 @@ class OpticalFlowOdom(object):
         x_rel = 2 * h * math.tan(r_x / 2.0)
         y_rel = 2 * h * math.tan(r_y / 2.0)
         _, _, yaw = tf.transformations.euler_from_quaternion(
-            (self.odom.pose.pose.orientation.x,
+            [self.odom.pose.pose.orientation.x,
              self.odom.pose.pose.orientation.y,
              self.odom.pose.pose.orientation.z,
-             self.odom.pose.pose.orientation.w))
+             self.odom.pose.pose.orientation.w])
         x_abs = x_rel * math.cos(yaw) - y_rel * math.sin(yaw)
         y_abs = x_rel * math.sin(yaw) + y_rel * math.cos(yaw)
         self.odom.header.seq += 1
