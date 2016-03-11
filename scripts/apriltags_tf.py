@@ -46,9 +46,9 @@ class AprilTagsTransformer(object):
     def quat_to_list(self, quat):
         return [quat.x, quat.y, quat.z, quat.w]
 
-    def only_yaw(self, quat):
+    def only_yaw(self, quat, mag=1):
         _, _, yaw = euler_from_quaternion(self.quat_to_list(quat))
-        quat_yaw = quaternion_from_euler(0, 0, yaw)
+        quat_yaw = quaternion_from_euler(0, 0, mag * yaw)
         ret_quat = Quaternion()
         ret_quat.x = quat_yaw[0]
         ret_quat.y = quat_yaw[1]
@@ -65,7 +65,7 @@ class AprilTagsTransformer(object):
             ps.pose.position.x, ps.pose.position.y = pos.y, -pos.x
             ps_bls = self.tfl.transformPose("quad/base_link_stab", ps)
             pos = ps_bls.pose.position
-            quat = self.only_yaw(ps.pose.orientation)
+            quat = self.only_yaw(ps.pose.orientation, -1)
             self.br.sendTransform((pos.x, pos.y, pos.z),
                                   (quat.x, quat.y, quat.z, quat.w),
                                   rospy.Time.now(), "car/hood_tag",
