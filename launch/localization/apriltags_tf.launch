@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-    <node pkg="foresight" type="stabilized_tf.py" name="stabilized_tf"/>
+    <node pkg="foresight" type="stabilized_tf.py" name="stabilized_tf" output="screen"/>
+    <node pkg="foresight" type="tf_to_pose.py" name="tf_to_pose" output="screen"/>
     <node pkg="apriltags_ros" type="apriltag_detector_node"
         name="at_node" output="screen">
         <remap to="/camera/camera_info" from="/camera_info"/>
