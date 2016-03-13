@@ -4,8 +4,13 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
+        - /TF1
         - /TF1/Frames1
-        - /TF1/Tree1
+        - /TF1/Tree1/map1
+        - /TF1/Tree1/map1/car/base_link1
+        - /TF1/Tree1/map1/car/base_link1/car/hood_link1
+        - /TF1/Tree1/map1/car/base_link1/car/hood_link1/odom1
       Splitter Ratio: 0.5
     Tree Height: 532
   - Class: rviz/Selection
@@ -63,6 +68,8 @@ Visualization Manager:
           Value: false
         fcu:
           Value: false
+        imu:
+          Value: false
         map:
           Value: true
         odom:
@@ -70,29 +77,30 @@ Visualization Manager:
         quad/back_camera_link:
           Value: false
         quad/base_link:
-          Value: false
-        quad/base_link_stab:
           Value: true
+        quad/base_link_stab:
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        car/hood_tag:
-          {}
         map:
           car/base_link:
             car/hood_link:
-              {}
-        odom:
-          quad/base_link:
-            fcu:
-              {}
-            quad/back_camera_link:
-              {}
-          quad/base_link_stab:
-            {}
+              odom:
+                quad/base_link:
+                  fcu:
+                    {}
+                  imu:
+                    {}
+                  quad/back_camera_link:
+                    car/tag_0:
+                      {}
+                quad/base_link_stab:
+                  car/hood_tag:
+                    {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0
@@ -139,7 +147,7 @@ Visualization Manager:
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.3
       Head Radius: 0.1
       Name: Pose
@@ -147,7 +155,21 @@ Visualization Manager:
       Shaft Radius: 0.05
       Shape: Axes
       Topic: /mavros/mocap/pose
-      Value: true
+      Value: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: false
+      Line Style: Lines
+      Line Width: 0.03
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Topic: /trajectory
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -172,22 +194,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.17614
+      Distance: 7.14298
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.33847
-        Y: 0.277647
-        Z: 1.13892
+        X: 0.734992
+        Y: 0.578003
+        Z: 1.326
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.179797
+      Pitch: 0.519797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.17679
+      Yaw: 3.36681
     Saved: ~
 Window Geometry:
   Displays:
@@ -207,5 +229,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1920
-  X: 4480
+  X: 0
   Y: 21

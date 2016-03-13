@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import rospy
+import math
 import tf
 from apriltags_ros.msg import AprilTagDetectionArray
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import PoseStamped
-from sensor_msgs.msg import Imu
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
 
@@ -28,27 +28,22 @@ class AprilTagsTransformer(object):
         self.tfl = tf.TransformListener()
         self.rate = rospy.Rate(frequency)
         self.sub = None
-        self.imu_sub = 0
+        self.imu_sub = None
         self.trans = (0, 0, 0)
         self.quat = (0, 0, 0, 1)
-        self.quad_quat = Quaternion()
 
     def start(self):
         self.sub = rospy.Subscriber(
             TAG_DETECTIONS_TOPIC, AprilTagDetectionArray, self.apriltags_cb)
-        self.imu_sub = rospy.Subscriber("/mavros/imu/data", Imu, self.imu_cb)
         self.run()
         return self
-
-    def imu_cb(self, imu):
-        self.quad_quat = imu.orientation
 
     def quat_to_list(self, quat):
         return [quat.x, quat.y, quat.z, quat.w]
 
-    def only_yaw(self, quat, mag=1):
+    def only_yaw(self, quat, mag=1, add=0):
         _, _, yaw = euler_from_quaternion(self.quat_to_list(quat))
-        quat_yaw = quaternion_from_euler(0, 0, mag * yaw)
+        quat_yaw = quaternion_from_euler(0.0, 0.0, mag * yaw + add)
         ret_quat = Quaternion()
         ret_quat.x = quat_yaw[0]
         ret_quat.y = quat_yaw[1]
@@ -63,22 +58,26 @@ class AprilTagsTransformer(object):
             ps = tag.pose
             pos = ps.pose.position
             ps.pose.position.x, ps.pose.position.y = pos.y, -pos.x
-            ps_bls = self.tfl.transformPose("quad/base_link_stab", ps)
+            ps_bls = self.tfl.transformPose("quad/base_link", ps)
             pos = ps_bls.pose.position
-            quat = self.only_yaw(ps.pose.orientation, -1)
-            self.br.sendTransform((pos.x, pos.y, pos.z),
-                                  (quat.x, quat.y, quat.z, quat.w),
-                                  rospy.Time.now(), "car/hood_tag",
-                                  "quad/base_link_stab")
-            odom_org = PoseStamped()
-            odom_org.header.stamp = rospy.Time.now() - rospy.Duration(0.1)
-            odom_org.header.frame_id = "odom"
-            odom_org.pose.orientation.w = 1
-            tp = self.tfl.transformPose("car/hood_tag", odom_org)
-            pos = tp.pose.position
-            quat = tp.pose.orientation
-            self.trans = (pos.x, pos.y, pos.z)
-            self.quat = (quat.x, quat.y, quat.z, quat.w)
+            quat = ps_bls.pose.orientation
+            self.br.sendTransform(
+                (pos.x, pos.y, pos.z),
+                (quat.x, quat.y, quat.z, quat.w),
+                rospy.Time.now(), "car/hood_tag", "quad/base_link")
+            try:
+                t = self.tfl.getLatestCommonTime("odom", "car/hood_tag")
+                odom_org = PoseStamped()
+                odom_org.header.stamp = t
+                odom_org.header.frame_id = "odom"
+                odom_org.pose.orientation.w = 1
+                tp = self.tfl.transformPose("car/hood_tag", odom_org)
+                pos = tp.pose.position
+                quat = tp.pose.orientation
+                self.trans = (-pos.x, -pos.y, pos.z)
+                # self.quat = self.only_yaw(quat, 1, 3.14)
+            except tf.Exception:
+                print "TF Error!"
 
     def run(self):
         while not rospy.is_shutdown():
@@ -90,7 +89,7 @@ class AprilTagsTransformer(object):
 
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
-    att = AprilTagsTransformer(30)
+    att = AprilTagsTransformer(100)
     att.start()
     rospy.spin()
 

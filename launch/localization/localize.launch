@@ -4,4 +4,5 @@
     <include file="$(find foresight)/launch/localization/px4flow_odom.launch"/>
     <include file="$(find foresight)/launch/localization/apriltags_tf.launch"/>
     <include file="$(find foresight)/launch/localization/ukf_fuser.launch"/>
+    <include file="$(find foresight)/launch/util/trajectory_server.launch"/>
 </launch>

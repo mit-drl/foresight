@@ -14,5 +14,5 @@
 
     <!-- This is just for testing and should be dynamically updated -->
     <node pkg="tf" type="static_transform_publisher" name="map_to_car"
-        args="1 1 0 0 0 0 map car/base_link 100" />
+        args="-1 0 0 0 0 0 map car/base_link 100" />
 </launch>

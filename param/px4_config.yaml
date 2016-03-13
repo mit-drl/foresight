@@ -43,7 +43,7 @@ cmd:
 
 # global_position
 global_position:
-  frame_id: "map"           # pose and fix frame_id
+  frame_id: "fcu"           # pose and fix frame_id
   rot_covariance: 99999.0   # covariance for attitude?
   tf:
     send: false               # send TF?
@@ -54,8 +54,8 @@ global_position:
 imu:
   frame_id: "fcu"
   # need find actual values
-  linear_acceleration_stdev: 0.0003
-  angular_velocity_stdev: !degrees 0.02
+  linear_acceleration_stdev: 0.003
+  angular_velocity_stdev: !degrees 1
   orientation_stdev: 1.0
   magnetic_stdev: 0.0
 
