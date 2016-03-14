@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find foresight)/launch/sensors/kinect.launch"/>
+    <include file="$(find foresight)/launch/localization/car_localization.launch"/>
+</launch>

@@ -15,4 +15,13 @@
     <!-- This is just for testing and should be dynamically updated -->
     <node pkg="tf" type="static_transform_publisher" name="map_to_car"
         args="-1 0 0 0 0 0 map car/base_link 100" />
+
+    <!-- Car doesn't actually have odom -->
+    <node pkg="tf" type="static_transform_publisher" name="car_odom"
+        args="0 0 0 0 0 0 car/base_link car/odom 100" />
+
+    <!-- Car to laser -->
+    <node pkg="tf" type="static_transform_publisher" name="car_odom"
+        args="0 0 0 0 0 0 camera_depth_frame car/base_link 100" />
+
 </launch>

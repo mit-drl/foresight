@@ -3,8 +3,7 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /TF1/Frames1
+      Expanded: ~
       Splitter Ratio: 0.5
     Tree Height: 532
   - Class: rviz/Selection
@@ -61,26 +60,6 @@ Visualization Manager:
         {}
       Update Interval: 0
       Value: true
-    - Angle Tolerance: 0
-      Class: rviz/Odometry
-      Color: 0; 255; 0
-      Enabled: false
-      Keep: 1
-      Length: 0.3
-      Name: Odometry
-      Position Tolerance: 0
-      Topic: /foresight/px4flow/odom
-      Value: false
-    - Angle Tolerance: 0
-      Class: rviz/Odometry
-      Color: 255; 25; 0
-      Enabled: false
-      Keep: 1
-      Length: 0.3
-      Name: Odometry
-      Position Tolerance: 0
-      Topic: /odom
-      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /tag_detections_image
@@ -92,13 +71,15 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: compressed
       Value: true
-    - Alpha: 1
-      Class: rviz_plugin_tutorials/Imu
-      Color: 204; 51; 204
+    - Angle Tolerance: 0
+      Class: rviz/Odometry
+      Color: 255; 25; 0
       Enabled: false
-      History Length: 1
-      Name: Imu
-      Topic: /mavros/imu/data
+      Keep: 1
+      Length: 0.3
+      Name: Odometry
+      Position Tolerance: 0
+      Topic: /odom
       Value: false
     - Alpha: 1
       Axes Length: 1
@@ -128,6 +109,27 @@ Visualization Manager:
         Z: 0
       Topic: /trajectory
       Value: false
+    - Acceleration properties:
+        Acc. vector alpha: 1
+        Acc. vector color: 255; 0; 0
+        Acc. vector scale: 1
+        Derotate acceleration: true
+        Enable acceleration: false
+      Axes properties:
+        Axes scale: 1
+        Enable axes: true
+      Box properties:
+        Box alpha: 1
+        Box color: 255; 0; 0
+        Enable box: false
+        x_scale: 1
+        y_scale: 1
+        z_scale: 1
+      Class: rviz_imu_plugin/Imu
+      Enabled: false
+      Name: Imu
+      Topic: ""
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -152,7 +154,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.14298
+      Distance: 17.6858
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -164,10 +166,10 @@ Visualization Manager:
         Z: 1.326
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.519797
+      Pitch: 0.619797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.36681
+      Yaw: 3.13681
     Saved: ~
 Window Geometry:
   Displays:
