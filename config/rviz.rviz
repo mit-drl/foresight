@@ -4,13 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /TF1
         - /TF1/Frames1
-        - /TF1/Tree1/map1
-        - /TF1/Tree1/map1/car/base_link1
-        - /TF1/Tree1/map1/car/base_link1/car/hood_link1
-        - /TF1/Tree1/map1/car/base_link1/car/hood_link1/odom1
       Splitter Ratio: 0.5
     Tree Height: 532
   - Class: rviz/Selection
@@ -31,7 +25,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -58,49 +52,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        car/base_link:
-          Value: true
-        car/hood_link:
-          Value: true
-        car/hood_tag:
-          Value: false
-        car/tag_0:
-          Value: false
-        fcu:
-          Value: false
-        imu:
-          Value: false
-        map:
-          Value: true
-        odom:
-          Value: true
-        quad/back_camera_link:
-          Value: false
-        quad/base_link:
-          Value: true
-        quad/base_link_stab:
-          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          car/base_link:
-            car/hood_link:
-              odom:
-                quad/base_link:
-                  fcu:
-                    {}
-                  imu:
-                    {}
-                  quad/back_camera_link:
-                    car/tag_0:
-                      {}
-                quad/base_link_stab:
-                  car/hood_tag:
-                    {}
+        {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0
