@@ -3,9 +3,11 @@
 import rospy
 import math
 import tf
+from tf.transformations import euler_from_quaternion
 from apriltags_ros.msg import AprilTagDetectionArray
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Float64
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
 
@@ -31,6 +33,8 @@ class AprilTagsTransformer(object):
         self.imu_sub = None
         self.trans = (0, 0, 0)
         self.quat = (0, 0, 0, 1)
+        self.offset_pub = rospy.Publisher("/foresight/yaw_offset", Float64,
+                                          queue_size=2)
 
     def start(self):
         self.sub = rospy.Subscriber(
@@ -73,9 +77,12 @@ class AprilTagsTransformer(object):
                 tp = self.tfl.transformPose("car/hood_tag", odom_org)
                 pos = tp.pose.position
                 quat = tp.pose.orientation
+                quat = self.quat_to_list(self.only_yaw(quat, 1, 3.14))
                 self.trans = (-pos.x, -pos.y, pos.z)
-                # Here is the fucking error
-                # self.quat = self.quat_to_list(self.only_yaw(quat, 1, 3.14))
+                _, _, yaw = euler_from_quaternion(self.quat_to_list(quat))
+                fl_yaw = Float65()
+                fl_yaw.data = yaw
+                self.offset_pub.publish(fl_yaw)
             except tf.Exception:
                 print "TF Error!"
 
