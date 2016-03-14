@@ -70,12 +70,12 @@ class AprilTagsTransformer(object):
                 odom_org = PoseStamped()
                 odom_org.header.stamp = t
                 odom_org.header.frame_id = "odom"
-                odom_org.pose.orientation.w = 1
                 tp = self.tfl.transformPose("car/hood_tag", odom_org)
                 pos = tp.pose.position
                 quat = tp.pose.orientation
                 self.trans = (-pos.x, -pos.y, pos.z)
-                # self.quat = self.only_yaw(quat, 1, 3.14)
+                # Here is the fucking error
+                # self.quat = self.quat_to_list(self.only_yaw(quat, 1, 3.14))
             except tf.Exception:
                 print "TF Error!"
 

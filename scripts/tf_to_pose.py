@@ -2,8 +2,8 @@
 
 import rospy
 import tf
-from tf.transformations import euler_from_quaternion
-from tf.transformations import quaternion_from_euler
+# from tf.transformations import euler_from_quaternion
+# from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import PoseStamped
 
 
@@ -31,23 +31,16 @@ class TFToPose(object):
                     "map", "quad/base_link",
                     rospy.Time(), rospy.Duration(0.1))
                 tr, quat = self.tfl.lookupTransform(
-                    "map", "car/hood_tag", rospy.Time())
-                map_to_tag = euler_from_quaternion(quat)[2]
-                tr, quat = self.tfl.lookupTransform(
-                    "car/hood_tag", "quad/base_link_yaw", rospy.Time())
-                tag_to_quad = euler_from_quaternion(quat)[2]
-                yaw = quaternion_from_euler(0, 0, map_to_tag + tag_to_quad)
-                tr, quat = self.tfl.lookupTransform(
                     "map", "quad/base_link", rospy.Time())
                 self.pose.header.seq += 1
                 self.pose.header.stamp = rospy.Time.now()
                 self.pose.pose.position.x = tr[0]
                 self.pose.pose.position.y = tr[1]
                 self.pose.pose.position.z = tr[2]
-                self.pose.pose.orientation.x = yaw[0]
-                self.pose.pose.orientation.y = yaw[1]
-                self.pose.pose.orientation.z = yaw[2]
-                self.pose.pose.orientation.w = yaw[3]
+                self.pose.pose.orientation.x = quat[0]
+                self.pose.pose.orientation.y = quat[1]
+                self.pose.pose.orientation.z = quat[2]
+                self.pose.pose.orientation.w = quat[3]
                 self.pub.publish(self.pose)
             except tf.Exception:
                 print "TF ERROR"
