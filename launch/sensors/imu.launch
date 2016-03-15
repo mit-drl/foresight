@@ -3,8 +3,9 @@
     <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_node">
         <remap from="imu/data_raw" to="/mavros/imu/data_raw"/>
         <remap from="imu/mag" to="/mavros/imu/mag"/>
-        <param name="orientation_stddev" value="0.5"/>
-        <param name="publish_tf" value="true"/>
+        <param name="orientation_stddev" value="0"/>
+        <!-- <param name="fixed_frame" value="odom"/> -->
+        <param name="publish_tf" value="false"/>
         <param name="use_magnetic_field_msg" value="true"/>
     </node>
 </launch>

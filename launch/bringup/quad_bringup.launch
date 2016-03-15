@@ -2,5 +2,6 @@
 <launch>
     <include file="$(find foresight)/launch/bringup/pixhawk.launch"/>
     <include file="$(find foresight)/launch/sensors/camera.launch"/>
+    <include file="$(find foresight)/launch/sensors/imu.launch"/>
     <!-- <include file="$(find foresight)/launch/localization/localize.launch"/> -->
 </launch>

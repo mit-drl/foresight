@@ -13,7 +13,7 @@
         <param name="transform_time_offset" value="0.0"/>
 
         <param name="odom0" value="/foresight/px4flow/odom"/>
-        <param name="imu0" value="/mavros/imu/data"/>
+        <param name="imu0" value="/imu/data"/>
 
         <rosparam param="odom0_config">[true, true, true,
                                         false, false, false,

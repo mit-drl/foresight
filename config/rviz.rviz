@@ -4,6 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /TF1
+        - /TF1/Frames1
+        - /Pose1/Status1
         - /Imu1/Axes properties1
       Splitter Ratio: 0.5
     Tree Height: 532
@@ -55,13 +58,15 @@ Visualization Manager:
         car/base_link:
           Value: true
         car/hood_link:
-          Value: true
+          Value: false
         car/hood_tag:
           Value: false
         car/tag_0:
-          Value: false
+          Value: true
         fcu:
           Value: false
+        imu:
+          Value: true
         map:
           Value: true
         odom:
@@ -84,6 +89,8 @@ Visualization Manager:
                   car/hood_tag:
                     {}
                   fcu:
+                    {}
+                  imu:
                     {}
                   quad/back_camera_link:
                     {}
@@ -201,7 +208,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.339
+      Distance: 7.71373
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -213,10 +220,10 @@ Visualization Manager:
         Z: 0.954063
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.779797
+      Pitch: 1.5698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.18179
+      Yaw: 3.52177
     Saved: ~
 Window Geometry:
   Displays:
