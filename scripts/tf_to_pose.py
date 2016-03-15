@@ -44,6 +44,7 @@ class TFToPose(object):
                 tr, quat = self.tfl.lookupTransform(
                     "map", "quad/base_link", rospy.Time())
                 roll, pitch, yaw_abs = euler_from_quaternion(quat)
+                print yaw_abs, self.yaw_offset
                 yaw_quat = quaternion_from_euler(roll, pitch,
                                                  yaw_abs + self.yaw_offset)
                 self.pose.header.seq += 1

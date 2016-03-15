@@ -11,5 +11,11 @@ plugin_blacklist:
     - cam_imu_sync
     - global_position
     - setpoint_raw
+    - safety_area
+    - vfr_hud
+    - ftp
+    - waypoint
+    - manual_control
+    - altitude
     # - vision_pose_estimate
     - vision_speed_estimate

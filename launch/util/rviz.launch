@@ -1,4 +1,11 @@
 <?xml version="1.0"?>
 <launch>
+    <node pkg="mavros_extras" type="copter_visualization" name="copter_visualization">
+        <param name="fixed_frame_id" value="map"/>
+        <param name="child_frame_id" value="quad/base_link"/>
+        <param name="num_rotors" value="4"/>
+        <remap from="local_position" to="/mavros/local_position/pose"/>
+        <remap from="local_setpoint" to="/mavros/setpoint_position/pose"/>
+    </node>
     <node name="rviz" type="rviz" pkg="rviz" args="-d $(find foresight)/config/rviz.rviz"/>
 </launch>
