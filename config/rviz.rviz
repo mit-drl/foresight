@@ -4,9 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /TF1
+        - /Grid1
         - /TF1/Frames1
-        - /Pose1/Status1
         - /Imu1/Axes properties1
       Splitter Ratio: 0.5
     Tree Height: 532
@@ -28,18 +27,18 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
-    - Alpha: 0.5
+    - Alpha: 1
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
       Line Style:
         Line Width: 0.03
-        Value: Billboards
+        Value: Lines
       Name: Grid
       Normal Cell Count: 0
       Offset:
@@ -55,45 +54,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        car/base_link:
-          Value: true
-        car/hood_link:
-          Value: false
-        car/hood_tag:
-          Value: false
-        car/tag_0:
-          Value: true
-        fcu:
-          Value: false
-        imu:
-          Value: true
-        map:
-          Value: true
-        odom:
-          Value: true
-        quad/back_camera_link:
-          Value: false
-        quad/base_link:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          car/base_link:
-            car/hood_link:
-              odom:
-                quad/base_link:
-                  car/hood_tag:
-                    {}
-                  fcu:
-                    {}
-                  imu:
-                    {}
-                  quad/back_camera_link:
-                    {}
+        {}
       Update Interval: 0
       Value: true
     - Class: rviz/Image
@@ -171,9 +138,7 @@ Visualization Manager:
       Marker Topic: /vehicle_marker
       Name: Marker
       Namespaces:
-        vehicle_arm: true
-        vehicle_body: true
-        vehicle_rotor: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -208,7 +173,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.71373
+      Distance: 14.9657
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -220,10 +185,10 @@ Visualization Manager:
         Z: 0.954063
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.5698
+      Pitch: 0.574796
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.52177
+      Yaw: 3.15677
     Saved: ~
 Window Geometry:
   Displays:
