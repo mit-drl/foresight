@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
     <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping">
-        <remap from="scan" to="/car/front_scan"/>
-        <param name="odom_frame" value="car/odom"/>
-        <param name="base_frame" value="car/base_link"/>
+        <remap from="scan" to="/front_scan"/>
+        <param name="odom_frame" value="odom"/>
+        <param name="base_frame" value="base_link"/>
     </node>
 </launch>

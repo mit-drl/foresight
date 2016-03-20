@@ -139,3 +139,4 @@ target/
 *.app
 
 .ropeproject/
+data/
