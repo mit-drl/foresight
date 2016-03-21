@@ -10,8 +10,8 @@ from mavros_msgs.msg import OpticalFlowRad
 
 
 NODE_NAME = "px4flow_odom"
-OPTICAL_FLOW_TOPIC = "/mavros/px4flow/raw/optical_flow_rad"
-IMU_TOPIC = "/mavros/imu/data"
+OPTICAL_FLOW_TOPIC = "/foresight/optical_flow_rad/filtered"
+IMU_TOPIC = "/imu/data"
 ODOM_TOPIC = "/foresight/px4flow/odom"
 ODOM_FRAME_ID = "odom"
 ODOM_CHILD_FRAME_ID = "base_link"

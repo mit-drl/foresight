@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="foresight" type="range_filter.py" name="range_filter" output="screen">
+        <param name="learning_rate" value="0.5"/>
+        <param name="frequency" value="30"/>
+    </node>
+</launch>
