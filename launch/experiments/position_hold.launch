@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+    <include file="$(find foresight)/launch/bringup/quad_bringup.launch"/>
     <arg name="set_pos" value="'{pose: {position: {x: 0, y: 0, z: 1}}}'"/>
     <arg name="msg_type" value="geometry_msgs/PoseStamped"/>
     <arg name="topic_name" value="/mavros/setpoint_position/local"/>
