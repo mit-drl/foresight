@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <launch>
+    <rosparam>
+        use_sim_time: true
+    </rosparam>
     <include file="$(find foresight)/launch/sensors/range.launch"/>
     <include file="$(find foresight)/launch/localization/static_transformations.launch"/>
     <include file="$(find foresight)/launch/localization/px4flow_odom.launch"/>
@@ -7,5 +10,5 @@
     <include file="$(find foresight)/launch/localization/ukf_fuser.launch"/>
     <include file="$(find foresight)/launch/util/trajectory_server.launch"/>
     <node type="play" pkg="rosbag" name="player"
-        args="$(find foresight)/data/flight-data-2-filtered.bag --clock -q -l"/>
+        args="$(find foresight)/data/flight-data-2-filtered.bag --clock -q -l -s 5"/>
 </launch>

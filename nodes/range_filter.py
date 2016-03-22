@@ -35,7 +35,7 @@ class RangeFilter(object):
 
 if __name__ == "__main__":
     rospy.init_node(NODE_NAME, anonymous=False)
-    lr = rospy.get_param("learning_rate", 0.3)
+    lr = rospy.get_param("~learning_rate", 0.3)
     rf = RangeFilter(lr)
     rf.start()
     rospy.spin()

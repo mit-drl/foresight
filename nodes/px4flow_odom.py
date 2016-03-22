@@ -32,6 +32,7 @@ class OpticalFlowOdom(object):
         self.odom.header.frame_id = odom_frame_id
         self.odom.child_frame_id = odom_child_frame_id
         self.o_cov = [0] * 9
+        self.height = None
 
     def start(self):
         self.optical_flow_sub = rospy.Subscriber(
@@ -50,6 +51,10 @@ class OpticalFlowOdom(object):
 
     def optical_flow_callback(self, ofr):
         h = ofr.distance
+        if self.height is None:
+            self.height = h
+        dt = ofr.integration_time_us * float(1e-6)
+        dt_dist = ofr.time_delta_distance_us * float(1e-6)
         r_x = ofr.integrated_x
         r_y = ofr.integrated_y
         x_rel = 2 * h * math.tan(r_x / 2.0)
@@ -66,6 +71,12 @@ class OpticalFlowOdom(object):
         self.odom.pose.pose.position.x -= x_abs
         self.odom.pose.pose.position.y -= y_abs
         self.odom.pose.pose.position.z = h
+        if dt > 0:
+            self.odom.twist.twist.linear.x = -x_abs / dt
+            self.odom.twist.twist.linear.y = -y_abs / dt
+        if dt_dist > 0:
+            self.odom.twist.twist.linear.z = (h - self.height) / dt_dist
+        self.height = h
 
     def imu_callback(self, imu):
         self.odom.pose.pose.orientation = imu.orientation
@@ -73,7 +84,9 @@ class OpticalFlowOdom(object):
 
     def publish_odom(self):
         self.odom.pose.covariance = self.covariance_matrix(
-            1e-2, 1e-2, 1e-2, self.o_cov[0], self.o_cov[4], self.o_cov[8])
+            1e-6, 1e-6, 1e-6, self.o_cov[0], self.o_cov[4], self.o_cov[8])
+        self.odom.twist.covariance = self.covariance_matrix(
+            1e-6, 1e-6, 1e-6, self.o_cov[0], self.o_cov[4], self.o_cov[8])
         self.odom_pub.publish(self.odom)
         return self
 

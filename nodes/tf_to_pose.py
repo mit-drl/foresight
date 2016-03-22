@@ -16,7 +16,7 @@ class TFToPose(object):
         self.pub = rospy.Publisher("/mavros/vision_pose/pose", PoseStamped,
                                    queue_size=2)
         self.sub = None
-        self.lr = 0.2
+        self.lr = 0.1
         self.pose = PoseStamped()
         self.pose.header.frame_id = "map"
         self.pose.header.seq = 0
@@ -41,10 +41,10 @@ class TFToPose(object):
                 self.set_mov(self.pose.pose.position, "x", tr[0])
                 self.set_mov(self.pose.pose.position, "y", tr[1])
                 self.set_mov(self.pose.pose.position, "z", tr[2])
-                self.pose.pose.orientation.x = quat[0]
-                self.pose.pose.orientation.y = quat[1]
-                self.pose.pose.orientation.z = quat[2]
-                self.pose.pose.orientation.w = quat[3]
+                self.set_mov(self.pose.pose.orientation, "x", quat[0])
+                self.set_mov(self.pose.pose.orientation, "y", quat[1])
+                self.set_mov(self.pose.pose.orientation, "z", quat[2])
+                self.set_mov(self.pose.pose.orientation, "w", quat[3])
                 self.pub.publish(self.pose)
             except tf.Exception:
                 print "TF ERROR"
