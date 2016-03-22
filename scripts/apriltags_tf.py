@@ -28,11 +28,12 @@ class AprilTagsTransformer(object):
         self.tfl = tf.TransformListener()
         self.rate = rospy.Rate(frequency)
         self.sub = None
-        self.imu_sub = None
-        self.trans = (0, 0, 0)
+        self.trans = [0, 0, 0]
         self.quat = (0, 0, 0, 1)
-        self.offset_pub = rospy.Publisher("/foresight/yaw_offset", Float64,
-                                          queue_size=2)
+        self.lx = None
+        self.ly = None
+        self.lz = None
+        self.lr = 0.7
 
     def start(self):
         self.sub = rospy.Subscriber(
@@ -62,7 +63,7 @@ class AprilTagsTransformer(object):
             ps.pose.position.x, ps.pose.position.y = pos.y, -pos.x
             ps_bls = self.tfl.transformPose("quad/base_link", ps)
             pos = ps_bls.pose.position
-            quat = ps_bls.pose.orientation
+            quat = self.only_yaw(ps_bls.pose.orientation)
             self.br.sendTransform(
                 (pos.x, pos.y, pos.z),
                 (quat.x, quat.y, quat.z, quat.w),
@@ -76,7 +77,14 @@ class AprilTagsTransformer(object):
                 pos = tp.pose.position
                 quat = tp.pose.orientation
                 self.quat = self.quat_to_list(self.only_yaw(quat, 1, 3.14))
-                self.trans = (-pos.x, -pos.y, pos.z)
+                if self.lx is None:
+                    self.lx = -pos.x
+                    self.ly = -pos.y
+                    self.lz = pos.z
+                self.lx = (1 - self.lr) * self.lx - self.lr * pos.x
+                self.ly = (1 - self.lr) * self.ly - self.lr * pos.y
+                self.lz = (1 - self.lr) * self.lz + self.lr * pos.z
+                self.trans = (self.lx, self.ly, self.lz)
             except tf.Exception:
                 print "TF Error!"
 

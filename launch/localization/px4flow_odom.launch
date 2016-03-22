@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="frequency" default="30"/>
-    <arg name="optical_flow_topic" default="/mavros/px4flow/raw/optical_flow_rad"/>
+    <arg name="optical_flow_topic" default="/foresight/optical_flow_rad/filtered"/>
     <arg name="imu_topic" default="/imu/data"/>
     <arg name="odom_topic" default="/foresight/px4flow/odom"/>
     <arg name="odom_frame_id" default="odom"/>

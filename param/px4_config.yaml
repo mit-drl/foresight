@@ -56,7 +56,7 @@ imu:
   # need find actual values
   linear_acceleration_stdev: 0.003
   angular_velocity_stdev: !degrees 1
-  orientation_stdev: 1.0
+  orientation_stdev: 0.5
   magnetic_stdev: 0.0
 
 # local_position
@@ -148,7 +148,7 @@ image:
 mocap:
   # select mocap source
   use_tf: false   # ~mocap/tf
-  use_pose: true  # ~mocap/pose
+  use_pose: false  # ~mocap/pose
 
 # px4flow
 px4flow:
@@ -160,7 +160,7 @@ px4flow:
 # vision_pose_estimate
 vision_pose:
   tf:
-    listen: true          # enable tf listener (disable topic subscribers)
+    listen: false          # enable tf listener (disable topic subscribers)
     frame_id: "map"
     child_frame_id: "quad/base_link"
     rate_limit: 50.0
