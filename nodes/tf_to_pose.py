@@ -16,14 +16,12 @@ class TFToPose(object):
         self.child_frame = child_frame
         self.tfl = tf.TransformListener()
         self.rate = rospy.Rate(frequency)
-        self.pub = rospy.Publisher("/mavros/vision_pose/pose", PoseStamped,
-                                   queue_size=2)
         self.pub = rospy.Publisher(pose_topic, PoseStamped,
                                    queue_size=2)
         self.sub = None
         self.lr = 0.1
         self.pose = PoseStamped()
-        self.pose.header.frame_id = "map"
+        self.pose.header.frame_id = self.fixed_frame
         self.pose.header.seq = 0
 
     def quat_to_list(self, quat):
