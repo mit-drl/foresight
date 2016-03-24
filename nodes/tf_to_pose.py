@@ -10,10 +10,15 @@ NODE_NAME = "tf_to_pose"
 
 class TFToPose(object):
 
-    def __init__(self, frequency):
+    def __init__(self, frequency, pose_topic, fixed_frame, child_frame):
+        self.pose_topic = pose_topic
+        self.fixed_frame = fixed_frame
+        self.child_frame = child_frame
         self.tfl = tf.TransformListener()
         self.rate = rospy.Rate(frequency)
         self.pub = rospy.Publisher("/mavros/vision_pose/pose", PoseStamped,
+                                   queue_size=2)
+        self.pub = rospy.Publisher(pose_topic, PoseStamped,
                                    queue_size=2)
         self.sub = None
         self.lr = 0.1
@@ -32,10 +37,10 @@ class TFToPose(object):
         while not rospy.is_shutdown():
             try:
                 self.tfl.waitForTransform(
-                    "map", "quad/base_link",
+                    self.fixed_frame, self.child_frame,
                     rospy.Time(), rospy.Duration(0.1))
                 tr, quat = self.tfl.lookupTransform(
-                    "map", "quad/base_link", rospy.Time())
+                    self.fixed_frame, self.child_frame, rospy.Time())
                 self.pose.header.seq += 1
                 self.pose.header.stamp = rospy.Time.now()
                 self.set_mov(self.pose.pose.position, "x", tr[0])
@@ -53,7 +58,10 @@ class TFToPose(object):
 
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
-    att = TFToPose(100)
+    pose_topic = rospy.get_param("~pose_topic", "/mavros/vision_pose/pose")
+    fixed_frame = rospy.get_param("~fixed_frame", "map")
+    child_frame = rospy.get_param("~child_frame", "quad/base_link")
+    att = TFToPose(100, pose_topic, fixed_frame, child_frame)
     att.start()
     rospy.spin()
 

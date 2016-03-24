@@ -148,7 +148,7 @@ image:
 mocap:
   # select mocap source
   use_tf: false   # ~mocap/tf
-  use_pose: false  # ~mocap/pose
+  use_pose: true  # ~mocap/pose
 
 # px4flow
 px4flow:

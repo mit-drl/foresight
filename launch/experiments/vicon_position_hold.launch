@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find foresight)/launch/bringup/pixhawk.launch"/>
+    <node pkg="foresight" type="tf_to_pose.py" name="tf_to_pose" output="screen">
+        <param name="pose_topic" value="/mavros/mocap/pose"/>
+        <param name="fixed_frame" value="map"/>
+        <param name="child_frame" value="wallar_shaqiri"/>
+    </node>
+
+    <arg name="set_pos" value="'{header: {frame_id: 'map'}, pose: {position: {x: 0, y: 0, z: 1}, orientation: {w: 1}}}'"/>
+    <arg name="msg_type" value="geometry_msgs/PoseStamped"/>
+    <arg name="topic_name" value="/mavros/setpoint_position/local"/>
+    <node pkg="rostopic" type="rostopic" name="setter"
+        args="pub $(arg topic_name) $(arg msg_type) $(arg set_pos) -r 30"/>
+</launch>
