@@ -49,47 +49,19 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        car/base_link:
-          Value: true
-        car/hood_link:
-          Value: true
-        car/hood_tag:
-          Value: true
-        car/tag_0:
-          Value: true
-        fcu:
-          Value: true
-        map:
-          Value: true
-        odom:
-          Value: true
-        quad/back_camera_link:
-          Value: true
-        quad/base_link:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          car/base_link:
-            car/hood_link:
-              odom:
-                quad/base_link:
-                  car/hood_tag:
-                    {}
-                  fcu:
-                    {}
-                  quad/back_camera_link:
-                    {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: false
       Image Topic: /tag_detections_image
@@ -161,15 +133,13 @@ Visualization Manager:
       Topic: /mavros/imu/data
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /vehicle_marker
       Name: Marker
       Namespaces:
-        vehicle_arm: true
-        vehicle_body: true
-        vehicle_rotor: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.1
@@ -222,22 +192,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.3796
+      Distance: 15.9854
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.469607
-        Y: 0.585053
-        Z: 0.954063
+        X: -0.613613
+        Y: 0.845991
+        Z: 1.13828
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.124797
+      Pitch: 0.534797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.49674
+      Yaw: 4.70174
     Saved: ~
 Window Geometry:
   Displays:
