@@ -62,7 +62,6 @@ class InfoPlanner(object):
                 rot_cq, trans_cq = self.pose_to_matrix(pose_cq)
                 projection = self.cam.get_projection(rot_qm, rot_cq,
                                                      trans_qm, trans_cq)
-                print projection
             except tf.Exception:
                 print "TF ERROR"
             self.rate.sleep()

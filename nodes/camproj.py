@@ -41,7 +41,7 @@ class CameraProjection(object):
         for i in xrange(4):
             lxi = np.concatenate(
                 (lmds[i] * self.xis[i], np.matrix([1])), axis=0)
-            v = np.array(hom_qm * hom_cq * lxi)[:3]
+            v = np.array(hom_qm * hom_cq * lxi)[:2]
             verts.append(v)
         return verts
 
