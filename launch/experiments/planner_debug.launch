@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <include
+        file="$(find foresight)/launch/localization/static_transformations.launch"/>
+    <node pkg="tf" type="static_transform_publisher" name="hl_odom"
+        args="1 1 0 0 0 0 car/hood_link odom 100" />
+    <node pkg="tf" type="static_transform_publisher" name="odom_bl"
+        args="0 0 1 0 0 0 odom quad/base_link 100" />
+    <node pkg="foresight" type="info_planner.py" name="planner" output="screen"/>
+</launch>

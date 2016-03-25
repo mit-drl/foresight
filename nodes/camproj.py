@@ -10,7 +10,7 @@ class CameraProjection(object):
         self.th_v = 0.5 * fov_x
         self.th_h = 0.5 * fov_y
         self.xis = self.get_xis(self.th_v, self.th_h)
-        self.ez = np.matrix([0, 0, 1, 0])
+        self.ez = np.array([0, 0, 1])
 
     def get_xis(self, th_v, th_h):
         ret_xis = list()
@@ -18,14 +18,14 @@ class CameraProjection(object):
             x = i * cos(th_h) * sin(th_v) / cos(th_v)
             y = j * sin(th_h)
             z = cos(th_h)
-            ret_xis.append(np.matrix([x, y, z]))
+            ret_xis.append(np.matrix([x, y, z]).T)
         return ret_xis
 
     def get_lambdas(self, rot_qm, rot_cq, trans_qm, trans_cq):
         lmds = list()
         for xi in self.xis:
-            top = -(rot_qm * trans_cq + trans_qm) * self.ez
-            bot = rot_qm * rot_cq * xi * self.ez
+            top = np.inner((-(rot_qm * trans_cq + trans_qm)).A1, self.ez)
+            bot = np.inner((rot_qm * rot_cq * xi).A1, self.ez)
             lmds.append(top / bot)
         return lmds
 
@@ -34,14 +34,14 @@ class CameraProjection(object):
         rot_cq = np.matrix(rot_cq)
         trans_qm = np.matrix(trans_qm)
         trans_cq = np.matrix(trans_cq)
-        lmds = self.get_lambdas(self, rot_qm, rot_cq, trans_qm, trans_cq)
+        lmds = self.get_lambdas(rot_qm, rot_cq, trans_qm, trans_cq)
         hom_qm = self.homogeneous(rot_qm, trans_qm)
         hom_cq = self.homogeneous(rot_cq, trans_cq)
         verts = list()
         for i in xrange(4):
             lxi = np.concatenate(
                 (lmds[i] * self.xis[i], np.matrix([1])), axis=0)
-            v = hom_qm * hom_cq * lxi
+            v = np.array(hom_qm * hom_cq * lxi)[:3]
             verts.append(v)
         return verts
 
