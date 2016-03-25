@@ -6,7 +6,6 @@ from tf.transformations import euler_from_quaternion
 from apriltags_ros.msg import AprilTagDetectionArray
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Float64
 from tf.transformations import quaternion_from_euler
 
 
@@ -81,6 +80,7 @@ class AprilTagsTransformer(object):
                     self.lx = -pos.x
                     self.ly = -pos.y
                     self.lz = pos.z
+                # Wrong because I am dumb
                 self.lx = (1 - self.lr) * self.lx - self.lr * pos.x
                 self.ly = (1 - self.lr) * self.ly - self.lr * pos.y
                 self.lz = (1 - self.lr) * self.lz + self.lr * pos.z

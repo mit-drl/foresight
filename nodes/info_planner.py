@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import camproj
 from collections import defaultdict
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
@@ -14,10 +15,12 @@ MAP_TOPIC = "/car/map"
 class InfoPlanner(object):
 
     def __init__(self):
+        fov_v = rospy.param("~fov_v", 60)
+        fov_h = rospy.param("~fov_h", 60)
+        self.cam = camproj.CameraProjection(fov_v, fov_h)
         self.pose = None
         self.pub = None
         self.sub = None
-        self.og = None
         self.time_grid = defaultdict(lambda: defaultdict(float))
 
     def start(self):
