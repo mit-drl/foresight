@@ -43,6 +43,7 @@ class CameraProjection(object):
                 (lmds[i] * self.xis[i], np.matrix([1])), axis=0)
             v = np.array(hom_qm * hom_cq * lxi)[:2]
             verts.append(v)
+        verts = [verts[0], verts[1], verts[3], verts[2]]
         return verts
 
     def homogeneous(self, rot, trans):
