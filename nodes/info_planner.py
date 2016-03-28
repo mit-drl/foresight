@@ -82,9 +82,9 @@ class InfoPlanner(object):
         bounds = [(init[0] - self.bound_rel_xy, init[0] + self.bound_rel_xy),
                   (init[1] - self.bound_rel_xy, init[1] + self.bound_rel_xy),
                   (self.min_alt, self.max_alt), (0, 2 * math.pi)]
-        min_point = opt.minimize(self.objective, x0, method="SLSQP",
-                                 bounds=bounds)
-        return min_point
+        opt_res = opt.minimize(self.objective, x0, method="SLSQP",
+                               bounds=bounds)
+        return opt_res.x
 
     def objective(self, arr):
         x = arr[0]
