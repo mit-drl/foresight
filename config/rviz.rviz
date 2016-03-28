@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /Imu1/Axes properties1
-        - /PointCloud1
       Splitter Ratio: 0.5
     Tree Height: 631
   - Class: rviz/Selection
@@ -27,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud
+    SyncSource: ""
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Displays
@@ -63,39 +62,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        car/base_link:
-          Value: true
-        car/hood_link:
-          Value: true
-        car/hood_tag:
-          Value: true
-        car/tag_0:
-          Value: true
-        fcu:
-          Value: true
-        map:
-          Value: true
-        odom:
-          Value: true
-        quad/back_camera_link:
-          Value: true
-        quad/base_link:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          car/base_link:
-            car/hood_link:
-              odom:
-                quad/base_link:
-                  fcu:
-                    {}
-                  quad/back_camera_link:
-                    {}
+        {}
       Update Interval: 0
       Value: true
     - Class: rviz/Image
@@ -264,7 +237,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.12567
+      Distance: 16.5614
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -276,10 +249,10 @@ Visualization Manager:
         Z: 1.13881
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.2898
+      Pitch: 0.8898
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.16171
+      Yaw: 3.13671
     Saved: ~
 Window Geometry:
   Displays:

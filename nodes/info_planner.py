@@ -41,6 +41,7 @@ class InfoPlanner(object):
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
         self.min_alt = rospy.get_param("~min_alt", 1)
         self.max_alt = rospy.get_param("~max_alt", 2)
+        self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 1)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
         self.pose = None
@@ -78,9 +79,9 @@ class InfoPlanner(object):
 
     def find_best_point(self, ps):
         init = self.pose_to_state(ps)
-        bounds = [(None, None), (None, None),
-                  (self.min_alt, self.max_alt),
-                  (0, 2 * math.pi)]
+        bounds = [(init[0] - self.bound_rel_xy, init[0] + self.bound_rel_xy),
+                  (init[1] - self.bound_rel_xy, init[1] + self.bound_rel_xy),
+                  (self.min_alt, self.max_alt), (0, 2 * math.pi)]
         min_point = opt.minimize(self.objective, x0, method="SLSQP",
                                  bounds=bounds)
         return min_point
