@@ -14,7 +14,9 @@ from tf.transformations import quaternion_from_euler
 from collections import defaultdict, deque
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PolygonStamped
+from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point32
+from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import PointCloud
 from sensor_msgs.msg import ChannelFloat32
 
@@ -28,7 +30,8 @@ MAP_FRAME = "map"
 QUAD_FRAME = "quad/base_link"
 CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
-NBR_DIST = 0.15
+SCAN_TOPIC = "/scan_multi"
+NBR_DIST = 1
 
 
 class InfoPlanner(object):
@@ -48,6 +51,7 @@ class InfoPlanner(object):
         self.pub = None
         self.polygon_pub = None
         self.pc_pub = None
+        self.scan_sub = None
         self.time_grid = defaultdict(lambda: defaultdict(lambda: -1))
         self.tfl = tf.TransformListener()
         self.start_time = None
@@ -57,8 +61,10 @@ class InfoPlanner(object):
         self.polygon_pub = rospy.Publisher(POLYGON_TOPIC, PolygonStamped,
                                            queue_size=1)
         self.pc_pub = rospy.Publisher(PC_TOPIC, PointCloud, queue_size=1)
-        self.pose_sub = rospy.Subscriber(POSE_SUB_TOPIC, PoseStamped,
-                                         self.pose_callback)
+        self.scan_sub = rospy.Subscriber(SCAN_TOPIC, LaserScan,
+                                         self.laser_callback)
+        # self.pose_sub = rospy.Subscriber(POSE_SUB_TOPIC, PoseStamped,
+        #                                  self.pose_callback)
         self.run()
 
     def run(self):
@@ -74,24 +80,26 @@ class InfoPlanner(object):
 
     def pose_callback(self, ps):
         bp = self.find_best_point(ps)
-        set_ps = self.pose_to_state(bp)
+        set_ps = self.state_to_pose(bp)
         self.pub.publish(set_ps)
+
+    def laser_callback(self, scan):
+        for i, rng in scan.ranges:
+            angle = scan.angle_min + scan.angle_increment * i
+            dist = scan.ranges[i]
+            p = self.polar_to_cart(angle, dist, scan.header.frame_id)
 
     def find_best_point(self, ps):
         init = self.pose_to_state(ps)
         bounds = [(init[0] - self.bound_rel_xy, init[0] + self.bound_rel_xy),
                   (init[1] - self.bound_rel_xy, init[1] + self.bound_rel_xy),
                   (self.min_alt, self.max_alt), (0, 2 * math.pi)]
-        opt_res = opt.minimize(self.objective, x0, method="SLSQP",
+        opt_res = opt.minimize(self.objective, init, method="SLSQP",
                                bounds=bounds)
         return opt_res.x
 
-    def objective(self, arr):
-        x = arr[0]
-        y = arr[1]
-        z = arr[2]
-        yaw = arr[3]
-        projection = self.get_projection(x, y, z, yaw)
+    def objective(self, state):
+        projection = self.get_projection(state)
         improvement = 0
         new_time = time.time()
         for p in self.points_in_poly(projection, NBR_DIST):
@@ -118,11 +126,22 @@ class InfoPlanner(object):
         return pc
 
     def get_relative_pose(self, parent_frame, child_frame):
-        ori = PoseStamped()
-        ori.header.frame_id = parent_frame
-        ori.pose.orientation.w = 1
-        pose = self.tfl.transformPose(child_frame, ori)
-        return pose
+        self.tfl.waitForTransform(
+            parent_frame, child_frame, rospy.Time(),
+            rospy.Duration(0.1))
+        tr, _ = self.tfl.lookupTransform(
+            parent_frame, child_frame, rospy.Time())
+        _, quat = self.tfl.lookupTransform(
+            parent_frame, child_frame, rospy.Time())
+        ps = PoseStamped()
+        ps.pose.position.x = -tr[0]
+        ps.pose.position.y = -tr[1]
+        ps.pose.position.z = -tr[2]
+        ps.pose.orientation.x = quat[0]
+        ps.pose.orientation.y = quat[1]
+        ps.pose.orientation.z = quat[2]
+        ps.pose.orientation.w = quat[3]
+        return ps
 
     def get_projection(self, state):
         pose_mq = self.state_to_pose(state)
@@ -176,7 +195,7 @@ class InfoPlanner(object):
         quat = quaternion_from_euler(0, 0, state[3])
         pose_mq = PoseStamped()
         pose_mq.header.frame_id = self.map_frame
-        pose_mq.header.stamp = rospy.Time.now()
+        pose_mq.header.stamp = rospy.Time()
         pose_mq.pose.position.x = state[0]
         pose_mq.pose.position.y = state[1]
         pose_mq.pose.position.z = state[2]
@@ -187,10 +206,10 @@ class InfoPlanner(object):
         return pose_mq
 
     def pose_to_state(self, pose):
-        quat = [pose.orientation.x, pose.orientation.y,
-                pose.orientation.z, pose.orientation.z]
+        quat = [pose.pose.orientation.x, pose.pose.orientation.y,
+                pose.pose.orientation.z, pose.pose.orientation.z]
         _, _, yaw = euler_from_quaternion(quat)
-        pos = pose.position
+        pos = pose.pose.position
         state = np.array([pos.x, pos.y, pos.z, yaw])
         return state
 
@@ -201,15 +220,23 @@ class InfoPlanner(object):
         return vecs
 
     def pose_to_matrix(self, ps):
-        trans = np.matrix([ps.pose.position.x,
-                           ps.pose.position.y,
+        trans = np.matrix([-ps.pose.position.x,
+                           -ps.pose.position.y,
                            ps.pose.position.z]).T
         r, p, y = euler_from_quaternion([ps.pose.orientation.x,
                                          ps.pose.orientation.y,
                                          ps.pose.orientation.z,
                                          ps.pose.orientation.w])
-        rot = np.matrix(euler_matrix(-p, r, -y)[:3, :3])
+        rot = np.matrix(euler_matrix(-r, -p, y)[:3, :3]).T
         return rot, trans
+
+    def polar_to_cart(self, angle, dist, frame_id):
+        rel_point = PointStamped()
+        rel_point.header.frame_id = frame_id
+        rel_point.point.x = dist * math.cos(angle)
+        rel_point.point.y = dist * math.sin(angle)
+        abs_point = self.tfl.transformPoint(self.fixed_frame, rel_point)
+        return abs_point.point.x, abs_point.point.y
 
 
 if __name__ == "__main__":

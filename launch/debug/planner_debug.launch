@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+    <rosparam>
+        use_sim_time: true
+    </rosparam>
+    <!-- base_link to IMU/FCU -->
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_fcu"
+        args="0.02 0 0 0 0 0 quad/base_link fcu 100" />
+
+    <!-- base_link to back_camera -->
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_back_camera"
+        args="-0.072 0 0 0 3.14 0 quad/base_link quad/back_camera_link 100" />
+
+    <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_car" -->
+    <!--     args="&#45;1 0 0 0 0 0 map car/base_link 100" /> -->
+
+    <!-- Car TF model -->
+    <node pkg="tf" type="static_transform_publisher" name="car_to_car_hood"
+        args="1 0 0 0 0 0 car/base_link car/hood_link 100" />
+
+    <node pkg="tf" type="static_transform_publisher" name="hl_odom"
+        args="0 0 0 0 0 0 car/hood_link odom 100" />
+
+    <node pkg="tf" type="static_transform_publisher" name="odom_bl"
+        args="1 1 1 1.0 0 0 odom quad/base_link 100" />
+
+    <node pkg="foresight" type="info_planner.py" name="planner" output="screen"/>
+
+    <group>
+        <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
+            <rosparam param="mappings">
+                [{old: base_link, new: car/base_link},
+                {old: odom, new: map}]
+            </rosparam>
+        </node>
+        <node type="play" pkg="rosbag" name="player"
+            args="$(find foresight)/data/car-1.bag --clock -q -l -s 240 /tf:=/tf_old"/>
+    </group>
+    <include file="$(find foresight)/launch/sensors/laserscan_multi_merger.launch"/>
+</launch>

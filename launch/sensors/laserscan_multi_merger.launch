@@ -14,7 +14,7 @@
     </node>
 
     <node pkg="ira_laser_tools" name="laserscan_multi_merger" type="laserscan_multi_merger" output="screen">
-		<param name="destination_frame" value="base_link"/>
+        <param name="destination_frame" value="car/base_link"/>
 		<param name="cloud_destination_topic" value="/merged_cloud"/>
 		<param name="scan_destination_topic" value="/scan_multi"/>
         <param name="laserscan_topics" value ="/front_scan_intensity /rear_left_scan_intensity /rear_right_scan_intensity"/>
