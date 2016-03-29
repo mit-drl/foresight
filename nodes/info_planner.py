@@ -34,8 +34,8 @@ CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
 SCAN_TOPIC = "/merged_cloud_filtered"
 BREAKS_TOPIC = "/breaks_pc"
-NBR_DIST = 1
-CF_STEP = 0.5
+NBR_DIST = 0.3
+CF_STEP = 0.3
 NORMAL_HORIZON = 2
 
 
@@ -70,7 +70,7 @@ class InfoPlanner(object):
         self.pc_pub = rospy.Publisher(PC_TOPIC, PointCloud, queue_size=1)
         self.breaks_pub = rospy.Publisher(BREAKS_TOPIC, PointCloud, queue_size=1)
         self.scan_sub = rospy.Subscriber(SCAN_TOPIC, PointCloud2,
-                                         self.laser_callback)
+                                         self.laser_callback, queue_size=1)
         # self.pose_sub = rospy.Subscriber(POSE_SUB_TOPIC, PoseStamped,
         #                                  self.pose_callback)
         self.run()
@@ -80,9 +80,6 @@ class InfoPlanner(object):
             try:
                 projection = self.get_current_projection()
                 poly = self.projection_to_polygon(projection)
-                # pc = self.update_time_grid(poly)
-                # self.pc_pub.publish(pc)
-                self.publish_projection(projection)
             except tf.Exception:
                 print "TF ERROR"
             self.rate.sleep()
@@ -93,12 +90,11 @@ class InfoPlanner(object):
         self.pub.publish(set_ps)
 
     def laser_callback(self, scan):
-        if self.start_time is None:
-            self.start_time = rospy.get_time()
-        t = rospy.get_time() - self.start_time
+        self.time_grid.clear()
         poly = self.pointcloud_to_polygon(scan)
+        self.publish_planar_polygon(poly)
         for brk in self.get_laser_breaks(scan, poly):
-            self.set_grid_val(brk.x, brk.y, t)
+            self.set_grid_val(brk.x, brk.y, 1)
         self.publish_time_grid()
 
     def get_laser_breaks(self, scan, poly):
@@ -177,13 +173,11 @@ class InfoPlanner(object):
         pc.header.frame_id = "map"
         ch.name = "time"
         if self.start_time is None:
-            self.start_time = time.time()
+            self.start_time = rospy.get_time()
         t = rospy.get_time() - self.start_time
         for p in self.points_in_poly(poly, NBR_DIST):
-            self.time_grid[p.x][p.y] = t
-            p32 = Point32()
-            p32.x = p.x
-            p32.y = p.y
+            self.set_grid_val(p.x, p.y, t)
+            p32 = self.vec_to_point32(p)
             pc.points.append(p32)
             ch.values.append(t)
         pc.channels.append(ch)
@@ -326,9 +320,9 @@ class InfoPlanner(object):
     def arr_to_point_stamped(self, arr, frame_id):
         ps = PointStamped()
         ps.header.frame_id = frame_id
+        ps.header.stamp = rospy.Time()
         ps.point.x = arr[0]
         ps.point.y = arr[1]
-        ps.point.z = arr[2]
         return ps
 
     def arr_to_point_stamped_tf(self, arr, frame_id):
