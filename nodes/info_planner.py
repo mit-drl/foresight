@@ -35,6 +35,7 @@ POLYGON_TOPIC = "/projection"
 SCAN_TOPIC = "/merged_cloud"
 BREAKS_TOPIC = "/breaks_pc"
 NBR_DIST = 1
+CF_STEP = 0.5
 
 
 class InfoPlanner(object):
@@ -124,10 +125,19 @@ class InfoPlanner(object):
                 pc.points.append(q32)
                 ch.values.append(1)
                 breaks.append((last_pt, point))
+                for bpt in self.crow_flies(last_pt, point):
+                    pc.points.append(self.vec_to_point32(bpt))
             last_pt = point
         pc.channels.append(ch)
         self.breaks_pub.publish(pc)
         return breaks
+
+    def crow_flies(self, start, end):
+        dr = (end - start).normalized()
+        cur = start
+        while cur.distance_to(end) > CF_STEP:
+            cur += CF_STEP * dr
+            yield cur
 
     def find_best_point(self, ps):
         init = self.pose_to_state(ps)
@@ -258,6 +268,12 @@ class InfoPlanner(object):
         for arr in arrs:
             vecs.append(planar.Vec2(arr[0], arr[1]))
         return vecs
+
+    def vec_to_point32(self, vec):
+        point = Point32()
+        point.x = vec.x
+        point.y = vec.y
+        return point
 
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
