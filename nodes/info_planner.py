@@ -9,6 +9,8 @@ import planar
 import time
 import scipy.optimize as opt
 import sensor_msgs.point_cloud2 as pc2
+import mutex
+import threading
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -34,8 +36,8 @@ CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
 SCAN_TOPIC = "/merged_cloud_filtered"
 BREAKS_TOPIC = "/breaks_pc"
-NBR_DIST = 0.3
-CF_STEP = 0.3
+NBR_DIST = 1
+CF_STEP = 0.5
 NORMAL_HORIZON = 2
 
 
@@ -49,17 +51,18 @@ class InfoPlanner(object):
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
         self.min_alt = rospy.get_param("~min_alt", 1)
         self.max_alt = rospy.get_param("~max_alt", 2)
-        self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 1)
+        self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 1000)
         self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 1)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
+        self.lock = threading.Lock()
         self.pose = None
         self.pub = None
         self.polygon_pub = None
         self.pc_pub = None
         self.scan_sub = None
         self.breaks_pub = None
-        self.time_grid = defaultdict(lambda: defaultdict(lambda: 1))
+        self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
         self.start_time = None
 
@@ -71,9 +74,9 @@ class InfoPlanner(object):
         self.breaks_pub = rospy.Publisher(BREAKS_TOPIC, PointCloud, queue_size=1)
         self.scan_sub = rospy.Subscriber(SCAN_TOPIC, PointCloud2,
                                          self.laser_callback, queue_size=1)
-        # self.pose_sub = rospy.Subscriber(POSE_SUB_TOPIC, PoseStamped,
-        #                                  self.pose_callback)
-        self.run()
+        self.pose_sub = rospy.Subscriber(POSE_SUB_TOPIC, PoseStamped,
+                                         self.pose_callback, queue_size=1)
+        # self.run()
 
     def run(self):
         while not rospy.is_shutdown():
@@ -85,17 +88,22 @@ class InfoPlanner(object):
             self.rate.sleep()
 
     def pose_callback(self, ps):
+        projection = self.get_current_projection()
+        self.publish_projection(projection)
+        self.lock.acquire()
         bp = self.find_best_point(ps)
+        self.lock.release()
         set_ps = self.state_to_pose(bp)
         self.pub.publish(set_ps)
 
     def laser_callback(self, scan):
-        self.time_grid.clear()
-        poly = self.pointcloud_to_polygon(scan)
-        self.publish_planar_polygon(poly)
-        for brk in self.get_laser_breaks(scan, poly):
-            self.set_grid_val(brk.x, brk.y, 1)
-        self.publish_time_grid()
+        if self.lock.acquire(False):
+            self.time_grid.clear()
+            poly = self.pointcloud_to_polygon(scan)
+            for brk in self.get_laser_breaks(scan, poly):
+                self.set_grid_val(brk.x, brk.y, 1)
+            self.publish_time_grid()
+            self.lock.release()
 
     def get_laser_breaks(self, scan, poly):
         breaks = list()
@@ -151,17 +159,21 @@ class InfoPlanner(object):
                   (init[1] - self.bound_rel_xy, init[1] + self.bound_rel_xy),
                   (self.min_alt, self.max_alt), (0, 2 * math.pi)]
         opt_res = opt.minimize(self.objective, init, method="SLSQP",
-                               bounds=bounds)
+                               bounds=bounds, args=(init))
         return opt_res.x
 
-    def objective(self, state):
-        improvement = 0
+    def objective(self, state, init):
+        obj = 0
         projection = self.get_projection(state)
         poly = self.projection_to_polygon(
             projection, is_convex=True, is_simple=True)
         for p in self.points_in_poly(poly, NBR_DIST):
-                improvement += self.get_grid_val(p.x, p.y)
-        return -improvement
+            gv = self.get_grid_val(p.x, p.y)
+            if gv > 0:
+                obj -= self.get_grid_val(p.x, p.y)
+            else:
+                obj += p.distance_to(planar.Vec2(init[0], init[1]))
+        return obj
 
     def update_time_grid(self, poly):
         pc = PointCloud()
@@ -364,3 +376,4 @@ if __name__ == "__main__":
     rospy.init_node(NODE_NAME, anonymous=False)
     infopl = InfoPlanner()
     infopl.start()
+    rospy.spin()

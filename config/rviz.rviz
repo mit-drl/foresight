@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /Imu1/Axes properties1
+        - /PointCloud1
       Splitter Ratio: 0.498294
     Tree Height: 374
   - Class: rviz/Selection
@@ -26,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: PointCloud
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Displays
@@ -204,7 +205,7 @@ Visualization Manager:
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.3
       Head Radius: 0.1
       Name: Pose
@@ -212,13 +213,13 @@ Visualization Manager:
       Shaft Radius: 0.05
       Shape: Arrow
       Topic: /mavros/local_position/pose
-      Value: false
+      Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 0; 255; 255
-      Enabled: false
+      Enabled: true
       Head Length: 0.3
       Head Radius: 0.1
       Name: Pose
@@ -226,7 +227,7 @@ Visualization Manager:
       Shaft Radius: 0.05
       Shape: Arrow
       Topic: /mavros/setpoint_position/local
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/Polygon
       Color: 25; 255; 0
@@ -249,9 +250,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: true
       Max Color: 255; 255; 255
-      Max Intensity: 64.9111
+      Max Intensity: 1
       Min Color: 0; 0; 0
-      Min Intensity: 1.64512
+      Min Intensity: 0
       Name: PointCloud
       Position Transformer: XYZ
       Queue Size: 10
@@ -289,9 +290,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 33.476
+      Max Intensity: 22.088
       Min Color: 0; 0; 0
-      Min Intensity: 1.841
+      Min Intensity: 2.75
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -356,22 +357,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 206.435
+      Distance: 138.412
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 4.36785
-        Y: 33.3186
-        Z: -80.2282
+        X: -7.87654
+        Y: 6.1641
+        Z: -79.4022
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.4998
+      Pitch: 1.5298
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.47174
+      Yaw: 4.60174
     Saved: ~
 Window Geometry:
   Displays:
