@@ -36,6 +36,7 @@ SCAN_TOPIC = "/merged_cloud_filtered"
 BREAKS_TOPIC = "/breaks_pc"
 NBR_DIST = 1
 CF_STEP = 0.5
+NORMAL_HORIZON = 2
 
 
 class InfoPlanner(object):
@@ -80,7 +81,7 @@ class InfoPlanner(object):
                 projection = self.get_current_projection()
                 # pc = self.update_time_grid(projection)
                 # self.pc_pub.publish(pc)
-                self.publish_polygon(projection)
+                self.publish_projection(projection)
             except tf.Exception:
                 print "TF ERROR"
             self.rate.sleep()
@@ -103,6 +104,7 @@ class InfoPlanner(object):
         ch.name = "break_id"
         breaks = list()
         last_pt = None
+        poly = self.pointcloud_to_polygon(scan)
         pts = pc2.read_points(
             scan, skip_nans=True,
             field_names=("x", "y", "z"))
@@ -118,13 +120,20 @@ class InfoPlanner(object):
                 pc.points.append(p32)
                 pc.points.append(q32)
                 ch.values.append(1)
-                breaks.append((last_pt, point))
-                for bpt in self.crow_flies(last_pt, point):
+                for bpt in self.horizon_points(last_pt, point, poly):
                     pc.points.append(self.vec_to_point32(bpt))
                     yield bpt
             last_pt = point
         pc.channels.append(ch)
         self.breaks_pub.publish(pc)
+
+    def horizon_points(self, p, q, poly):
+        perp = (p - q).perpendicular()
+        horizon = perp.scaled_to(NORMAL_HORIZON)
+        for bpt in self.crow_flies(p, q):
+            for hpt in self.crow_flies(bpt, bpt + horizon):
+                if not poly.contains_point(hpt):
+                    yield hpt
 
     def crow_flies(self, start, end):
         dr = (end - start).normalized()
@@ -208,7 +217,7 @@ class InfoPlanner(object):
                                              trans_qm, trans_cq)
         return projection
 
-    def publish_polygon(self, projection):
+    def publish_projection(self, projection):
         poly = PolygonStamped()
         poly.header.stamp = rospy.Time.now()
         poly.header.frame_id = MAP_FRAME
@@ -216,6 +225,15 @@ class InfoPlanner(object):
             p = Point32()
             p.x = v[0]
             p.y = v[1]
+            poly.polygon.points.append(p)
+        self.polygon_pub.publish(poly)
+
+    def publish_planar_polygon(self, p_poly):
+        poly = PolygonStamped()
+        poly.header.stamp = rospy.Time.now()
+        poly.header.frame_id = self.map_frame
+        for v in p_poly:
+            p = self.vec_to_point32(v)
             poly.polygon.points.append(p)
         self.polygon_pub.publish(poly)
 
@@ -292,6 +310,17 @@ class InfoPlanner(object):
         ps.point.z = arr[2]
         return ps
 
+    def arr_to_point_stamped_tf(self, arr, frame_id):
+        ps = self.arr_to_point_stamped(arr, frame_id)
+        return self.tfl.transformPoint(self.map_frame, ps)
+
+    def arrs_to_vecs_tf(self, arrs, frame_id):
+        vecs = list()
+        for arr in arrs:
+            ps = self.arr_to_point_stamped_tf(arr, frame_id)
+            vecs.append(planar.Vec2(ps.point.x, ps.point.y))
+        return vecs
+
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
                            -ps.pose.position.y,
@@ -310,6 +339,13 @@ class InfoPlanner(object):
         rel_point.point.y = dist * math.sin(angle)
         abs_point = self.tfl.transformPoint(self.map_frame, rel_point)
         return abs_point.point.x, abs_point.point.y
+
+    def pointcloud_to_polygon(self, pc):
+        pts = pc2.read_points(
+            pc, skip_nans=True,
+            field_names=("x", "y", "z"))
+        vecs = self.arrs_to_vecs_tf(pts, pc.header.frame_id)
+        return planar.Polygon(vecs, is_convex=False, is_simple=True)
 
 
 if __name__ == "__main__":
