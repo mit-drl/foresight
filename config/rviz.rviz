@@ -7,7 +7,6 @@ Panels:
         - /TF1/Frames1
         - /Imu1/Axes properties1
         - /PointCloud21/Status1
-        - /PointCloud2
       Splitter Ratio: 0.5
     Tree Height: 416
   - Class: rviz/Selection
@@ -251,9 +250,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 22.9442
+      Max Intensity: 3.31593
       Min Color: 0; 0; 0
-      Min Intensity: 22.9442
+      Min Intensity: 3.31593
       Name: PointCloud
       Position Transformer: XYZ
       Queue Size: 10
@@ -291,9 +290,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 31.485
+      Max Intensity: 44.703
       Min Color: 0; 0; 0
-      Min Intensity: 1.288
+      Min Intensity: 6.313
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -327,9 +326,9 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 10
       Size (m): 0.3
-      Style: Flat Squares
+      Style: Points
       Topic: /breaks_pc
       Use Fixed Frame: true
       Use rainbow: true
@@ -358,22 +357,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 106.656
+      Distance: 98.6721
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.176278
-        Y: 40.9368
-        Z: -35.4616
+        X: 1.6961
+        Y: 28.4336
+        Z: -45.5387
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.729797
+      Pitch: 1.4698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.37177
+      Yaw: 4.37174
     Saved: ~
 Window Geometry:
   Displays:

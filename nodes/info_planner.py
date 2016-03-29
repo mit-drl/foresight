@@ -78,8 +78,8 @@ class InfoPlanner(object):
         while not rospy.is_shutdown():
             try:
                 projection = self.get_current_projection()
-                pc = self.update_time_grid(projection)
-                self.pc_pub.publish(pc)
+                # pc = self.update_time_grid(projection)
+                # self.pc_pub.publish(pc)
                 self.publish_polygon(projection)
             except tf.Exception:
                 print "TF ERROR"
@@ -91,20 +91,21 @@ class InfoPlanner(object):
         self.pub.publish(set_ps)
 
     def laser_callback(self, scan):
-        breaks = self.get_laser_breaks(scan)
-        # print len(breaks)
-        # rospy.sleep(0.3)
+        t = rospy.get_time()
+        for brk in self.get_laser_breaks(scan):
+            self.set_grid_val(brk.x, brk.y, t)
 
     def get_laser_breaks(self, scan):
         pc = PointCloud()
         ch = ChannelFloat32()
         pc.header.stamp = rospy.Time.now()
-        pc.header.frame_id = "map"
+        pc.header.frame_id = self.map_frame
         ch.name = "break_id"
         breaks = list()
         last_pt = None
-        pts = pc2.read_points(scan, skip_nans=True,
-                              field_names=("x", "y", "z"))
+        pts = pc2.read_points(
+            scan, skip_nans=True,
+            field_names=("x", "y", "z"))
         for pt in pts:
             ps = self.arr_to_point_stamped(pt, scan.header.frame_id)
             ps_tf = self.tfl.transformPoint(self.map_frame, ps)
@@ -120,10 +121,10 @@ class InfoPlanner(object):
                 breaks.append((last_pt, point))
                 for bpt in self.crow_flies(last_pt, point):
                     pc.points.append(self.vec_to_point32(bpt))
+                    yield bpt
             last_pt = point
         pc.channels.append(ch)
         self.breaks_pub.publish(pc)
-        return breaks
 
     def crow_flies(self, start, end):
         dr = (end - start).normalized()
@@ -144,9 +145,11 @@ class InfoPlanner(object):
     def objective(self, state):
         projection = self.get_projection(state)
         improvement = 0
-        new_time = time.time()
+        new_time = rospy.get_time()
         for p in self.points_in_poly(projection, NBR_DIST):
-            improvement += (new_time - self.time_grid[p.x][p.y])
+            t = self.get_grid_val(p.x, p.y)
+            if t > 0:
+                improvement += (new_time - t)
         return -improvement
 
     def update_time_grid(self, projection):
@@ -234,6 +237,19 @@ class InfoPlanner(object):
                     q.append(nbr_p)
             yield p
 
+    def get_discrete(self, x, y):
+        x_hat = NBR_DIST * math.floor(x / NBR_DIST)
+        y_hat = NBR_DIST * math.floor(y / NBR_DIST)
+        return x_hat, y_hat
+
+    def get_grid_val(self, x, y):
+        xp, yp = self.get_discrete(x, y)
+        return self.time_grid[xp][yp]
+
+    def set_grid_val(self, x, y, val):
+        xp, yp = self.get_discrete(x, y)
+        self.time_grid[xp][yp] = val
+
     def state_to_pose(self, state):
         quat = quaternion_from_euler(0, 0, state[3])
         pose_mq = PoseStamped()
@@ -274,6 +290,7 @@ class InfoPlanner(object):
         ps.point.x = arr[0]
         ps.point.y = arr[1]
         ps.point.z = arr[2]
+        return ps
 
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
