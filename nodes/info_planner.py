@@ -8,6 +8,7 @@ import numpy as np
 import planar
 import time
 import scipy.optimize as opt
+import sensor_msgs.point_cloud2 as pc2
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -18,6 +19,7 @@ from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point32
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import PointCloud
+from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import ChannelFloat32
 
 
@@ -30,7 +32,8 @@ MAP_FRAME = "map"
 QUAD_FRAME = "quad/base_link"
 CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
-SCAN_TOPIC = "/scan_multi"
+SCAN_TOPIC = "/merged_cloud"
+BREAKS_TOPIC = "/breaks_pc"
 NBR_DIST = 1
 
 
@@ -45,6 +48,7 @@ class InfoPlanner(object):
         self.min_alt = rospy.get_param("~min_alt", 1)
         self.max_alt = rospy.get_param("~max_alt", 2)
         self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 1)
+        self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 1)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
         self.pose = None
@@ -52,6 +56,7 @@ class InfoPlanner(object):
         self.polygon_pub = None
         self.pc_pub = None
         self.scan_sub = None
+        self.breaks_pub = None
         self.time_grid = defaultdict(lambda: defaultdict(lambda: -1))
         self.tfl = tf.TransformListener()
         self.start_time = None
@@ -61,7 +66,8 @@ class InfoPlanner(object):
         self.polygon_pub = rospy.Publisher(POLYGON_TOPIC, PolygonStamped,
                                            queue_size=1)
         self.pc_pub = rospy.Publisher(PC_TOPIC, PointCloud, queue_size=1)
-        self.scan_sub = rospy.Subscriber(SCAN_TOPIC, LaserScan,
+        self.breaks_pub = rospy.Publisher(BREAKS_TOPIC, PointCloud, queue_size=1)
+        self.scan_sub = rospy.Subscriber(SCAN_TOPIC, PointCloud2,
                                          self.laser_callback)
         # self.pose_sub = rospy.Subscriber(POSE_SUB_TOPIC, PoseStamped,
         #                                  self.pose_callback)
@@ -84,10 +90,44 @@ class InfoPlanner(object):
         self.pub.publish(set_ps)
 
     def laser_callback(self, scan):
-        for i, rng in scan.ranges:
-            angle = scan.angle_min + scan.angle_increment * i
-            dist = scan.ranges[i]
-            p = self.polar_to_cart(angle, dist, scan.header.frame_id)
+        breaks = self.get_laser_breaks(scan)
+        # print len(breaks)
+        # rospy.sleep(0.3)
+
+    def get_laser_breaks(self, scan):
+        pc = PointCloud()
+        ch = ChannelFloat32()
+        pc.header.stamp = rospy.Time.now()
+        pc.header.frame_id = "map"
+        ch.name = "break_id"
+        breaks = list()
+        last_pt = None
+        pts = pc2.read_points(scan, skip_nans=True,
+                              field_names=("x", "y", "z"))
+        for pt in pts:
+            ps = PointStamped()
+            ps.header.frame_id = scan.header.frame_id
+            ps.point.x = pt[0]
+            ps.point.y = pt[1]
+            ps_tf = self.tfl.transformPoint(self.map_frame, ps)
+            point = planar.Vec2(ps_tf.point.x, ps_tf.point.y)
+            if last_pt is None:
+                last_pt = point
+            elif last_pt.distance_to(point) > self.scan_break_thresh:
+                p32 = Point32()
+                q32 = Point32()
+                p32.x = last_pt.x
+                p32.y = last_pt.y
+                q32.x = point.x
+                q32.y = point.y
+                pc.points.append(p32)
+                pc.points.append(q32)
+                ch.values.append(1)
+                breaks.append((last_pt, point))
+            last_pt = point
+        pc.channels.append(ch)
+        self.breaks_pub.publish(pc)
+        return breaks
 
     def find_best_point(self, ps):
         init = self.pose_to_state(ps)
@@ -235,7 +275,7 @@ class InfoPlanner(object):
         rel_point.header.frame_id = frame_id
         rel_point.point.x = dist * math.cos(angle)
         rel_point.point.y = dist * math.sin(angle)
-        abs_point = self.tfl.transformPoint(self.fixed_frame, rel_point)
+        abs_point = self.tfl.transformPoint(self.map_frame, rel_point)
         return abs_point.point.x, abs_point.point.y
 
 
