@@ -106,21 +106,14 @@ class InfoPlanner(object):
         pts = pc2.read_points(scan, skip_nans=True,
                               field_names=("x", "y", "z"))
         for pt in pts:
-            ps = PointStamped()
-            ps.header.frame_id = scan.header.frame_id
-            ps.point.x = pt[0]
-            ps.point.y = pt[1]
+            ps = self.arr_to_point_stamped(pt, scan.header.frame_id)
             ps_tf = self.tfl.transformPoint(self.map_frame, ps)
             point = planar.Vec2(ps_tf.point.x, ps_tf.point.y)
             if last_pt is None:
                 last_pt = point
             elif last_pt.distance_to(point) > self.scan_break_thresh:
-                p32 = Point32()
-                q32 = Point32()
-                p32.x = last_pt.x
-                p32.y = last_pt.y
-                q32.x = point.x
-                q32.y = point.y
+                p32 = self.vec_to_point32(last_pt)
+                q32 = self.vec_to_point32(point)
                 pc.points.append(p32)
                 pc.points.append(q32)
                 ch.values.append(1)
@@ -274,6 +267,13 @@ class InfoPlanner(object):
         point.x = vec.x
         point.y = vec.y
         return point
+
+    def arr_to_point_stamped(self, arr, frame_id):
+        ps = PointStamped()
+        ps.header.frame_id = frame_id
+        ps.point.x = arr[0]
+        ps.point.y = arr[1]
+        ps.point.z = arr[2]
 
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
