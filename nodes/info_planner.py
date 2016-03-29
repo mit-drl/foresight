@@ -79,7 +79,8 @@ class InfoPlanner(object):
         while not rospy.is_shutdown():
             try:
                 projection = self.get_current_projection()
-                # pc = self.update_time_grid(projection)
+                poly = self.projection_to_polygon(projection)
+                # pc = self.update_time_grid(poly)
                 # self.pc_pub.publish(pc)
                 self.publish_projection(projection)
             except tf.Exception:
@@ -92,19 +93,17 @@ class InfoPlanner(object):
         self.pub.publish(set_ps)
 
     def laser_callback(self, scan):
-        t = rospy.get_time()
-        for brk in self.get_laser_breaks(scan):
+        if self.start_time is None:
+            self.start_time = rospy.get_time()
+        t = rospy.get_time() - self.start_time
+        poly = self.pointcloud_to_polygon(scan)
+        for brk in self.get_laser_breaks(scan, poly):
             self.set_grid_val(brk.x, brk.y, t)
+        self.publish_time_grid()
 
-    def get_laser_breaks(self, scan):
-        pc = PointCloud()
-        ch = ChannelFloat32()
-        pc.header.stamp = rospy.Time.now()
-        pc.header.frame_id = self.map_frame
-        ch.name = "break_id"
+    def get_laser_breaks(self, scan, poly):
         breaks = list()
         last_pt = None
-        poly = self.pointcloud_to_polygon(scan)
         pts = pc2.read_points(
             scan, skip_nans=True,
             field_names=("x", "y", "z"))
@@ -115,17 +114,9 @@ class InfoPlanner(object):
             if last_pt is None:
                 last_pt = point
             elif last_pt.distance_to(point) > self.scan_break_thresh:
-                p32 = self.vec_to_point32(last_pt)
-                q32 = self.vec_to_point32(point)
-                pc.points.append(p32)
-                pc.points.append(q32)
-                ch.values.append(1)
                 for bpt in self.horizon_points(last_pt, point, poly):
-                    pc.points.append(self.vec_to_point32(bpt))
                     yield bpt
             last_pt = point
-        pc.channels.append(ch)
-        self.breaks_pub.publish(pc)
 
     def horizon_points(self, p, q, poly):
         perp = (p - q).perpendicular()
@@ -142,6 +133,22 @@ class InfoPlanner(object):
             cur += CF_STEP * dr
             yield cur
 
+    def points_in_poly(self, poly, step):
+        q = deque([poly.centroid])
+        seen = set([poly.centroid.x, poly.centroid.y])
+        nbrs = [(step, 0), (0, step), (step, step),
+                (-step, 0), (0, -step), (-step, -step),
+                (step, -step), (-step, step)]
+        while len(q) > 0 and not rospy.is_shutdown():
+            p = q.popleft()
+            for nbr in nbrs:
+                nbr_t = (p.x + nbr[0], p.y + nbr[1])
+                nbr_p = planar.Vec2(*nbr_t)
+                if poly.contains_point(nbr_p) and not nbr_t in seen:
+                    seen.add(nbr_t)
+                    q.append(nbr_p)
+            yield p
+
     def find_best_point(self, ps):
         init = self.pose_to_state(ps)
         bounds = [(init[0] - self.bound_rel_xy, init[0] + self.bound_rel_xy),
@@ -155,13 +162,15 @@ class InfoPlanner(object):
         projection = self.get_projection(state)
         improvement = 0
         new_time = rospy.get_time()
+        poly = self.projection_to_polygon(projection, is_convex=True,
+                                          is_simple=True)
         for p in self.points_in_poly(projection, NBR_DIST):
             t = self.get_grid_val(p.x, p.y)
             if t > 0:
                 improvement += (new_time - t)
         return -improvement
 
-    def update_time_grid(self, projection):
+    def update_time_grid(self, poly):
         pc = PointCloud()
         ch = ChannelFloat32()
         pc.header.stamp = rospy.Time.now()
@@ -169,8 +178,8 @@ class InfoPlanner(object):
         ch.name = "time"
         if self.start_time is None:
             self.start_time = time.time()
-        t = time.time() - self.start_time
-        for p in self.points_in_poly(projection, NBR_DIST):
+        t = rospy.get_time() - self.start_time
+        for p in self.points_in_poly(poly, NBR_DIST):
             self.time_grid[p.x][p.y] = t
             p32 = Point32()
             p32.x = p.x
@@ -217,6 +226,8 @@ class InfoPlanner(object):
                                              trans_qm, trans_cq)
         return projection
 
+    """ Publisher helpers """
+
     def publish_projection(self, projection):
         poly = PolygonStamped()
         poly.header.stamp = rospy.Time.now()
@@ -237,23 +248,21 @@ class InfoPlanner(object):
             poly.polygon.points.append(p)
         self.polygon_pub.publish(poly)
 
-    def points_in_poly(self, projection, step):
-        vecs = self.arrs_to_vecs(projection)
-        poly = planar.Polygon(vecs, is_simple=True, is_convex=True)
-        q = deque([poly.centroid])
-        seen = set([poly.centroid.x, poly.centroid.y])
-        nbrs = [(step, 0), (0, step), (step, step),
-                (-step, 0), (0, -step), (-step, -step),
-                (step, -step), (-step, step)]
-        while len(q) > 0 and not rospy.is_shutdown():
-            p = q.popleft()
-            for nbr in nbrs:
-                nbr_t = (p.x + nbr[0], p.y + nbr[1])
-                nbr_p = planar.Vec2(*nbr_t)
-                if poly.contains_point(nbr_p) and not nbr_t in seen:
-                    seen.add(nbr_t)
-                    q.append(nbr_p)
-            yield p
+    def publish_time_grid(self):
+        pc = PointCloud()
+        ch = ChannelFloat32()
+        pc.header.stamp = rospy.Time.now()
+        pc.header.frame_id = self.map_frame
+        ch.name = "time"
+        for x in self.time_grid.keys():
+            for y in self.time_grid[x].keys():
+                p32 = self.xy_to_point32(x, y)
+                pc.points.append(p32)
+                ch.values.append(self.time_grid[x][y])
+        pc.channels.append(ch)
+        self.pc_pub.publish(pc)
+
+    """ Getters and setters for time grid """
 
     def get_discrete(self, x, y):
         x_hat = NBR_DIST * math.floor(x / NBR_DIST)
@@ -267,6 +276,12 @@ class InfoPlanner(object):
     def set_grid_val(self, x, y, val):
         xp, yp = self.get_discrete(x, y)
         self.time_grid[xp][yp] = val
+
+    """ Conversions """
+
+    def projection_to_polygon(self, projection, **kwargs):
+        vecs = self.arrs_to_vecs(projection)
+        return planar.Polygon(vecs, **kwargs)
 
     def state_to_pose(self, state):
         quat = quaternion_from_euler(0, 0, state[3])
@@ -300,6 +315,12 @@ class InfoPlanner(object):
         point = Point32()
         point.x = vec.x
         point.y = vec.y
+        return point
+
+    def xy_to_point32(self, x, y):
+        point = Point32()
+        point.x = x
+        point.y = y
         return point
 
     def arr_to_point_stamped(self, arr, frame_id):
