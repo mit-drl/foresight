@@ -59,7 +59,7 @@ class InfoPlanner(object):
         self.pc_pub = None
         self.scan_sub = None
         self.breaks_pub = None
-        self.time_grid = defaultdict(lambda: defaultdict(lambda: -1))
+        self.time_grid = defaultdict(lambda: defaultdict(lambda: 1))
         self.tfl = tf.TransformListener()
         self.start_time = None
 
@@ -155,15 +155,12 @@ class InfoPlanner(object):
         return opt_res.x
 
     def objective(self, state):
-        projection = self.get_projection(state)
         improvement = 0
-        new_time = rospy.get_time()
-        poly = self.projection_to_polygon(projection, is_convex=True,
-                                          is_simple=True)
-        for p in self.points_in_poly(projection, NBR_DIST):
-            t = self.get_grid_val(p.x, p.y)
-            if t > 0:
-                improvement += (new_time - t)
+        projection = self.get_projection(state)
+        poly = self.projection_to_polygon(
+            projection, is_convex=True, is_simple=True)
+        for p in self.points_in_poly(poly, NBR_DIST):
+                improvement += self.get_grid_val(p.x, p.y)
         return -improvement
 
     def update_time_grid(self, poly):
