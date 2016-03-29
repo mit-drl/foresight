@@ -17,7 +17,8 @@
         <param name="destination_frame" value="car/base_link"/>
 		<param name="cloud_destination_topic" value="/merged_cloud"/>
 		<param name="scan_destination_topic" value="/scan_multi"/>
-        <param name="laserscan_topics" value ="/front_scan_intensity /rear_left_scan_intensity /rear_right_scan_intensity"/>
+        <!-- <param name="laserscan_topics" value ="/front_scan_intensity /rear_left_scan_intensity /rear_right_scan_intensity"/> -->
+        <param name="laserscan_topics" value ="/front_scan_intensity"/>
 	</node>
     <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager"
     output="screen" />
