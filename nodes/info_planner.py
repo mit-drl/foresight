@@ -7,6 +7,7 @@ import tf
 import numpy as np
 import planar
 import scipy.optimize as opt
+import scipy.spatial as spatial
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -32,22 +33,22 @@ NBR_DIST = 0.7
 class InfoPlanner(object):
 
     def __init__(self):
-        fov_v = rospy.get_param("~fov_v", 0.5 * math.pi)
-        fov_h = rospy.get_param("~fov_h", 0.5 * math.pi)
+        fov_v = rospy.get_param("~fov_v", 0.4 * math.pi)
+        fov_h = rospy.get_param("~fov_h", 0.6 * math.pi)
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
-        self.min_alt = rospy.get_param("~min_alt", 1)
+        self.min_alt = rospy.get_param("~min_alt", 2)
         self.max_alt = rospy.get_param("~max_alt", 4)
         self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 30)
-        self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
+        self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
         self.pose = None
         self.pose_pub = None
         self.polygon_pub = None
         self.opt_polygon_pub = None
         self.pc_pub = None
-        self.scan_sub = None
+        self.tree = None
         self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
 
@@ -71,6 +72,7 @@ class InfoPlanner(object):
     def frontier_callback(self, fpc):
         self.time_grid.clear()
         self.set_grid_with_pc(fpc, 1)
+        self.update_tree_with_pc(fpc)
         bp = self.find_best_point(self.pose)
         set_ps = self.state_to_pose(bp)
         opt_projection = self.get_projection(bp)
@@ -96,35 +98,27 @@ class InfoPlanner(object):
     def find_best_point(self, ps):
         init = self.pose_to_state(ps)
         best_opt = None
-        for z in xrange(self.min_alt, self.max_alt + 1):
-            init[2] = z
-            bounds = [(init[0] - self.bound_rel_xy,
-                       init[0] + self.bound_rel_xy),
-                      (init[1] - self.bound_rel_xy,
-                       init[1] + self.bound_rel_xy),
-                      (self.min_alt, self.max_alt),
-                      (0, 2 * math.pi)]
-            opt_res = opt.minimize(self.objective, init, method="SLSQP",
-                                   bounds=bounds, args=(init))
+        for yaw in np.linspace(0, 2 * math.pi, 4):
+            init[2] = yaw
+            opt_res = opt.minimize(self.objective, init, method="BFGS")
             if best_opt is None or opt_res.fun < best_opt.fun:
                 best_opt = opt_res
         return best_opt.x
 
-    def objective(self, state, init):
+    def objective(self, state):
+        obj = 0
         projection = self.get_projection(state)
         poly = self.projection_to_polygon(
             projection, is_convex=True, is_simple=True)
-        obj = 0
-        init_vec = self.state_to_vec(init)
-        state_vec = self.state_to_vec(state)
-        obj = -0.5 * init_vec.distance_to(state_vec)
+        dist, _ = self.tree.query(state[:2])
         for p in self.points_in_poly(poly, NBR_DIST):
             gv = self.get_grid_val(p.x, p.y)
             if gv > 0:
-                obj -= 1000 * gv
-            else:
-                obj += 0.001
-        return obj
+                obj -= 10 * gv
+        if obj < 0:
+            return obj
+        else:
+            return 10 * dist
 
     def get_relative_pose(self, parent_frame, child_frame):
         self.tfl.waitForTransform(
@@ -148,7 +142,7 @@ class InfoPlanner(object):
         pos = pose.pose.position
         quat = pose.pose.orientation
         r, p, y = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
-        inv_quat = quaternion_from_euler(-r, -p, -y)
+        inv_quat = quaternion_from_euler(-r, -p, y)
         inv_pose = PoseStamped()
         inv_pose.header.frame_id = frame_id
         inv_pose.pose.position.x = -pos.x
@@ -222,6 +216,10 @@ class InfoPlanner(object):
             self.set_grid_val(pt.x, pt.y, val)
         return self
 
+    def update_tree_with_pc(self, pc):
+        arrs = self.point32s_to_arrs(pc.points)
+        self.tree = spatial.KDTree(arrs)
+
     """ Conversions """
 
     def projection_to_polygon(self, projection, **kwargs):
@@ -229,29 +227,29 @@ class InfoPlanner(object):
         return planar.Polygon(vecs, **kwargs)
 
     def state_to_pose(self, state):
-        quat = quaternion_from_euler(0, 0, state[3])
+        quat = quaternion_from_euler(0, 0, state[2])
         pose_mq = PoseStamped()
         pose_mq.header.frame_id = self.map_frame
         pose_mq.header.stamp = rospy.Time()
         pose_mq.pose.position.x = state[0]
         pose_mq.pose.position.y = state[1]
-        pose_mq.pose.position.z = state[2]
+        pose_mq.pose.position.z = self.min_alt
         pose_mq.pose.orientation.x = quat[0]
         pose_mq.pose.orientation.y = quat[1]
         pose_mq.pose.orientation.z = quat[2]
         pose_mq.pose.orientation.w = quat[3]
         return pose_mq
 
-    def state_to_vec(self, state):
-        return planar.Vec2(state[0], state[1])
-
     def pose_to_state(self, pose):
         quat = [pose.pose.orientation.x, pose.pose.orientation.y,
-                pose.pose.orientation.z, pose.pose.orientation.z]
+                pose.pose.orientation.z, pose.pose.orientation.w]
         _, _, yaw = euler_from_quaternion(quat)
         pos = pose.pose.position
-        state = np.array([pos.x, pos.y, pos.z, yaw])
+        state = np.array([pos.x, pos.y, yaw])
         return state
+
+    def state_to_vec(self, state):
+        return planar.Vec2(state[0], state[1])
 
     def arrs_to_vecs(self, arrs):
         vecs = list()
@@ -264,6 +262,16 @@ class InfoPlanner(object):
         point.x = vec.x
         point.y = vec.y
         return point
+
+    def point32_to_arr(self, p32):
+        return np.array([p32.x, p32.y])
+
+    def point32s_to_arrs(self, p32s):
+        arrs = np.zeros((len(p32s), 2))
+        for i in xrange(len(p32s)):
+            arrs[i][0] = p32s[i].x
+            arrs[i][1] = p32s[i].y
+        return arrs
 
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
