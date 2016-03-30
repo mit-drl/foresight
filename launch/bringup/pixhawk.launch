@@ -3,7 +3,7 @@
     <include file="$(find mavros)/launch/node.launch">
         <arg name="pluginlists_yaml" value="$(find foresight)/param/px4_plugins.yaml"/>
         <arg name="config_yaml" value="$(find foresight)/param/px4_config.yaml"/>
-        <arg name="fcu_url" value="/dev/ttyACM0:57600" />
+        <arg name="fcu_url" value="/dev/ttyACM1:57600" />
         <arg name="gcs_url" value="udp://:14556@localhost:14550" />
         <arg name="tgt_system" value="1" />
         <arg name="tgt_component" value="1" />

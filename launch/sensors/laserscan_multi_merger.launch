@@ -1,23 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-    <node pkg="foresight" name="add_ls_intensity_1" type="add_ls_intensity.py" output="screen">
-        <remap from="in_scan" to="/rear_left_scan"/>
-        <remap from="out_scan" to="/rear_left_scan_intensity"/>
-    </node>
-    <node pkg="foresight" name="add_ls_intensity_2" type="add_ls_intensity.py" output="screen">
-        <remap from="in_scan" to="/rear_right_scan"/>
-        <remap from="out_scan" to="/rear_right_scan_intensity"/>
-    </node>
-    <node pkg="foresight" name="add_ls_intensity_3" type="add_ls_intensity.py" output="screen">
-        <remap from="in_scan" to="/front_scan_changed_range"/>
-        <remap from="out_scan" to="/front_scan_intensity"/>
-    </node>
-
     <node pkg="ira_laser_tools" name="laserscan_multi_merger" type="laserscan_multi_merger" output="screen">
         <param name="destination_frame" value="car/base_link"/>
 		<param name="cloud_destination_topic" value="/merged_cloud"/>
 		<param name="scan_destination_topic" value="/scan_multi"/>
-        <param name="laserscan_topics" value ="/front_scan_intensity"/>
+        <param name="laserscan_topics" value ="/scan"/>
 	</node>
     <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager"
     output="screen" />
