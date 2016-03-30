@@ -38,7 +38,7 @@ class InfoPlanner(object):
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
-        self.min_alt = rospy.get_param("~min_alt", 2)
+        self.min_alt = rospy.get_param("~min_alt", 2.2)
         self.max_alt = rospy.get_param("~max_alt", 4)
         self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 30)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
