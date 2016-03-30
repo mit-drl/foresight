@@ -30,4 +30,7 @@
         <param name="fixed_frame" value="map"/>
         <param name="child_frame" value="quad/base_link"/>
     </node>
+    <node pkg="foresight" type="info_planner.py" name="planner" output="screen">
+        <remap from="/frontier" to="/car/frontier"/>
+    </node>
 </launch>

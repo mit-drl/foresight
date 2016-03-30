@@ -49,6 +49,7 @@ class InfoPlanner(object):
         self.opt_polygon_pub = None
         self.pc_pub = None
         self.tree = None
+        self.opt_ps = None
         self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
 
@@ -63,6 +64,13 @@ class InfoPlanner(object):
         self.pose_sub = rospy.Subscriber(
             POSE_SUB_TOPIC, PoseStamped,
             self.pose_callback, queue_size=1)
+        self.run()
+
+    def run(self):
+        while not rospy.is_shutdown():
+            if not self.opt_ps is None:
+                self.pose_pub.publish(self.opt_ps)
+            self.rate.sleep()
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
@@ -76,6 +84,7 @@ class InfoPlanner(object):
         bp = self.find_best_point(self.pose)
         set_ps = self.state_to_pose(bp)
         opt_projection = self.get_projection(bp)
+        self.opt_ps = set_ps
         self.publish_projection(opt_projection, self.opt_polygon_pub)
         self.pose_pub.publish(set_ps)
 

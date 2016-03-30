@@ -4,8 +4,25 @@
         <param name="frame_id" value="base_link"/>
     </node>
     <node pkg="foresight" type="frontier_cloud.py" name="frontier_pub" output="screen"/>
-    <node pkg="foresight" type="info_planner.py" name="planner" output="screen"/>
     <include file="$(find foresight)/launch/sensors/laserscan_multi_merger.launch"/>
+
+    <!-- base_link to IMU/FCU -->
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_fcu"
+        args="0.02 0 0 0 0 0 quad/base_link fcu 100" />
+
+    <node pkg="tf" type="static_transform_publisher" name="shaqiri_to_base_link"
+        args="0 0 0 0 0 0 wallar_shaqiri quad/base_link 100" />
+
+    <!-- base_link to back_camera -->
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_back_camera"
+        args="-0.072 0 0 0 3.14 0 quad/base_link quad/back_camera_link 100" />
+
+    <!-- Car TF model -->
+    <node pkg="tf" type="static_transform_publisher" name="car_to_car_hood"
+        args="1 0 0 0 0 0 car/base_link car/hood_link 100" />
+
+    <node pkg="tf" type="static_transform_publisher" name="map_to_car"
+        args="0 0 0 0 0 0 map base_link 100" />
 
     <arg name="host" default="raphaelchang.com" />
     <arg name="port" default="8080"/>
@@ -17,15 +34,16 @@
         <param name="description" value="Car namespace" />
         <rosparam>
             publishing:
-                - /merged_cloud_filtered
+                - /frontier
+                - /tf
             types:
-                - sensor_msgs/PointCloud2
+                - sensor_msgs/PointCloud
+                - tf2_msgs/TFMessage
             trusted:
                 - ".*"
             global_frames:
-                - world
+                - map
         </rosparam>
-
     </node>
 
 </launch>
