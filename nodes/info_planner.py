@@ -6,136 +6,76 @@ import math
 import tf
 import numpy as np
 import planar
-import time
 import scipy.optimize as opt
-import sensor_msgs.point_cloud2 as pc2
-import mutex
-import threading
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
 from collections import defaultdict, deque
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PolygonStamped
-from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point32
-from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import PointCloud
-from sensor_msgs.msg import PointCloud2
-from sensor_msgs.msg import ChannelFloat32
 
 
 NODE_NAME = "info_planner"
 POSE_TOPIC = "/mavros/setpoint_position/local"
 POSE_SUB_TOPIC = "/mavros/local_position/pose"
-PC_TOPIC = "/timegrid"
-MAP_TOPIC = "/map"
 MAP_FRAME = "map"
 QUAD_FRAME = "quad/base_link"
 CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
-SCAN_TOPIC = "/merged_cloud_filtered"
-BREAKS_TOPIC = "/breaks_pc"
-NBR_DIST = 1
-CF_STEP = 0.5
-NORMAL_HORIZON = 2
+FRONTIER_TOPIC = "/frontier"
+OPT_POLYGON_TOPIC = "/opt_projection"
+NBR_DIST = 0.7
 
 
 class InfoPlanner(object):
 
     def __init__(self):
-        fov_v = rospy.get_param("~fov_v", math.pi / 2)
-        fov_h = rospy.get_param("~fov_h", math.pi / 2)
+        fov_v = rospy.get_param("~fov_v", 0.5 * math.pi)
+        fov_h = rospy.get_param("~fov_h", 0.5 * math.pi)
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
         self.min_alt = rospy.get_param("~min_alt", 1)
-        self.max_alt = rospy.get_param("~max_alt", 2)
-        self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 1000)
-        self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 1)
+        self.max_alt = rospy.get_param("~max_alt", 4)
+        self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 30)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
-        self.lock = threading.Lock()
         self.pose = None
-        self.pub = None
+        self.pose_pub = None
         self.polygon_pub = None
+        self.opt_polygon_pub = None
         self.pc_pub = None
         self.scan_sub = None
-        self.breaks_pub = None
         self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
-        self.start_time = None
 
     def start(self):
-        self.pub = rospy.Publisher(POSE_TOPIC, PoseStamped, queue_size=1)
-        self.polygon_pub = rospy.Publisher(POLYGON_TOPIC, PolygonStamped,
-                                           queue_size=1)
-        self.pc_pub = rospy.Publisher(PC_TOPIC, PointCloud, queue_size=1)
-        self.breaks_pub = rospy.Publisher(BREAKS_TOPIC, PointCloud, queue_size=1)
-        self.scan_sub = rospy.Subscriber(SCAN_TOPIC, PointCloud2,
-                                         self.laser_callback, queue_size=1)
-        self.pose_sub = rospy.Subscriber(POSE_SUB_TOPIC, PoseStamped,
-                                         self.pose_callback, queue_size=1)
-        # self.run()
-
-    def run(self):
-        while not rospy.is_shutdown():
-            try:
-                projection = self.get_current_projection()
-                poly = self.projection_to_polygon(projection)
-            except tf.Exception:
-                print "TF ERROR"
-            self.rate.sleep()
+        self.pose_pub = rospy.Publisher(POSE_TOPIC, PoseStamped, queue_size=1)
+        self.polygon_pub = rospy.Publisher(
+            POLYGON_TOPIC, PolygonStamped, queue_size=1)
+        self.opt_polygon_pub = rospy.Publisher(
+            OPT_POLYGON_TOPIC, PolygonStamped, queue_size=1)
+        self.frontier_sub = rospy.Subscriber(
+            FRONTIER_TOPIC, PointCloud, self.frontier_callback, queue_size=1)
+        self.pose_sub = rospy.Subscriber(
+            POSE_SUB_TOPIC, PoseStamped,
+            self.pose_callback, queue_size=1)
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
-        self.publish_projection(projection)
-        self.lock.acquire()
-        bp = self.find_best_point(ps)
-        self.lock.release()
+        self.publish_projection(projection, self.polygon_pub)
+        self.pose = ps
+
+    def frontier_callback(self, fpc):
+        self.time_grid.clear()
+        self.set_grid_with_pc(fpc, 1)
+        bp = self.find_best_point(self.pose)
         set_ps = self.state_to_pose(bp)
-        self.pub.publish(set_ps)
-
-    def laser_callback(self, scan):
-        if self.lock.acquire(False):
-            self.time_grid.clear()
-            poly = self.pointcloud_to_polygon(scan)
-            for brk in self.get_laser_breaks(scan, poly):
-                self.set_grid_val(brk.x, brk.y, 1)
-            self.publish_time_grid()
-            self.lock.release()
-
-    def get_laser_breaks(self, scan, poly):
-        breaks = list()
-        last_pt = None
-        pts = pc2.read_points(
-            scan, skip_nans=True,
-            field_names=("x", "y", "z"))
-        for pt in pts:
-            ps = self.arr_to_point_stamped(pt, scan.header.frame_id)
-            ps_tf = self.tfl.transformPoint(self.map_frame, ps)
-            point = planar.Vec2(ps_tf.point.x, ps_tf.point.y)
-            if last_pt is None:
-                last_pt = point
-            elif last_pt.distance_to(point) > self.scan_break_thresh:
-                for bpt in self.horizon_points(last_pt, point, poly):
-                    yield bpt
-            last_pt = point
-
-    def horizon_points(self, p, q, poly):
-        perp = (p - q).perpendicular()
-        horizon = perp.scaled_to(NORMAL_HORIZON)
-        for bpt in self.crow_flies(p, q):
-            for hpt in self.crow_flies(bpt, bpt + horizon):
-                if not poly.contains_point(hpt):
-                    yield hpt
-
-    def crow_flies(self, start, end):
-        dr = (end - start).normalized()
-        cur = start
-        while cur.distance_to(end) > CF_STEP:
-            cur += CF_STEP * dr
-            yield cur
+        opt_projection = self.get_projection(bp)
+        self.publish_projection(opt_projection, self.opt_polygon_pub)
+        self.pose_pub.publish(set_ps)
 
     def points_in_poly(self, poly, step):
         q = deque([poly.centroid])
@@ -155,42 +95,36 @@ class InfoPlanner(object):
 
     def find_best_point(self, ps):
         init = self.pose_to_state(ps)
-        bounds = [(init[0] - self.bound_rel_xy, init[0] + self.bound_rel_xy),
-                  (init[1] - self.bound_rel_xy, init[1] + self.bound_rel_xy),
-                  (self.min_alt, self.max_alt), (0, 2 * math.pi)]
-        opt_res = opt.minimize(self.objective, init, method="SLSQP",
-                               bounds=bounds, args=(init))
-        return opt_res.x
+        best_opt = None
+        for z in xrange(self.min_alt, self.max_alt + 1):
+            init[2] = z
+            bounds = [(init[0] - self.bound_rel_xy,
+                       init[0] + self.bound_rel_xy),
+                      (init[1] - self.bound_rel_xy,
+                       init[1] + self.bound_rel_xy),
+                      (self.min_alt, self.max_alt),
+                      (0, 2 * math.pi)]
+            opt_res = opt.minimize(self.objective, init, method="SLSQP",
+                                   bounds=bounds, args=(init))
+            if best_opt is None or opt_res.fun < best_opt.fun:
+                best_opt = opt_res
+        return best_opt.x
 
     def objective(self, state, init):
-        obj = 0
         projection = self.get_projection(state)
         poly = self.projection_to_polygon(
             projection, is_convex=True, is_simple=True)
+        obj = 0
+        init_vec = self.state_to_vec(init)
+        state_vec = self.state_to_vec(state)
+        obj = -0.5 * init_vec.distance_to(state_vec)
         for p in self.points_in_poly(poly, NBR_DIST):
             gv = self.get_grid_val(p.x, p.y)
             if gv > 0:
-                obj -= self.get_grid_val(p.x, p.y)
+                obj -= 1000 * gv
             else:
-                obj += p.distance_to(planar.Vec2(init[0], init[1]))
+                obj += 0.001
         return obj
-
-    def update_time_grid(self, poly):
-        pc = PointCloud()
-        ch = ChannelFloat32()
-        pc.header.stamp = rospy.Time.now()
-        pc.header.frame_id = "map"
-        ch.name = "time"
-        if self.start_time is None:
-            self.start_time = rospy.get_time()
-        t = rospy.get_time() - self.start_time
-        for p in self.points_in_poly(poly, NBR_DIST):
-            self.set_grid_val(p.x, p.y, t)
-            p32 = self.vec_to_point32(p)
-            pc.points.append(p32)
-            ch.values.append(t)
-        pc.channels.append(ch)
-        return pc
 
     def get_relative_pose(self, parent_frame, child_frame):
         self.tfl.waitForTransform(
@@ -210,9 +144,25 @@ class InfoPlanner(object):
         ps.pose.orientation.w = quat[3]
         return ps
 
+    def get_inverse_pose(self, pose, frame_id):
+        pos = pose.pose.position
+        quat = pose.pose.orientation
+        r, p, y = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+        inv_quat = quaternion_from_euler(-r, -p, -y)
+        inv_pose = PoseStamped()
+        inv_pose.header.frame_id = frame_id
+        inv_pose.pose.position.x = -pos.x
+        inv_pose.pose.position.y = -pos.y
+        inv_pose.pose.position.z = -pos.z
+        inv_pose.pose.orientation.x = inv_quat[0]
+        inv_pose.pose.orientation.y = inv_quat[1]
+        inv_pose.pose.orientation.z = inv_quat[2]
+        inv_pose.pose.orientation.w = inv_quat[3]
+        return inv_pose
+
     def get_projection(self, state):
         pose_mq = self.state_to_pose(state)
-        pose_qm = self.tfl.transformPose(self.quad_frame, pose_mq)
+        pose_qm = self.get_inverse_pose(pose_mq, "opt_quad/base_link")
         pose_cq = self.get_relative_pose(self.quad_frame, self.camera_frame)
         rot_qm, trans_qm = self.pose_to_matrix(pose_qm)
         rot_cq, trans_cq = self.pose_to_matrix(pose_cq)
@@ -231,7 +181,7 @@ class InfoPlanner(object):
 
     """ Publisher helpers """
 
-    def publish_projection(self, projection):
+    def publish_projection(self, projection, pub):
         poly = PolygonStamped()
         poly.header.stamp = rospy.Time.now()
         poly.header.frame_id = MAP_FRAME
@@ -240,7 +190,7 @@ class InfoPlanner(object):
             p.x = v[0]
             p.y = v[1]
             poly.polygon.points.append(p)
-        self.polygon_pub.publish(poly)
+        pub.publish(poly)
 
     def publish_planar_polygon(self, p_poly):
         poly = PolygonStamped()
@@ -250,20 +200,6 @@ class InfoPlanner(object):
             p = self.vec_to_point32(v)
             poly.polygon.points.append(p)
         self.polygon_pub.publish(poly)
-
-    def publish_time_grid(self):
-        pc = PointCloud()
-        ch = ChannelFloat32()
-        pc.header.stamp = rospy.Time.now()
-        pc.header.frame_id = self.map_frame
-        ch.name = "time"
-        for x in self.time_grid.keys():
-            for y in self.time_grid[x].keys():
-                p32 = self.xy_to_point32(x, y)
-                pc.points.append(p32)
-                ch.values.append(self.time_grid[x][y])
-        pc.channels.append(ch)
-        self.pc_pub.publish(pc)
 
     """ Getters and setters for time grid """
 
@@ -279,6 +215,12 @@ class InfoPlanner(object):
     def set_grid_val(self, x, y, val):
         xp, yp = self.get_discrete(x, y)
         self.time_grid[xp][yp] = val
+        return self
+
+    def set_grid_with_pc(self, pc, val):
+        for pt in pc.points:
+            self.set_grid_val(pt.x, pt.y, val)
+        return self
 
     """ Conversions """
 
@@ -300,6 +242,9 @@ class InfoPlanner(object):
         pose_mq.pose.orientation.w = quat[3]
         return pose_mq
 
+    def state_to_vec(self, state):
+        return planar.Vec2(state[0], state[1])
+
     def pose_to_state(self, pose):
         quat = [pose.pose.orientation.x, pose.pose.orientation.y,
                 pose.pose.orientation.z, pose.pose.orientation.z]
@@ -320,31 +265,6 @@ class InfoPlanner(object):
         point.y = vec.y
         return point
 
-    def xy_to_point32(self, x, y):
-        point = Point32()
-        point.x = x
-        point.y = y
-        return point
-
-    def arr_to_point_stamped(self, arr, frame_id):
-        ps = PointStamped()
-        ps.header.frame_id = frame_id
-        ps.header.stamp = rospy.Time()
-        ps.point.x = arr[0]
-        ps.point.y = arr[1]
-        return ps
-
-    def arr_to_point_stamped_tf(self, arr, frame_id):
-        ps = self.arr_to_point_stamped(arr, frame_id)
-        return self.tfl.transformPoint(self.map_frame, ps)
-
-    def arrs_to_vecs_tf(self, arrs, frame_id):
-        vecs = list()
-        for arr in arrs:
-            ps = self.arr_to_point_stamped_tf(arr, frame_id)
-            vecs.append(planar.Vec2(ps.point.x, ps.point.y))
-        return vecs
-
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
                            -ps.pose.position.y,
@@ -353,23 +273,8 @@ class InfoPlanner(object):
                                          ps.pose.orientation.y,
                                          ps.pose.orientation.z,
                                          ps.pose.orientation.w])
-        rot = np.matrix(euler_matrix(-r, -p, y)[:3, :3]).T
+        rot = np.matrix(euler_matrix(-r, -p, -y)[:3, :3]).T
         return rot, trans
-
-    def polar_to_cart(self, angle, dist, frame_id):
-        rel_point = PointStamped()
-        rel_point.header.frame_id = frame_id
-        rel_point.point.x = dist * math.cos(angle)
-        rel_point.point.y = dist * math.sin(angle)
-        abs_point = self.tfl.transformPoint(self.map_frame, rel_point)
-        return abs_point.point.x, abs_point.point.y
-
-    def pointcloud_to_polygon(self, pc):
-        pts = pc2.read_points(
-            pc, skip_nans=True,
-            field_names=("x", "y", "z"))
-        vecs = self.arrs_to_vecs_tf(pts, pc.header.frame_id)
-        return planar.Polygon(vecs, is_convex=False, is_simple=True)
 
 
 if __name__ == "__main__":
