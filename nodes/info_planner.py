@@ -34,7 +34,7 @@ class InfoPlanner(object):
 
     def __init__(self):
         fov_v = rospy.get_param("~fov_v", 0.4 * math.pi)
-        fov_h = rospy.get_param("~fov_h", 0.6 * math.pi)
+        fov_h = rospy.get_param("~fov_h", 0.4 * math.pi)
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
