@@ -17,9 +17,9 @@ NODE_NAME = "frontier_publisher"
 PC_TOPIC = "/frontier"
 MAP_FRAME = "map"
 SCAN_TOPIC = "/merged_cloud_filtered"
-NBR_DIST = 0.5
-CF_STEP = 0.5
-NORMAL_HORIZON = 3
+NBR_DIST = 0.68
+CF_STEP = 0.68
+NORMAL_HORIZON = 2
 
 
 class FrontierPublisher(object):

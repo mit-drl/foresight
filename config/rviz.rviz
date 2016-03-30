@@ -9,6 +9,7 @@ Panels:
         - /Imu1/Axes properties1
         - /Pose2
         - /Pose3
+        - /Polygon2
       Splitter Ratio: 0.498294
     Tree Height: 416
   - Class: rviz/Selection
@@ -65,6 +66,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        base_link:
+          Value: true
         car/base_link:
           Value: true
         car/hood_link:
@@ -77,6 +80,12 @@ Visualization Manager:
           Value: true
         quad/base_link:
           Value: true
+        sender/fcu:
+          Value: true
+        sender/map:
+          Value: true
+        sender/wallar_shaqiri:
+          Value: true
         wallar_shaqiri:
           Value: true
       Marker Scale: 1
@@ -86,15 +95,11 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          base_link:
+            {}
           car/base_link:
             car/hood_link:
               {}
-          wallar_shaqiri:
-            quad/base_link:
-              fcu:
-                {}
-              quad/back_camera_link:
-                {}
       Update Interval: 0
       Value: true
     - Class: rviz/Image
@@ -215,7 +220,7 @@ Visualization Manager:
       Color: 0; 255; 255
       Enabled: true
       Name: Polygon
-      Topic: /opt_projection
+      Topic: /sender/opt_projection
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -339,22 +344,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.44647
+      Distance: 0.358855
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -8.80258
-        Y: -1.1526
-        Z: 15.0803
+        X: -4.97619
+        Y: -0.31321
+        Z: 14.0014
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.934797
+      Pitch: 1.07954
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.15175
+      Yaw: 3.07677
     Saved: ~
 Window Geometry:
   Displays:
