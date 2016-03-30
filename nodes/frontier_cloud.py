@@ -17,8 +17,8 @@ NODE_NAME = "frontier_publisher"
 PC_TOPIC = "/frontier"
 MAP_FRAME = "map"
 SCAN_TOPIC = "/merged_cloud_filtered"
-NBR_DIST = 0.68
-CF_STEP = 0.68
+NBR_DIST = 0.3
+CF_STEP = 0.3
 NORMAL_HORIZON = 2
 
 

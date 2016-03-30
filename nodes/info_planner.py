@@ -27,7 +27,7 @@ CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
 FRONTIER_TOPIC = "/frontier"
 OPT_POLYGON_TOPIC = "/opt_projection"
-NBR_DIST = 0.7
+NBR_DIST = 0.3
 
 
 class InfoPlanner(object):
