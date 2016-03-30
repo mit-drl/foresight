@@ -1,12 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-    <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo_node">
-        <param name="frame_id" value="base_link"/>
-    </node>
-    <node pkg="foresight" type="frontier_cloud.py" name="frontier_pub" output="screen"/>
-    <node pkg="foresight" type="info_planner.py" name="planner" output="screen"/>
-    <include file="$(find foresight)/launch/sensors/laserscan_multi_merger.launch"/>
-
     <arg name="host" default="raphaelchang.com" />
     <arg name="port" default="8080"/>
     <node pkg="canopy_client" type="client_node.py" name="canopy_client_node" output="screen">
@@ -17,9 +10,9 @@
         <param name="description" value="Car namespace" />
         <rosparam>
             publishing:
-                - /merged_cloud_filtered
+                - /scan
             types:
-                - sensor_msgs/PointCloud2
+                - sensor_msgs/LaserScan
             trusted:
                 - ".*"
             global_frames:
@@ -27,5 +20,4 @@
         </rosparam>
 
     </node>
-
 </launch>
