@@ -38,11 +38,15 @@
         <rosparam>
             publishing:
                 - /frontier
+                - /scan_polygon
                 - /tf
             types:
                 - sensor_msgs/PointCloud
                 - tf2_msgs/TFMessage
+                - geometry_msgs/PolygonStamped
             trusted:
+                - ".*"
+                - ".*"
                 - ".*"
             global_frames:
                 - map

@@ -25,12 +25,13 @@
     <node pkg="tf" type="static_transform_publisher" name="map_to_car"
         args="0 0 0 0 0 0 map car/base_link 100" />
 
-    <node pkg="foresight" type="tf_to_pose.py" name="tf_to_pose">
-        <param name="pose_topic" value="/mavros/local_position/pose"/>
-        <param name="fixed_frame" value="map"/>
-        <param name="child_frame" value="quad/base_link"/>
-    </node>
+    <!-- <node pkg="foresight" type="tf_to_pose.py" name="tf_to_pose"> -->
+    <!--     <param name="pose_topic" value="/mavros/local_position/pose"/> -->
+    <!--     <param name="fixed_frame" value="map"/> -->
+    <!--     <param name="child_frame" value="quad/base_link"/> -->
+    <!-- </node> -->
     <node pkg="foresight" type="info_planner.py" name="planner" output="screen">
         <remap from="/frontier" to="/car/frontier"/>
+        <remap from="/scan_polygon" to="/car/scan_polygon"/>
     </node>
 </launch>
