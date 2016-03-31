@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-    <rosparam>
-        use_sim_time: true
-    </rosparam>
+    <!-- <rosparam> -->
+    <!--     use_sim_time: true -->
+    <!-- </rosparam> -->
     <!-- base_link to IMU/FCU -->
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_fcu"
         args="0.02 0 0 0 0 0 quad/base_link fcu 100" />
@@ -19,7 +19,7 @@
         args="0 0 0 0 0 0 car/hood_link odom 100" />
 
     <node pkg="tf" type="static_transform_publisher" name="odom_bl"
-        args="1 1 1 1.0 0 0 odom quad/base_link 100" />
+        args="0 0 1 1.0 0 0 map quad/base_link 100" />
 
     <node pkg="foresight" type="tf_to_pose.py" name="tf_to_pose">
         <param name="pose_topic" value="/mavros/local_position/pose"/>
@@ -27,18 +27,18 @@
         <param name="child_frame" value="quad/base_link"/>
     </node>
 
-    <node pkg="foresight" type="frontier_cloud.py" name="frontier_pub" output="screen"/>
+    <!-- <node pkg="foresight" type="frontier_cloud.py" name="frontier_pub" output="screen"/> -->
     <node pkg="foresight" type="info_planner.py" name="planner" output="screen"/>
-
-    <group>
-        <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
-            <rosparam param="mappings">
-                [{old: base_link, new: car/base_link},
-                {old: odom, new: map}]
-            </rosparam>
-        </node>
-        <node type="play" pkg="rosbag" name="player"
-            args="$(find foresight)/data/car-1.bag --clock -q -l -s 240 /tf:=/tf_old"/>
-    </group>
-    <include file="$(find foresight)/launch/sensors/laserscan_multi_merger.launch"/>
+    <!--  -->
+    <!-- <group> -->
+    <!--     <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen"> -->
+    <!--         <rosparam param="mappings"> -->
+    <!--             [{old: base_link, new: car/base_link}, -->
+    <!--             {old: odom, new: map}] -->
+    <!--         </rosparam> -->
+    <!--     </node> -->
+    <!--     <node type="play" pkg="rosbag" name="player" -->
+    <!--         args="$(find foresight)/data/car&#45;1.bag &#45;&#45;clock &#45;q &#45;l &#45;s 240 /tf:=/tf_old"/> -->
+    <!-- </group> -->
+    <!-- <include file="$(find foresight)/launch/sensors/laserscan_multi_merger.launch"/> -->
 </launch>

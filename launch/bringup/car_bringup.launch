@@ -21,6 +21,9 @@
     <node pkg="tf" type="static_transform_publisher" name="car_to_car_hood"
         args="1 0 0 0 0 0 car/base_link car/hood_link 100" />
 
+    <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_car_2" -->
+    <!--     args="0 0 0 0 0 0 map car/base_link 100" /> -->
+
     <node pkg="tf" type="static_transform_publisher" name="map_to_car"
         args="0 0 0 0 0 0 map base_link 100" />
 

@@ -27,18 +27,18 @@ CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
 FRONTIER_TOPIC = "/frontier"
 OPT_POLYGON_TOPIC = "/opt_projection"
-NBR_DIST = 0.3
+NBR_DIST = 0.5
 
 
 class InfoPlanner(object):
 
     def __init__(self):
-        fov_v = rospy.get_param("~fov_v", 0.4 * math.pi)
-        fov_h = rospy.get_param("~fov_h", 0.4 * math.pi)
+        fov_v = rospy.get_param("~fov_v", 0.2 * math.pi)
+        fov_h = rospy.get_param("~fov_h", 0.2 * math.pi)
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
-        self.min_alt = rospy.get_param("~min_alt", 2.2)
+        self.min_alt = rospy.get_param("~min_alt", 2)
         self.max_alt = rospy.get_param("~max_alt", 4)
         self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 30)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
@@ -64,13 +64,13 @@ class InfoPlanner(object):
         self.pose_sub = rospy.Subscriber(
             POSE_SUB_TOPIC, PoseStamped,
             self.pose_callback, queue_size=1)
-        self.run()
+        # self.run()
 
-    def run(self):
-        while not rospy.is_shutdown():
-            if not self.opt_ps is None:
-                self.pose_pub.publish(self.opt_ps)
-            self.rate.sleep()
+    # def run(self):
+    #     while not rospy.is_shutdown():
+    #         if not self.opt_ps is None:
+    #             self.pose_pub.publish(self.opt_ps)
+            # self.rate.sleep()
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()

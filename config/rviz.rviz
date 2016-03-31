@@ -10,6 +10,7 @@ Panels:
         - /Pose2
         - /Pose3
         - /Polygon2
+        - /LaserScan1
       Splitter Ratio: 0.498294
     Tree Height: 416
   - Class: rviz/Selection
@@ -76,17 +77,11 @@ Visualization Manager:
           Value: true
         map:
           Value: true
+        odom:
+          Value: true
         quad/back_camera_link:
           Value: true
         quad/base_link:
-          Value: true
-        sender/fcu:
-          Value: true
-        sender/map:
-          Value: true
-        sender/wallar_shaqiri:
-          Value: true
-        wallar_shaqiri:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -99,6 +94,12 @@ Visualization Manager:
             {}
           car/base_link:
             car/hood_link:
+              odom:
+                {}
+          quad/base_link:
+            fcu:
+              {}
+            quad/back_camera_link:
               {}
       Update Interval: 0
       Value: true
@@ -220,7 +221,7 @@ Visualization Manager:
       Color: 0; 255; 255
       Enabled: true
       Name: Polygon
-      Topic: /sender/opt_projection
+      Topic: /opt_projection
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -344,7 +345,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.358855
+      Distance: 1.66598
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -356,7 +357,7 @@ Visualization Manager:
         Z: 14.0014
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.07954
+      Pitch: 1.08954
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
       Yaw: 3.07677
