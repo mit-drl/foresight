@@ -112,7 +112,9 @@ class InfoPlanner(object):
         pc.header.frame_id = "map"
         ch.name = "time"
         t = rospy.get_time()
-        for p in self.points_in_poly(projection, NBR_DIST):
+        vecs = self.arrs_to_vecs(projection)
+        poly = planar.Polygon(vecs)
+        for p in self.points_in_poly(poly, NBR_DIST):
             self.set_grid_val(p.x, p.y, t)
             p32 = Point32()
             p32.x = p.x
@@ -272,7 +274,7 @@ class InfoPlanner(object):
 
     def set_grid_with_pc(self, pc, val):
         for pt in pc.points:
-            if self.get_grid_val(pt.x) == 0:
+            if self.get_grid_val(pt.x, pt.y) == 0:
                 self.set_grid_val(pt.x, pt.y, val)
         return self
 
