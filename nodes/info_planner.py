@@ -89,12 +89,13 @@ class InfoPlanner(object):
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
+        self.update_time_grid(projection)
         self.publish_projection(projection, self.polygon_pub)
         self.pose = ps
 
     def frontier_callback(self, fpc):
         self.time_grid.clear()
-        self.set_grid_with_pc(fpc, 1)
+        self.set_grid_with_pc(fpc, rospy.get_time())
         self.update_tree_with_pc(fpc)
         bp = self.find_best_point(self.pose)
         set_ps = self.state_to_pose(bp)
@@ -102,6 +103,25 @@ class InfoPlanner(object):
         self.opt_ps = set_ps
         self.publish_projection(opt_projection, self.opt_polygon_pub)
         self.pose_pub.publish(set_ps)
+
+    def update_time_grid(self, projection):
+        pc = PointCloud()
+        ch = ChannelFloat32()
+        pc.header.stamp = rospy.Time.now()
+        pc.header.frame_id = "map"
+        ch.name = "time"
+        if self.start_time is None:
+            self.start_time = rospy.get_time()
+        t = time.time() - self.start_time
+        for p in self.points_in_poly(projection, NBR_DIST):
+            self.set_grid_val(p.x, p.y, t)
+            p32 = Point32()
+            p32.x = p.x
+            p32.y = p.y
+            pc.points.append(p32)
+            ch.values.append(t)
+        pc.channels.append(ch)
+        return pc
 
     def points_in_poly(self, poly, step):
         q = deque([poly.centroid])
@@ -145,11 +165,12 @@ class InfoPlanner(object):
             dist_to_quad = np.linalg.norm(state - self.last_opt)
             yaw_diff = 10 * abs(self.last_opt[2] - state[2])
             movement_cost = dist_to_quad + yaw_diff
+        t = rospy.get_time()
         if self.poly.contains_point(self.state_to_vec(state)):
             for p in self.points_in_poly(poly, NBR_DIST):
                 gv = self.get_grid_val(p.x, p.y)
                 if gv > 0:
-                    obj -= 10 * gv
+                    obj -= (t - gv)
             if obj >= 0:
                 obj = 10 * dist
             obj = obj + movement_cost
@@ -252,7 +273,8 @@ class InfoPlanner(object):
 
     def set_grid_with_pc(self, pc, val):
         for pt in pc.points:
-            self.set_grid_val(pt.x, pt.y, val)
+            if self.get_grid_val(pt.x) == 0:
+                self.set_grid_val(pt.x, pt.y, val)
         return self
 
     def update_tree_with_pc(self, pc):
