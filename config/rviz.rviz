@@ -64,6 +64,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        base_link:
+          Value: true
         car/base_link:
           Value: true
         car/hood_link:
@@ -76,6 +78,8 @@ Visualization Manager:
           Value: true
         quad/base_link:
           Value: true
+        wallar_shaqiri:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -83,6 +87,8 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          base_link:
+            {}
           car/base_link:
             car/hood_link:
               {}
@@ -313,7 +319,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 13.3615
+      Distance: 12.2478
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
