@@ -19,7 +19,7 @@ MAP_FRAME = "map"
 SCAN_TOPIC = "/merged_cloud_filtered"
 NBR_DIST = 0.3
 CF_STEP = 0.3
-NORMAL_HORIZON = 1
+NORMAL_HORIZON = 0.8
 
 
 class FrontierPublisher(object):
