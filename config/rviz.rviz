@@ -83,6 +83,14 @@ Visualization Manager:
           Value: true
         quad/base_link:
           Value: true
+        sender/fcu:
+          Value: true
+        sender/map:
+          Value: true
+        sender/wallar_shaqiri:
+          Value: true
+        wallar_shaqiri:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -345,22 +353,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.66598
+      Distance: 12.8113
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -4.97619
-        Y: -0.31321
-        Z: 14.0014
+        X: -4.72572
+        Y: -0.31773
+        Z: 14.0709
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.08954
+      Pitch: 1.4698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.07677
+      Yaw: 3.04677
     Saved: ~
 Window Geometry:
   Displays:

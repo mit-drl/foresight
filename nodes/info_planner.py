@@ -64,13 +64,13 @@ class InfoPlanner(object):
         self.pose_sub = rospy.Subscriber(
             POSE_SUB_TOPIC, PoseStamped,
             self.pose_callback, queue_size=1)
-        # self.run()
+        self.run()
 
-    # def run(self):
-    #     while not rospy.is_shutdown():
-    #         if not self.opt_ps is None:
-    #             self.pose_pub.publish(self.opt_ps)
-            # self.rate.sleep()
+    def run(self):
+        while not rospy.is_shutdown():
+            if not self.opt_ps is None:
+                self.pose_pub.publish(self.opt_ps)
+            self.rate.sleep()
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
