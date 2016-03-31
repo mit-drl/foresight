@@ -111,9 +111,7 @@ class InfoPlanner(object):
         pc.header.stamp = rospy.Time.now()
         pc.header.frame_id = "map"
         ch.name = "time"
-        if self.start_time is None:
-            self.start_time = rospy.get_time()
-        t = time.time() - self.start_time
+        t = rospy.get_time()
         for p in self.points_in_poly(projection, NBR_DIST):
             self.set_grid_val(p.x, p.y, t)
             p32 = Point32()
