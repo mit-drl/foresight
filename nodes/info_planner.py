@@ -105,7 +105,7 @@ class InfoPlanner(object):
 
     def points_in_poly(self, poly, step):
         q = deque([poly.centroid])
-        see1 = set([poly.centroid.x, poly.centroid.y])
+        seen = set([poly.centroid.x, poly.centroid.y])
         nbrs = [(step, 0), (0, step), (step, step),
                 (-step, 0), (0, -step), (-step, -step),
                 (step, -step), (-step, step)]
