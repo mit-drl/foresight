@@ -109,25 +109,26 @@ class InfoPlanner(object):
         best_opt = None
         for yaw in np.linspace(0, 2 * math.pi, 4):
             init[2] = yaw
-            opt_res = opt.minimize(self.objective, init, method="BFGS")
+            opt_res = opt.minimize(self.objective, init, args=(init), method="BFGS")
             if best_opt is None or opt_res.fun < best_opt.fun:
                 best_opt = opt_res
         return best_opt.x
 
-    def objective(self, state):
+    def objective(self, state, init):
         obj = 0
         projection = self.get_projection(state)
         poly = self.projection_to_polygon(
             projection, is_convex=True, is_simple=True)
         dist, _ = self.tree.query(state[:2])
+        dist_to_quad = pow(state[0] - init[0], 2) + pow(state[1] - init[1], 2)
         for p in self.points_in_poly(poly, NBR_DIST):
             gv = self.get_grid_val(p.x, p.y)
             if gv > 0:
                 obj -= 10 * gv
         if obj < 0:
-            return obj
+            return obj + dist_to_quad
         else:
-            return 10 * dist
+            return 10 * dist + dist_to_quad
 
     def get_relative_pose(self, parent_frame, child_frame):
         self.tfl.waitForTransform(
