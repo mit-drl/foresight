@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<launch>
+
+    <group ns="car" clear_params="true">
+        <arg name="car_bl" value="car/base_link"/>
+        <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo_node">
+            <!-- <param name="frame_id" value="base_link"/> -->
+            <param name="frame_id" value="$(arg car_bl)"/>
+        </node>
+        <node pkg="foresight" type="frontier_cloud.py" name="frontier_pub" output="screen"/>
+        <node pkg="ira_laser_tools" name="laserscan_multi_merger" type="laserscan_multi_merger" output="screen">
+            <param name="destination_frame" value="$(arg car_bl)"/>
+            <param name="cloud_destination_topic" value="/merged_cloud"/>
+            <param name="scan_destination_topic" value="/scan_multi"/>
+            <param name="laserscan_topics" value ="/car/scan"/>
+        </node>
+        <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager"
+        output="screen" />
+
+        <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load
+        pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
+            <remap from="~input" to="/merged_cloud"/>
+            <remap from="~output" to="/merged_cloud_filtered"/>
+            <rosparam>
+                mean_k: 1
+                stddev: 5.0
+                negative: False
+            </rosparam>
+        </node>
+
+        <!-- base_link to IMU/FCU -->
+        <node pkg="tf" type="static_transform_publisher" name="base_link_to_fcu"
+            args="0.02 0 0 0 0 0 quad/base_link fcu 100" />
+
+        <!-- <node pkg="tf" type="static_transform_publisher" name="shaqiri_to_base_link" -->
+        <!--     args="0 0 0 0 0 0 wallar_shaqiri quad/base_link 100" /> -->
+
+        <!-- base_link to back_camera -->
+        <!-- <node pkg="tf" type="static_transform_publisher" name="base_link_to_back_camera" -->
+        <!--     args="&#45;0.072 0 0 0 3.14 0 quad/base_link quad/back_camera_link 100" /> -->
+
+        <!-- Car TF model -->
+        <node pkg="tf" type="static_transform_publisher" name="car_to_car_hood"
+            args="1 0 0 0 0 0 car/base_link car/hood_link 100" />
+
+        <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_car_2" -->
+        <!--     args="0 0 0 0 0 0 map car/base_link 100" /> -->
+
+        <node pkg="tf" type="static_transform_publisher" name="map_to_car"
+            args="0 0 0 0 0 0 map $(arg car_bl) 100" />
+    </group>
+
+    <arg name="set_pos" value="'{header: {frame_id: 'map'}, pose: {position: {x: 0, y: 0, z: 1}, orientation: {w: 1}}}'"/>
+    <arg name="msg_type" value="geometry_msgs/PoseStamped"/>
+    <arg name="topic_name" value="/mavros/local_position/pose"/>
+    <node pkg="rostopic" type="rostopic" name="setter"
+        args="pub $(arg topic_name) $(arg msg_type) $(arg set_pos) -r 30"/>
+
+
+    <node pkg="tf" type="static_transform_publisher" name="map_to_quad"
+        args="0 0 1 0 0 0 map quad/base_link 100" />
+
+    <node pkg="foresight" type="tf_to_pose.py" name="vision_pose" output="screen">
+        <param name="pose_topic" value="/mavros/vision_pose/pose"/>
+        <param name="fixed_frame" value="map"/>
+        <param name="child_frame" value="quad/base_link"/>
+    </node>
+
+    <!-- base_link to IMU/FCU -->
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_fcu"
+        args="0.02 0 0 0 0 0 quad/base_link fcu 100" />
+
+    <!-- <node pkg="tf" type="static_transform_publisher" name="shaqiri_to_base_link" -->
+    <!--     args="0 0 0 0 0 0 wallar_shaqiri quad/base_link 100" /> -->
+
+    <!-- base_link to back_camera -->
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_back_camera"
+        args="-0.072 0 0 0 2.4 0 quad/base_link quad/back_camera_link 100" />
+
+    <!-- Car TF model -->
+    <node pkg="tf" type="static_transform_publisher" name="car_to_car_hood"
+        args="1 0 0 0 0 0 car/base_link car/hood_link 100" />
+
+    <node pkg="tf" type="static_transform_publisher" name="map_to_car"
+        args="0 0 0 0 0 0 map car/base_link 100" />
+
+    <!-- <node pkg="foresight" type="tf_to_pose.py" name="tf_to_pose"> -->
+    <!--     <param name="pose_topic" value="/mavros/local_position/pose"/> -->
+    <!--     <param name="fixed_frame" value="map"/> -->
+    <!--     <param name="child_frame" value="quad/base_link"/> -->
+    <!-- </node> -->
+
+    <node pkg="foresight" type="info_planner.py" name="planner" output="screen">
+        <remap from="/frontier" to="/frontier"/>
+        <remap from="/scan_polygon" to="/scan_polygon"/>
+    </node>
+
+
+</launch>

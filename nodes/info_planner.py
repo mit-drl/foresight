@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import random
 import camproj
 import math
 import tf
@@ -27,7 +28,8 @@ CAM_FRAME = "quad/back_camera_link"
 POLYGON_TOPIC = "/projection"
 FRONTIER_TOPIC = "/frontier"
 OPT_POLYGON_TOPIC = "/opt_projection"
-NBR_DIST = 0.5
+SCAN_POLYGON_TOPIC = "/scan_polygon"
+NBR_DIST = 0.3
 
 
 class InfoPlanner(object):
@@ -38,7 +40,7 @@ class InfoPlanner(object):
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
-        self.min_alt = rospy.get_param("~min_alt", 2)
+        self.min_alt = rospy.get_param("~min_alt", 1)
         self.max_alt = rospy.get_param("~max_alt", 4)
         self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 30)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
@@ -47,9 +49,12 @@ class InfoPlanner(object):
         self.pose_pub = None
         self.polygon_pub = None
         self.opt_polygon_pub = None
+        self.scan_polygon_sub = None
         self.pc_pub = None
         self.tree = None
         self.opt_ps = None
+        self.poly = None
+        self.last_opt = None
         self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
 
@@ -64,6 +69,9 @@ class InfoPlanner(object):
         self.pose_sub = rospy.Subscriber(
             POSE_SUB_TOPIC, PoseStamped,
             self.pose_callback, queue_size=1)
+        self.scan_polygon_sub = rospy.Subscriber(
+            SCAN_POLYGON_TOPIC, PolygonStamped,
+            self.scan_polygon_cb, queue_size=1)
         self.run()
 
     def run(self):
@@ -71,6 +79,13 @@ class InfoPlanner(object):
             if not self.opt_ps is None:
                 self.pose_pub.publish(self.opt_ps)
             self.rate.sleep()
+
+    def scan_polygon_cb(self, ps):
+        vecs = list()
+        for p in ps.polygon.points:
+            vec = planar.Vec2(p.x, p.y)
+            vecs.append(vec)
+        self.poly = planar.Polygon(vecs, is_convex=False, is_simple=True)
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
@@ -105,15 +120,18 @@ class InfoPlanner(object):
             yield p
 
     def find_best_point(self, ps):
+        start = rospy.get_time()
         init = self.pose_to_state(ps)
-        self.init = init
         best_opt = None
-        for yaw in np.linspace(0, 2 * math.pi, 4):
-            init[2] = yaw
-            opt_res = opt.minimize(self.objective, init, method="BFGS")
-            if best_opt is None or opt_res.fun < best_opt.fun:
-                best_opt = opt_res
-        return best_opt.x
+        opt_res = opt.minimize(self.objective, init, method="Powell",
+                                options={"disp": False,
+                                         "eps": 0.01,
+                                         "maxiter": None,
+                                         "maxfev": 20})
+        self.last_opt = opt_res.x
+        end = rospy.get_time()
+        print end - start
+        return opt_res.x
 
     def objective(self, state):
         obj = 0
@@ -121,17 +139,23 @@ class InfoPlanner(object):
         poly = self.projection_to_polygon(
             projection, is_convex=True, is_simple=True)
         dist, _ = self.tree.query(state[:2])
-        dist_to_quad = 5 * math.sqrt(
-            pow(state[0] - self.init[0], 2) +
-            pow(state[1] - self.init[1], 2))
-        for p in self.points_in_poly(poly, NBR_DIST):
-            gv = self.get_grid_val(p.x, p.y)
-            if gv > 0:
-                obj -= 10 * gv
-        if obj < 0:
-            return obj + dist_to_quad + abs(self.init[2] - state[2])
+        if self.last_opt is None:
+            movement_cost = 0
         else:
-            return 10 * dist + dist_to_quad + abs(self.init[2] - state[2])
+            dist_to_quad = np.linalg.norm(state - self.last_opt)
+            yaw_diff = 10 * abs(self.last_opt[2] - state[2])
+            movement_cost = dist_to_quad + yaw_diff
+        if self.poly.contains_point(self.state_to_vec(state)):
+            for p in self.points_in_poly(poly, NBR_DIST):
+                gv = self.get_grid_val(p.x, p.y)
+                if gv > 0:
+                    obj -= 10 * gv
+            if obj >= 0:
+                obj = 10 * dist
+            obj = obj + movement_cost
+        else:
+            obj = 10000000
+        return obj
 
     def get_relative_pose(self, parent_frame, child_frame):
         self.tfl.waitForTransform(
@@ -140,15 +164,17 @@ class InfoPlanner(object):
         tr, _ = self.tfl.lookupTransform(
             parent_frame, child_frame, rospy.Time())
         _, quat = self.tfl.lookupTransform(
-            parent_frame, child_frame, rospy.Time())
+            child_frame, parent_frame, rospy.Time())
+        r, p, y = euler_from_quaternion(quat)
+        nquat = quaternion_from_euler(r, p, -y)
         ps = PoseStamped()
         ps.pose.position.x = -tr[0]
         ps.pose.position.y = -tr[1]
         ps.pose.position.z = -tr[2]
-        ps.pose.orientation.x = quat[0]
-        ps.pose.orientation.y = quat[1]
-        ps.pose.orientation.z = quat[2]
-        ps.pose.orientation.w = quat[3]
+        ps.pose.orientation.x = nquat[0]
+        ps.pose.orientation.y = nquat[1]
+        ps.pose.orientation.z = nquat[2]
+        ps.pose.orientation.w = nquat[3]
         return ps
 
     def get_inverse_pose(self, pose, frame_id):

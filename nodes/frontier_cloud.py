@@ -8,6 +8,7 @@ import sensor_msgs.point_cloud2 as pc2
 from collections import defaultdict, deque
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point32
+from geometry_msgs.msg import PolygonStamped
 from sensor_msgs.msg import PointCloud
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import ChannelFloat32
@@ -17,9 +18,10 @@ NODE_NAME = "frontier_publisher"
 PC_TOPIC = "/frontier"
 MAP_FRAME = "map"
 SCAN_TOPIC = "/merged_cloud_filtered"
+SCAN_POLYGON_TOPIC = "/scan_polygon"
 NBR_DIST = 0.3
 CF_STEP = 0.3
-NORMAL_HORIZON = 0.8
+NORMAL_HORIZON = 1
 
 
 class FrontierPublisher(object):
@@ -29,12 +31,16 @@ class FrontierPublisher(object):
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
         self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 1)
         self.pc_pub = None
+        self.polygon_pub = None
         self.scan_sub = None
         self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
 
     def start(self):
         self.pc_pub = rospy.Publisher(PC_TOPIC, PointCloud, queue_size=1)
+        self.polygon_pub = rospy.Publisher(SCAN_POLYGON_TOPIC,
+                                           PolygonStamped,
+                                           queue_size=1)
         self.scan_sub = rospy.Subscriber(SCAN_TOPIC, PointCloud2,
                                          self.laser_callback, queue_size=1)
 
@@ -43,6 +49,7 @@ class FrontierPublisher(object):
         poly = self.pointcloud_to_polygon(scan)
         for brk in self.get_laser_breaks(scan, poly):
             self.set_grid_val(brk.x, brk.y, 1)
+        self.publish_planar_polygon(poly)
         self.publish_time_grid()
 
     def get_laser_breaks(self, scan, poly):
@@ -91,6 +98,15 @@ class FrontierPublisher(object):
                     seen.add(nbr_t)
                     q.append(nbr_p)
             yield p
+
+    def publish_planar_polygon(self, p_poly):
+        poly = PolygonStamped()
+        poly.header.stamp = rospy.Time.now()
+        poly.header.frame_id = self.map_frame
+        for v in p_poly:
+            p = self.vec_to_point32(v)
+            poly.polygon.points.append(p)
+        self.polygon_pub.publish(poly)
 
     def publish_time_grid(self):
         pc = PointCloud()

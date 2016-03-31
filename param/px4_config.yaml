@@ -64,8 +64,8 @@ local_position:
   frame_id: "map"
   tf:
     send: false
-    frame_id: "local_origin"
-    child_frame_id: "fcu"
+    frame_id: "map"
+    child_frame_id: "quad/base_link"
 
 # param
 # None, used for FCU params
