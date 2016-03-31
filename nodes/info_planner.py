@@ -121,7 +121,7 @@ class InfoPlanner(object):
         poly = self.projection_to_polygon(
             projection, is_convex=True, is_simple=True)
         dist, _ = self.tree.query(state[:2])
-        dist_to_quad = math.sqrt(
+        dist_to_quad = 5 * math.sqrt(
             pow(state[0] - self.init[0], 2) +
             pow(state[1] - self.init[1], 2))
         for p in self.points_in_poly(poly, NBR_DIST):
