@@ -15,7 +15,7 @@
 
     <!-- base_link to back_camera -->
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_back_camera"
-        args="-0.072 0 0 0 3.30 0 quad/base_link quad/back_camera_link 100" />
+        args="-0.072 0 0 0 2.4 0 quad/base_link quad/back_camera_link 100" />
 
     <!-- Car TF model -->
     <node pkg="tf" type="static_transform_publisher" name="car_to_car_hood"
@@ -42,8 +42,8 @@
                 - /tf
             types:
                 - sensor_msgs/PointCloud
-                - tf2_msgs/TFMessage
                 - geometry_msgs/PolygonStamped
+                - tf2_msgs/TFMessage
             trusted:
                 - ".*"
                 - ".*"
