@@ -121,15 +121,17 @@ class InfoPlanner(object):
         poly = self.projection_to_polygon(
             projection, is_convex=True, is_simple=True)
         dist, _ = self.tree.query(state[:2])
-        dist_to_quad = pow(state[0] - self.init[0], 2) + pow(state[1] - self.init[1], 2)
+        dist_to_quad = math.sqrt(
+            pow(state[0] - self.init[0], 2) +
+            pow(state[1] - self.init[1], 2))
         for p in self.points_in_poly(poly, NBR_DIST):
             gv = self.get_grid_val(p.x, p.y)
             if gv > 0:
                 obj -= 10 * gv
         if obj < 0:
-            return obj + dist_to_quad
+            return obj + dist_to_quad + abs(self.init[2] - state[2])
         else:
-            return 10 * dist + dist_to_quad
+            return 10 * dist + dist_to_quad + abs(self.init[2] - state[2])
 
     def get_relative_pose(self, parent_frame, child_frame):
         self.tfl.waitForTransform(
