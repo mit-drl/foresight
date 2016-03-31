@@ -21,7 +21,7 @@ SCAN_TOPIC = "/merged_cloud_filtered"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
 NBR_DIST = 0.3
 CF_STEP = 0.3
-NORMAL_HORIZON = 1
+NORMAL_HORIZON = 2
 
 
 class FrontierPublisher(object):
@@ -104,8 +104,9 @@ class FrontierPublisher(object):
         poly.header.stamp = rospy.Time.now()
         poly.header.frame_id = self.map_frame
         for v in p_poly:
-            p = self.vec_to_point32(v)
-            poly.polygon.points.append(p)
+            # p = self.vec_to_point32(v)
+            q = v + (planar.Vec2(-1, 0) - v).normalized().scaled_to(0.8)
+            poly.polygon.points.append(self.vec_to_point32(q))
         self.polygon_pub.publish(poly)
 
     def publish_time_grid(self):

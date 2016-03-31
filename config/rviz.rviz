@@ -28,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: PointCloud
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Displays
@@ -78,6 +78,14 @@ Visualization Manager:
           Value: true
         quad/base_link:
           Value: true
+        sender/calibration_wand:
+          Value: true
+        sender/fcu:
+          Value: true
+        sender/map:
+          Value: true
+        sender/wallar_shaqiri:
+          Value: true
         wallar_shaqiri:
           Value: true
       Marker Scale: 1
@@ -91,11 +99,6 @@ Visualization Manager:
             {}
           car/base_link:
             car/hood_link:
-              {}
-          quad/base_link:
-            fcu:
-              {}
-            quad/back_camera_link:
               {}
       Update Interval: 0
       Value: true
@@ -295,6 +298,41 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: compressed
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.1
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.3
+      Head Radius: 0.1
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.05
+      Shape: Arrow
+      Topic: /sender/mavros/local_position/pose
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.1
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.3
+      Head Radius: 0.1
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.05
+      Shape: Arrow
+      Topic: /sender/mavros/setpoint_position/local
+      Value: true
+    - Alpha: 1
+      Class: rviz/Polygon
+      Color: 25; 255; 0
+      Enabled: true
+      Name: Polygon
+      Topic: /sender/opt_projection
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -319,22 +357,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.2478
+      Distance: 4.90063
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.846015
-        Y: 0.496973
-        Z: 3.99205
+        X: 1.6661
+        Y: -1.03223
+        Z: 4.03131
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.5698
+      Pitch: 1.5098
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.10176
+      Yaw: 2.05675
     Saved: ~
 Window Geometry:
   Displays:
