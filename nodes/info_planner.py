@@ -109,7 +109,7 @@ class InfoPlanner(object):
         best_opt = None
         for yaw in np.linspace(0, 2 * math.pi, 4):
             init[2] = yaw
-            opt_res = opt.minimize(self.objective, init, args=(init), method="BFGS")
+            opt_res = opt.minimize(self.objective, init, args=[init], method="BFGS")
             if best_opt is None or opt_res.fun < best_opt.fun:
                 best_opt = opt_res
         return best_opt.x
