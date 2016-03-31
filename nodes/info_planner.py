@@ -17,6 +17,7 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 from sensor_msgs.msg import PointCloud
+from sensor_msgs.msg import ChannelFloat32
 
 
 NODE_NAME = "info_planner"
