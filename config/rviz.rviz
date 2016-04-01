@@ -68,6 +68,8 @@ Visualization Manager:
           Value: true
         car/base_link:
           Value: true
+        car/fcu:
+          Value: true
         car/hood_link:
           Value: true
         fcu:
@@ -100,6 +102,13 @@ Visualization Manager:
           car/base_link:
             car/hood_link:
               {}
+          quad/base_link:
+            fcu:
+              {}
+            quad/back_camera_link:
+              {}
+          wallar_shaqiri:
+            {}
       Update Interval: 0
       Value: true
     - Class: rviz/Image
@@ -171,7 +180,7 @@ Visualization Manager:
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 0; 170; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.3
       Head Radius: 0.1
       Name: Pose
@@ -179,7 +188,7 @@ Visualization Manager:
       Shaft Radius: 0.05
       Shape: Arrow
       Topic: /mavros/vision_pose/pose
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.1
@@ -227,7 +236,7 @@ Visualization Manager:
       Color: 255; 0; 127
       Enabled: true
       Name: Polygon
-      Topic: /scan_polygon
+      Topic: /car/scan_polygon
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -254,7 +263,7 @@ Visualization Manager:
       Size (Pixels): 5
       Size (m): 0.1
       Style: Points
-      Topic: /frontier
+      Topic: /car/frontier
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -303,7 +312,7 @@ Visualization Manager:
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.3
       Head Radius: 0.1
       Name: Pose
@@ -311,13 +320,13 @@ Visualization Manager:
       Shaft Radius: 0.05
       Shape: Arrow
       Topic: /sender/mavros/local_position/pose
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.3
       Head Radius: 0.1
       Name: Pose
@@ -325,14 +334,14 @@ Visualization Manager:
       Shaft Radius: 0.05
       Shape: Arrow
       Topic: /sender/mavros/setpoint_position/local
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/Polygon
       Color: 25; 255; 0
-      Enabled: true
+      Enabled: false
       Name: Polygon
       Topic: /sender/opt_projection
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -357,22 +366,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 17.0471
+      Distance: 14.1558
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.6661
-        Y: -1.03223
-        Z: 4.03131
+        X: 0.340884
+        Y: -1.01878
+        Z: 2.66734
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.769797
+      Pitch: 0.974796
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.06176
+      Yaw: 3.32676
     Saved: ~
 Window Geometry:
   Displays:
