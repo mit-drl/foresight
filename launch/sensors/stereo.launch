@@ -8,6 +8,7 @@
             <arg name="width" value="640"/>
             <arg name="height" value="360"/>
             <arg name="camera_info_url" default="file://$(find foresight)/param/right.yaml"/>
+            <arg name="exposure_absolute" value="0.008"/>
         </include>
         <include file="$(find foresight)/launch/sensors/camera.launch">
             <arg name="camera_name" value="left"/>
@@ -16,6 +17,7 @@
             <arg name="width" value="640"/>
             <arg name="height" value="360"/>
             <arg name="camera_info_url" default="file://$(find foresight)/param/left.yaml"/>
+            <arg name="exposure_absolute" value="0.008"/>
         </include>
         <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>
     </group>

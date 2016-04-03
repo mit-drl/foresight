@@ -163,18 +163,18 @@ class InfoPlanner(object):
         if self.last_opt is None:
             movement_cost = 0
         else:
-            dist_to_quad = np.linalg.norm(state - self.last_opt)
-            yaw_diff = 10 * abs(self.last_opt[2] - state[2])
+            dist_to_quad = 0.1 * np.linalg.norm(state - self.last_opt)
+            yaw_diff = 0.1 * abs(self.last_opt[2] - state[2])
             movement_cost = dist_to_quad + yaw_diff
         t = rospy.get_time()
         if self.poly.contains_point(self.state_to_vec(state)):
             for p in self.points_in_poly(poly, NBR_DIST):
                 gv = self.get_grid_val(p.x, p.y)
                 if gv > 0:
-                    obj -= (t - gv)
+                    obj -= 10 # (t - gv)
             if obj >= 0:
-                obj = 10 * dist
-            obj = obj + movement_cost
+                obj = dist ** 2
+            obj += movement_cost
         else:
             obj = 10000000
         return obj

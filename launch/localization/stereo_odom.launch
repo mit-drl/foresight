@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="viso2_ros" type="stereo_odometer" name="stereo_odometer" output="screen">
+        <remap from="image" to="image_rect"/>
+        <remap from="stereo" to="stereo"/>
+        <param name="approximate_sync" value="false"/>
+    </node>
+</launch>

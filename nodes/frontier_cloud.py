@@ -104,9 +104,7 @@ class FrontierPublisher(object):
         poly.header.stamp = rospy.Time.now()
         poly.header.frame_id = self.map_frame
         for v in p_poly:
-            # p = self.vec_to_point32(v)
-            q = v + (planar.Vec2(-1, 0) - v).normalized().scaled_to(0.8)
-            poly.polygon.points.append(self.vec_to_point32(q))
+            poly.polygon.points.append(self.vec_to_point32(v))
         self.polygon_pub.publish(poly)
 
     def publish_time_grid(self):

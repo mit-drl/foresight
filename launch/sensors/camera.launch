@@ -9,6 +9,7 @@
     <arg name="frame_rate" default="120"/>
     <arg name="width" default="640"/>
     <arg name="height" default="480"/>
+    <arg name="exposure_absolute" default="0.006"/>
 
     <group ns="$(arg camera_name)">
         <node pkg="libuvc_camera" type="camera_node" name="$(arg camera_name)" output="screen">
@@ -33,7 +34,7 @@
 
             <param name="auto_exposure" value="0"/>
             <param name="auto_exposure_priority" value="0"/>
-            <param name="exposure_absolute" value="0.006"/>
+            <param name="exposure_absolute" value="$(arg exposure_absolute)"/>
             <param name="auto_white_balance" value="false"/>
         </node>
         <node pkg="image_proc" type="image_proc" name="image_proc"/>
