@@ -140,4 +140,4 @@ target/
 
 .ropeproject/
 data/
-models/
+# models/
