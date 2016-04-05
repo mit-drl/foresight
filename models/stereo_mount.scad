@@ -6,7 +6,6 @@ odroid_height = 25;
 mount_x = 32;
 mount_y = 39.1;
 $fn = 100;
-screw_d = 4;
 screw_thickness = 2;
 thickness = 3;
 in_x = 65;
@@ -14,18 +13,21 @@ in_y = 25;
 od_x = 60;
 od_y = 40;
 
-y_size = 90;
+mount_screw_d = 4;
+camera_screw_d = 3;
+y_size = 154 + 28;
 bar_r = 3;
 screw_height = 8;
-camera_x = 20;
-camera_y = 50;
-plate_x_size = 25;
-plate_y_size = 55;
-plate_thickness = 2;
+camera_x = 12.83 - 1.55;
+camera_y = 72.86 - 1.55;
+plate_x_size = 8;
+plate_y_size = 75;
+plate_thickness = 3;
 mount_bar_r = 3;
-mount_bar_y_dist = 10;
+mount_bar_y_dist = 30;
 mount_bar_x_size = 20;
 mount_angle = 135;
+mount_ext = 10;
 
 module screw_hole(x, y, z, screw_r=screw_d / 2, wall_r=screw_thickness, height=screw_height)
 {
@@ -39,8 +41,8 @@ module screw_hole(x, y, z, screw_r=screw_d / 2, wall_r=screw_thickness, height=s
     }
 }
 
-screw_hole(0, -y_size / 2, height=screw_height, 0);
-screw_hole(0, y_size / 2, height=screw_height, 0);
+screw_hole(0, -y_size / 2, height=screw_height, 0, screw_r=mount_screw_d/2);
+screw_hole(0, y_size / 2, height=screw_height, 0, screw_r=mount_screw_d/2);
 
 translate([0, -y_size / 2 + 3])
 rotate(a=[-90, 0, 0])
@@ -65,11 +67,9 @@ for (xm = [-1, 1])
         rotate([0, 135, 0])
         screw_hole(xm * camera_x / 2,
             ym * camera_y / 2,
-            mount_bar_x_size + plate_thickness / 2,
-            height=plate_thickness);
+            mount_bar_x_size + mount_ext / 2,
+            screw_r=camera_screw_d / 2,
+            wall_r=1.6,
+            height=mount_ext);
     }
 }
-
-// rotate([0, 135, 0])
-// translate([-camera_x / 2, 0, mount_bar_x_size + plate_thickness / 2])
-// screw_hole(0, -camera_y / 2, height=plate_thickness);
