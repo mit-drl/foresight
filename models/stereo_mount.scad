@@ -1,18 +1,6 @@
-xlen = 80;
-ylen = 57;
-odroid_x = 74.44;
-odroid_y = 52;
-odroid_height = 25;
-mount_x = 32;
-mount_y = 39.1;
+
 $fn = 100;
 screw_thickness = 2;
-thickness = 3;
-in_x = 65;
-in_y = 25;
-od_x = 60;
-od_y = 40;
-
 mount_screw_d = 4;
 camera_screw_d = 3;
 y_size = 154 + 28;
