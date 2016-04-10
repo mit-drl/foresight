@@ -9,7 +9,7 @@ Panels:
         - /Odometry1
         - /Imu1/Axes properties1
       Splitter Ratio: 0.498294
-    Tree Height: 541
+    Tree Height: 363
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
