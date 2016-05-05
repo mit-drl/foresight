@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import rospy
-import random
 import camproj
 import math
 import tf
@@ -24,13 +23,17 @@ NODE_NAME = "info_planner"
 POSE_TOPIC = "/mavros/setpoint_position/local"
 POSE_SUB_TOPIC = "/mavros/local_position/pose"
 MAP_FRAME = "map"
-QUAD_FRAME = "quad/base_link"
-CAM_FRAME = "quad/back_camera_link"
+QUAD_FRAME = "base_link"
+CAM_FRAME = "back_camera_link"
 POLYGON_TOPIC = "/projection"
 FRONTIER_TOPIC = "/frontier"
 OPT_POLYGON_TOPIC = "/opt_projection"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
 NBR_DIST = 0.3
+K_DIST = 0.1
+K_YAW = 0.1
+K_FRONTIER = 10
+K_MOVEMENT = 1
 
 
 class InfoPlanner(object):
@@ -141,17 +144,15 @@ class InfoPlanner(object):
             yield p
 
     def find_best_point(self, ps):
-        start = rospy.get_time()
+        # start = rospy.get_time()
         init = self.pose_to_state(ps)
-        best_opt = None
         opt_res = opt.minimize(self.objective, init, method="Powell",
-                                options={"disp": False,
-                                         "eps": 0.01,
-                                         "maxiter": None,
-                                         "maxfev": 20})
+                               options={"disp": False,
+                                        "maxiter": None,
+                                        "maxfev": 20})
         self.last_opt = opt_res.x
-        end = rospy.get_time()
-        print end - start
+        # end = rospy.get_time()
+        # print end - start
         return opt_res.x
 
     def objective(self, state):
@@ -163,20 +164,19 @@ class InfoPlanner(object):
         if self.last_opt is None:
             movement_cost = 0
         else:
-            dist_to_quad = 0.1 * np.linalg.norm(state - self.last_opt)
-            yaw_diff = 0.1 * abs(self.last_opt[2] - state[2])
+            dist_to_quad = K_DIST * np.linalg.norm(state - self.last_opt)
+            yaw_diff = K_YAW * abs(self.last_opt[2] - state[2])
             movement_cost = dist_to_quad + yaw_diff
-        t = rospy.get_time()
         if self.poly.contains_point(self.state_to_vec(state)):
             for p in self.points_in_poly(poly, NBR_DIST):
                 gv = self.get_grid_val(p.x, p.y)
                 if gv > 0:
-                    obj -= 10 # (t - gv)
-            if obj >= 0:
-                obj = dist ** 2
-            obj += movement_cost
+                    obj -= K_FRONTIER
+            if obj == 0:
+                obj = dist
+            obj += K_MOVEMENT * movement_cost
         else:
-            obj = 10000000
+            obj = float("inf")
         return obj
 
     def get_relative_pose(self, parent_frame, child_frame):
@@ -217,7 +217,7 @@ class InfoPlanner(object):
 
     def get_projection(self, state):
         pose_mq = self.state_to_pose(state)
-        pose_qm = self.get_inverse_pose(pose_mq, "opt_quad/base_link")
+        pose_qm = self.get_inverse_pose(pose_mq, "base_link")
         pose_cq = self.get_relative_pose(self.quad_frame, self.camera_frame)
         rot_qm, trans_qm = self.pose_to_matrix(pose_qm)
         rot_cq, trans_cq = self.pose_to_matrix(pose_cq)

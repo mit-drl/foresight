@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <include file="$(find freenect_launch)/launch/freenect.launch"/>
-    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
-        <remap from="cloud_in" to="/camera/depth/points"/>
-        <remap from="scan" to="/car/front_scan"/>
-    </node>
-</launch>

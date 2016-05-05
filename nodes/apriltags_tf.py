@@ -11,11 +11,11 @@ from tf.transformations import quaternion_from_euler
 
 NODE_NAME = "apriltags_pose"
 FREQUENCY = 30
-LANDING_PAD_ID = "/landing_pad"
-USB_CAM_ID = "/usb_cam"
-ODOM_ID = "/odom"
-MAP_ID = "/map"
-BASE_LINK_ID = "/base_link"
+LANDING_PAD_ID = "landing_pad"
+USB_CAM_ID = "usb_cam"
+ODOM_ID = "odom"
+MAP_ID = "map"
+BASE_LINK_ID = "base_link"
 TAG_DETECTIONS_TOPIC = "/tag_detections"
 TF_TIMEOUT = 0.3
 
@@ -60,13 +60,13 @@ class AprilTagsTransformer(object):
             ps = tag.pose
             pos = ps.pose.position
             ps.pose.position.x, ps.pose.position.y = pos.y, -pos.x
-            ps_bls = self.tfl.transformPose("quad/base_link", ps)
+            ps_bls = self.tfl.transformPose("base_link", ps)
             pos = ps_bls.pose.position
             quat = self.only_yaw(ps_bls.pose.orientation)
             self.br.sendTransform(
                 (pos.x, pos.y, pos.z),
                 (quat.x, quat.y, quat.z, quat.w),
-                rospy.Time.now(), "car/hood_tag", "quad/base_link")
+                rospy.Time.now(), "car/hood_tag", "base_link")
             try:
                 t = self.tfl.getLatestCommonTime("odom", "car/hood_tag")
                 odom_org = PoseStamped()

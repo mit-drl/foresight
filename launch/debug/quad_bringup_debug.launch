@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <include file="$(find foresight)/launch/bringup/pixhawk.launch"/>
-    <include file="$(find foresight)/launch/sensors/range.launch"/>
-    <!-- <include file="$(find foresight)/launch/sensors/camera.launch"/> -->
-    <include file="$(find foresight)/launch/sensors/imu.launch"/>
-    <include file="$(find foresight)/launch/localization/localize.launch"/>
-    <node pkg="foresight" type="info_planner.py" name="planner" output="screen"/>
-</launch>

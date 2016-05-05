@@ -58,7 +58,7 @@ def main():
     rospy.init_node(NODE_NAME, anonymous=False)
     pose_topic = rospy.get_param("~pose_topic", "/mavros/vision_pose/pose")
     fixed_frame = rospy.get_param("~fixed_frame", "map")
-    child_frame = rospy.get_param("~child_frame", "quad/base_link")
+    child_frame = rospy.get_param("~child_frame", "base_link")
     att = TFToPose(100, pose_topic, fixed_frame, child_frame)
     att.start()
     rospy.spin()

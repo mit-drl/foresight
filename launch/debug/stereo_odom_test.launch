@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <include file="$(find foresight)/launch/sensors/stereo.launch"/>
-    <include file="$(find foresight)/launch/localization/stereo_odom.launch"/>
-    <node pkg="tf" type="static_transform_publisher" name="bl_to_left"
-        args="0.0183 0.031 0 0 -0.785 1.57 quad/base_link left 100" />
-    <node pkg="tf" type="static_transform_publisher" name="bl_to_right"
-        args="0.0183 -0.031 0 0 -0.785 1.57 quad/base_link right 100" />
-</launch>

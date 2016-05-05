@@ -6,7 +6,7 @@
         <remap to="/camera/camera_info" from="/camera_info"/>
         <remap to="/camera/image_rect" from="/image_rect"/>
         <param name="image_transport" value="compressed"/>
-        <param name="sensor_frame_id" value="quad/back_camera_link"/>
+        <param name="sensor_frame_id" value="back_camera_link"/>
         <rosparam param="tag_descriptions">
             [{id: 0, size: 0.157163, frame_id: car/tag_0}]
         </rosparam>
