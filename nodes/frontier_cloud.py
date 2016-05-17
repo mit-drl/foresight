@@ -6,21 +6,28 @@ import tf
 import planar
 import sensor_msgs.point_cloud2 as pc2
 from collections import defaultdict, deque
+from foresight.msg import PolygonArray
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point32
+from geometry_msgs.msg import Point
 from geometry_msgs.msg import PolygonStamped
+from geometry_msgs.msg import Polygon
 from sensor_msgs.msg import PointCloud
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import ChannelFloat32
+from visualization_msgs.msg import MarkerArray
+from visualization_msgs.msg import Marker
 
 
 NODE_NAME = "frontier_publisher"
 PC_TOPIC = "/frontier"
 MAP_FRAME = "map"
-SCAN_TOPIC = "/merged_cloud_filtered"
+SCAN_TOPIC = "/merged_cloud"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
-NBR_DIST = 0.3
-CF_STEP = 0.3
+MARKER_TOPIC = "/blind_spots_marker"
+BS_TOPIC = "/blind_spots"
+NBR_DIST = 0.1
+CF_STEP = 0.1
 NORMAL_HORIZON = 2
 
 
@@ -30,27 +37,32 @@ class FrontierPublisher(object):
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
         self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 1)
-        self.pc_pub = None
-        self.polygon_pub = None
-        self.scan_sub = None
-        self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
 
     def start(self):
         self.pc_pub = rospy.Publisher(PC_TOPIC, PointCloud, queue_size=1)
-        self.polygon_pub = rospy.Publisher(SCAN_POLYGON_TOPIC,
-                                           PolygonStamped,
-                                           queue_size=1)
-        self.scan_sub = rospy.Subscriber(SCAN_TOPIC, PointCloud2,
-                                         self.laser_callback, queue_size=1)
+        self.blind_spots_pub = rospy.Publisher(
+            BS_TOPIC, PolygonArray, queue_size=1)
+        self.marker_pub = rospy.Publisher(
+            MARKER_TOPIC, MarkerArray, queue_size=1)
+        self.polygon_pub = rospy.Publisher(
+            SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
+        self.scan_sub = rospy.Subscriber(
+            SCAN_TOPIC, PointCloud2, self.laser_callback, queue_size=1)
 
     def laser_callback(self, scan):
-        self.time_grid.clear()
         poly = self.pointcloud_to_polygon(scan)
-        for brk in self.get_laser_breaks(scan, poly):
-            self.set_grid_val(brk.x, brk.y, 1)
+        b_polys = self.get_blind_polygons(scan, poly)
+        self.publish_polygon_markers(b_polys)
+        self.publish_blind_polygons(b_polys)
         self.publish_planar_polygon(poly)
-        self.publish_time_grid()
+
+    def get_blind_polygons(self, scan, poly):
+        polys = list()
+        for p, q in self.get_laser_breaks(scan, poly):
+            dr = (p - q).perpendicular().scaled_to(0.5 * p.distance_to(q))
+            polys.append([p, q, q + dr, p + dr])
+        return polys
 
     def get_laser_breaks(self, scan, poly):
         last_pt = None
@@ -64,40 +76,19 @@ class FrontierPublisher(object):
             if last_pt is None:
                 last_pt = point
             elif last_pt.distance_to(point) > self.scan_break_thresh:
-                for bpt in self.horizon_points(last_pt, point, poly):
-                    yield bpt
+                yield last_pt, point
             last_pt = point
 
-    def horizon_points(self, p, q, poly):
-        perp = (p - q).perpendicular()
-        horizon = perp.scaled_to(NORMAL_HORIZON)
-        for bpt in self.crow_flies(p, q):
-            for hpt in self.crow_flies(bpt, bpt + horizon):
-                if not poly.contains_point(hpt):
-                    yield hpt
-
-    def crow_flies(self, start, end):
-        dr = (end - start).normalized()
-        cur = start
-        while cur.distance_to(end) > CF_STEP:
-            cur += CF_STEP * dr
-            yield cur
-
-    def points_in_poly(self, poly, step):
-        q = deque([poly.centroid])
-        seen = set([poly.centroid.x, poly.centroid.y])
-        nbrs = [(step, 0), (0, step), (step, step),
-                (-step, 0), (0, -step), (-step, -step),
-                (step, -step), (-step, step)]
-        while len(q) > 0 and not rospy.is_shutdown():
-            p = q.popleft()
-            for nbr in nbrs:
-                nbr_t = (p.x + nbr[0], p.y + nbr[1])
-                nbr_p = planar.Vec2(*nbr_t)
-                if poly.contains_point(nbr_p) and not nbr_t in seen:
-                    seen.add(nbr_t)
-                    q.append(nbr_p)
-            yield p
+    def publish_blind_polygons(self, b_polys):
+        polys = PolygonArray()
+        polys.header.frame_id = self.map_frame
+        polys.header.stamp = rospy.Time.now()
+        for poly in b_polys:
+            p_poly = Polygon()
+            for v in poly:
+                p_poly.points.append(self.vec_to_point32(v))
+            polys.polygons.append(p_poly)
+        self.blind_spots_pub.publish(polys)
 
     def publish_planar_polygon(self, p_poly):
         poly = PolygonStamped()
@@ -107,42 +98,26 @@ class FrontierPublisher(object):
             poly.polygon.points.append(self.vec_to_point32(v))
         self.polygon_pub.publish(poly)
 
-    def publish_time_grid(self):
-        pc = PointCloud()
-        ch = ChannelFloat32()
-        pc.header.stamp = rospy.Time.now()
-        pc.header.frame_id = self.map_frame
-        ch.name = "time"
-        for x in self.time_grid.keys():
-            for y in self.time_grid[x].keys():
-                p32 = self.xy_to_point32(x, y)
-                pc.points.append(p32)
-                ch.values.append(self.time_grid[x][y])
-        pc.channels.append(ch)
-        self.pc_pub.publish(pc)
-
-    """ Getters and setters for time grid """
-
-    def get_discrete(self, x, y):
-        x_hat = NBR_DIST * math.floor(x / NBR_DIST)
-        y_hat = NBR_DIST * math.floor(y / NBR_DIST)
-        return x_hat, y_hat
-
-    def get_grid_val(self, x, y):
-        xp, yp = self.get_discrete(x, y)
-        return self.time_grid[xp][yp]
-
-    def set_grid_val(self, x, y, val):
-        xp, yp = self.get_discrete(x, y)
-        self.time_grid[xp][yp] = val
+    def publish_polygon_markers(self, polys):
+        markers = MarkerArray()
+        for i, poly in enumerate(polys):
+            marker = Marker()
+            marker.header.stamp = rospy.Time.now()
+            marker.header.frame_id = self.map_frame
+            marker.type = Marker.LINE_STRIP
+            marker.id = i
+            marker.action = Marker.ADD
+            marker.scale.x = 0.1
+            marker.lifetime = rospy.Duration(1.0)
+            marker.color.a = 1.0
+            marker.color.b = 0.8
+            for v in poly:
+                marker.points.append(self.vec_to_point(v))
+            marker.points.append(self.vec_to_point(poly[0]))
+            markers.markers.append(marker)
+        self.marker_pub.publish(markers)
 
     """ Conversions """
-
-    def arrs_to_vecs(self, arrs):
-        vecs = list()
-        for arr in arrs:
-            vecs.append(planar.Vec2(arr[0], arr[1]))
-        return vecs
 
     def vec_to_point32(self, vec):
         point = Point32()
@@ -150,10 +125,10 @@ class FrontierPublisher(object):
         point.y = vec.y
         return point
 
-    def xy_to_point32(self, x, y):
-        point = Point32()
-        point.x = x
-        point.y = y
+    def vec_to_point(self, vec):
+        point = Point()
+        point.x = vec.x
+        point.y = vec.y
         return point
 
     def arr_to_point_stamped(self, arr, frame_id):

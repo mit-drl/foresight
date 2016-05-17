@@ -12,26 +12,17 @@
             <param name="destination_frame" value="$(arg car_bl)"/>
             <param name="cloud_destination_topic" value="/merged_cloud"/>
             <param name="scan_destination_topic" value="/scan_multi"/>
-            <param name="laserscan_topics" value ="/car/scan"/>
-        </node>
-        <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager"
-        output="screen" />
-
-        <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load
-        pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
-            <remap from="~input" to="/merged_cloud"/>
-            <remap from="~output" to="/merged_cloud_filtered"/>
             <rosparam>
-                mean_k: 1
-                stddev: 5.0
-                negative: False
+                laserscan_topics:
+                    - /car/scan
             </rosparam>
         </node>
     </group>
 
     <include file="$(find foresight)/launch/localization/static_transformations.launch"/>
 
-    <arg name="set_pos" value="'{header: {frame_id: 'map'}, pose: {position: {x: 0, y: 0, z: 1}, orientation: {w: 1}}}'"/>
+    <arg name="set_pos" 
+        value="'{header: {frame_id: 'map'}, pose: {position: {z: 1}, orientation: {w: 1}}}'"/>
     <arg name="msg_type" value="geometry_msgs/PoseStamped"/>
     <arg name="topic_name" value="/mavros/local_position/pose"/>
     <node pkg="rostopic" type="rostopic" name="setter"

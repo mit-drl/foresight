@@ -8,6 +8,7 @@ import numpy as np
 import planar
 import scipy.optimize as opt
 import scipy.spatial as spatial
+import shapely.geometry as geom
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -17,6 +18,7 @@ from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 from sensor_msgs.msg import PointCloud
 from sensor_msgs.msg import ChannelFloat32
+from foresight.msg import PolygonArray
 
 
 NODE_NAME = "info_planner"
@@ -26,7 +28,7 @@ MAP_FRAME = "map"
 QUAD_FRAME = "base_link"
 CAM_FRAME = "back_camera_link"
 POLYGON_TOPIC = "/projection"
-FRONTIER_TOPIC = "/frontier"
+FRONTIER_TOPIC = "/blind_spots"
 OPT_POLYGON_TOPIC = "/opt_projection"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
 NBR_DIST = 0.3
@@ -45,21 +47,13 @@ class InfoPlanner(object):
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
         self.min_alt = rospy.get_param("~min_alt", 1)
-        self.max_alt = rospy.get_param("~max_alt", 4)
-        self.bound_rel_xy = rospy.get_param("~bound_rel_xy", 30)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
         self.pose = None
-        self.pose_pub = None
-        self.polygon_pub = None
-        self.opt_polygon_pub = None
-        self.scan_polygon_sub = None
-        self.pc_pub = None
         self.tree = None
         self.opt_ps = None
         self.poly = None
         self.last_opt = None
-        self.time_grid = defaultdict(lambda: defaultdict(lambda: 0))
         self.tfl = tf.TransformListener()
 
     def start(self):
@@ -69,7 +63,8 @@ class InfoPlanner(object):
         self.opt_polygon_pub = rospy.Publisher(
             OPT_POLYGON_TOPIC, PolygonStamped, queue_size=1)
         self.frontier_sub = rospy.Subscriber(
-            FRONTIER_TOPIC, PointCloud, self.frontier_callback, queue_size=1)
+            FRONTIER_TOPIC, PolygonArray,
+            self.frontier_callback, queue_size=1)
         self.pose_sub = rospy.Subscriber(
             POSE_SUB_TOPIC, PoseStamped,
             self.pose_callback, queue_size=1)
@@ -85,96 +80,51 @@ class InfoPlanner(object):
             self.rate.sleep()
 
     def scan_polygon_cb(self, ps):
-        vecs = list()
-        for p in ps.polygon.points:
-            vec = planar.Vec2(p.x, p.y)
-            vecs.append(vec)
-        self.poly = planar.Polygon(vecs, is_convex=False, is_simple=True)
+        arrs = self.points_to_arrs(ps.polygon.points)
+        self.poly = geom.Polygon(arrs)
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
-        self.update_time_grid(projection)
         self.publish_projection(projection, self.polygon_pub)
         self.pose = ps
 
-    def frontier_callback(self, fpc):
-        self.time_grid.clear()
-        self.set_grid_with_pc(fpc, rospy.get_time())
-        self.update_tree_with_pc(fpc)
-        bp = self.find_best_point(self.pose)
+    def frontier_callback(self, polys):
+        pt_polys = list()
+        for poly in polys.polygons:
+            pts = self.points_to_arrs(poly.points)
+            pt_polys.append(geom.Polygon(pts))
+        bp = self.find_best_point(self.pose, pt_polys)
         set_ps = self.state_to_pose(bp)
         opt_projection = self.get_projection(bp)
         self.opt_ps = set_ps
         self.publish_projection(opt_projection, self.opt_polygon_pub)
         self.pose_pub.publish(set_ps)
 
-    def update_time_grid(self, projection):
-        pc = PointCloud()
-        ch = ChannelFloat32()
-        pc.header.stamp = rospy.Time.now()
-        pc.header.frame_id = "map"
-        ch.name = "time"
-        t = rospy.get_time()
-        vecs = self.arrs_to_vecs(projection)
-        poly = planar.Polygon(vecs)
-        for p in self.points_in_poly(poly, NBR_DIST):
-            self.set_grid_val(p.x, p.y, t)
-            p32 = Point32()
-            p32.x = p.x
-            p32.y = p.y
-            pc.points.append(p32)
-            ch.values.append(t)
-        pc.channels.append(ch)
-        return pc
-
-    def points_in_poly(self, poly, step):
-        q = deque([poly.centroid])
-        seen = set([poly.centroid.x, poly.centroid.y])
-        nbrs = [(step, 0), (0, step), (step, step),
-                (-step, 0), (0, -step), (-step, -step),
-                (step, -step), (-step, step)]
-        while len(q) > 0 and not rospy.is_shutdown():
-            p = q.popleft()
-            for nbr in nbrs:
-                nbr_t = (p.x + nbr[0], p.y + nbr[1])
-                nbr_p = planar.Vec2(*nbr_t)
-                if poly.contains_point(nbr_p) and not nbr_t in seen:
-                    seen.add(nbr_t)
-                    q.append(nbr_p)
-            yield p
-
-    def find_best_point(self, ps):
-        # start = rospy.get_time()
+    def find_best_point(self, ps, polys):
         init = self.pose_to_state(ps)
         opt_res = opt.minimize(self.objective, init, method="Powell",
+                               args=(polys,),
                                options={"disp": False,
                                         "maxiter": None,
                                         "maxfev": 20})
         self.last_opt = opt_res.x
-        # end = rospy.get_time()
-        # print end - start
         return opt_res.x
 
-    def objective(self, state):
+    def objective(self, state, polys):
         obj = 0
         projection = self.get_projection(state)
-        poly = self.projection_to_polygon(
-            projection, is_convex=True, is_simple=True)
-        dist, _ = self.tree.query(state[:2])
+        proj = np.array(projection).reshape(4, 2)
+        poly = geom.Polygon(proj)
+        # dist, _ = self.tree.query(state[:2])
         if self.last_opt is None:
             movement_cost = 0
         else:
             dist_to_quad = K_DIST * np.linalg.norm(state - self.last_opt)
             yaw_diff = K_YAW * abs(self.last_opt[2] - state[2])
             movement_cost = dist_to_quad + yaw_diff
-        if self.poly.contains_point(self.state_to_vec(state)):
-            for p in self.points_in_poly(poly, NBR_DIST):
-                gv = self.get_grid_val(p.x, p.y)
-                if gv > 0:
-                    obj -= K_FRONTIER
-            if obj == 0:
-                obj = dist
-            obj += K_MOVEMENT * movement_cost
+        if self.poly.contains(geom.Point(state[0], state[1])):
+            for p in polys:
+                obj -= p.intersection(poly).area
         else:
             obj = float("inf")
         return obj
@@ -247,46 +197,7 @@ class InfoPlanner(object):
             poly.polygon.points.append(p)
         pub.publish(poly)
 
-    def publish_planar_polygon(self, p_poly):
-        poly = PolygonStamped()
-        poly.header.stamp = rospy.Time.now()
-        poly.header.frame_id = self.map_frame
-        for v in p_poly:
-            p = self.vec_to_point32(v)
-            poly.polygon.points.append(p)
-        self.polygon_pub.publish(poly)
-
-    """ Getters and setters for time grid """
-
-    def get_discrete(self, x, y):
-        x_hat = NBR_DIST * math.floor(x / NBR_DIST)
-        y_hat = NBR_DIST * math.floor(y / NBR_DIST)
-        return x_hat, y_hat
-
-    def get_grid_val(self, x, y):
-        xp, yp = self.get_discrete(x, y)
-        return self.time_grid[xp][yp]
-
-    def set_grid_val(self, x, y, val):
-        xp, yp = self.get_discrete(x, y)
-        self.time_grid[xp][yp] = val
-        return self
-
-    def set_grid_with_pc(self, pc, val):
-        for pt in pc.points:
-            if self.get_grid_val(pt.x, pt.y) == 0:
-                self.set_grid_val(pt.x, pt.y, val)
-        return self
-
-    def update_tree_with_pc(self, pc):
-        arrs = self.point32s_to_arrs(pc.points)
-        self.tree = spatial.KDTree(arrs)
-
     """ Conversions """
-
-    def projection_to_polygon(self, projection, **kwargs):
-        vecs = self.arrs_to_vecs(projection)
-        return planar.Polygon(vecs, **kwargs)
 
     def state_to_pose(self, state):
         quat = quaternion_from_euler(0, 0, state[2])
@@ -310,29 +221,11 @@ class InfoPlanner(object):
         state = np.array([pos.x, pos.y, yaw])
         return state
 
-    def state_to_vec(self, state):
-        return planar.Vec2(state[0], state[1])
-
-    def arrs_to_vecs(self, arrs):
-        vecs = list()
-        for arr in arrs:
-            vecs.append(planar.Vec2(arr[0], arr[1]))
-        return vecs
-
-    def vec_to_point32(self, vec):
-        point = Point32()
-        point.x = vec.x
-        point.y = vec.y
-        return point
-
-    def point32_to_arr(self, p32):
-        return np.array([p32.x, p32.y])
-
-    def point32s_to_arrs(self, p32s):
-        arrs = np.zeros((len(p32s), 2))
-        for i in xrange(len(p32s)):
-            arrs[i][0] = p32s[i].x
-            arrs[i][1] = p32s[i].y
+    def points_to_arrs(self, ps):
+        arrs = np.zeros((len(ps), 2))
+        for i in xrange(len(ps)):
+            arrs[i][0] = ps[i].x
+            arrs[i][1] = ps[i].y
         return arrs
 
     def pose_to_matrix(self, ps):
