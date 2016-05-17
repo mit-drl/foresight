@@ -31,11 +31,6 @@ POLYGON_TOPIC = "/projection"
 FRONTIER_TOPIC = "/blind_spots"
 OPT_POLYGON_TOPIC = "/opt_projection"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
-NBR_DIST = 0.3
-K_DIST = 0.1
-K_YAW = 0.1
-K_FRONTIER = 10
-K_MOVEMENT = 1
 
 
 class InfoPlanner(object):
@@ -102,11 +97,9 @@ class InfoPlanner(object):
 
     def find_best_point(self, ps, polys):
         init = self.pose_to_state(ps)
-        opt_res = opt.minimize(self.objective, init, method="Powell",
-                               args=(polys,),
-                               options={"disp": False,
-                                        "maxiter": None,
-                                        "maxfev": 20})
+        options = {"disp": False, "maxiter": None, "maxfev": 20}
+        kwargs = {"options": options, "method": "Powell", "args": (polys,)}
+        opt_res = opt.minimize(self.objective, init, **kwargs)
         self.last_opt = opt_res.x
         return opt_res.x
 
@@ -115,13 +108,6 @@ class InfoPlanner(object):
         projection = self.get_projection(state)
         proj = np.array(projection).reshape(4, 2)
         poly = geom.Polygon(proj)
-        # dist, _ = self.tree.query(state[:2])
-        if self.last_opt is None:
-            movement_cost = 0
-        else:
-            dist_to_quad = K_DIST * np.linalg.norm(state - self.last_opt)
-            yaw_diff = K_YAW * abs(self.last_opt[2] - state[2])
-            movement_cost = dist_to_quad + yaw_diff
         if self.poly.contains(geom.Point(state[0], state[1])):
             for p in polys:
                 obj -= p.intersection(poly).area
