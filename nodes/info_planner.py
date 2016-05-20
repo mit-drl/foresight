@@ -123,10 +123,10 @@ class InfoPlanner(object):
                     seen.add(nbr_t)
                     q.append(nbr_p)
 
-    def find_best_yaw(self, state_2d, polys):
+    def find_best_yaw(self, pt, polys):
         init = math.pi
         options = {"disp": False, "maxiter": None, "maxfev": 20}
-        args = (state_2d, polys)
+        args = (list(pt), polys)
         kwargs = {"options": options, "method": "Powell", "args": args}
         opt_res = opt.minimize(self.yaw_objective, init, **kwargs)
         return opt_res.x
