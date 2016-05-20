@@ -7,7 +7,7 @@
             <!-- <param name="frame_id" value="base_link"/> -->
             <param name="frame_id" value="$(arg car_bl)"/>
         </node>
-        <node pkg="foresight" type="frontier_cloud.py" name="frontier_pub" output="screen"/>
+        <node pkg="foresight" type="frontier_polygons.py" name="frontier_pub" output="screen"/>
         <node pkg="ira_laser_tools" name="laserscan_multi_merger" type="laserscan_multi_merger" output="screen">
             <param name="destination_frame" value="$(arg car_bl)"/>
             <param name="cloud_destination_topic" value="/merged_cloud"/>
