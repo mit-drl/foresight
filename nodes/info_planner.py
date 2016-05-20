@@ -103,6 +103,9 @@ class InfoPlanner(object):
         self.last_opt = opt_res.x
         return opt_res.x
 
+    def find_path(self, ps, polys):
+        pass
+
     def objective(self, state, polys):
         obj = 0
         projection = self.get_projection(state)

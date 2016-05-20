@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /Imu1/Axes properties1
-        - /MarkerArray1
       Splitter Ratio: 0.498294
     Tree Height: 753
   - Class: rviz/Selection
@@ -60,44 +59,19 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        back_camera_link:
-          Value: true
-        base_link:
-          Value: true
-        car/base_link:
-          Value: true
-        fcu:
-          Value: true
-        left:
-          Value: true
-        map:
-          Value: true
-        right:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          base_link:
-            back_camera_link:
-              {}
-            fcu:
-              {}
-            left:
-              {}
-            right:
-              {}
-          car/base_link:
-            {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: false
       Image Topic: /tag_detections_image
@@ -177,7 +151,7 @@ Visualization Manager:
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 0; 255; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.2
       Head Radius: 0.3
       Name: Pose
@@ -186,7 +160,7 @@ Visualization Manager:
       Shape: Arrow
       Topic: /mavros/local_position/pose
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.1
@@ -205,11 +179,11 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/Polygon
       Color: 25; 255; 0
-      Enabled: true
+      Enabled: false
       Name: Polygon
       Topic: /projection
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/Polygon
       Color: 0; 255; 255
@@ -296,7 +270,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.5747
+      Distance: 9.17744
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -308,10 +282,10 @@ Visualization Manager:
         Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.2648
+      Pitch: 0.729797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.29679
+      Yaw: 3.12181
     Saved: ~
 Window Geometry:
   Displays:

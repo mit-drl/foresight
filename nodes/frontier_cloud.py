@@ -26,9 +26,6 @@ SCAN_TOPIC = "/merged_cloud"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
 MARKER_TOPIC = "/blind_spots_marker"
 BS_TOPIC = "/blind_spots"
-NBR_DIST = 0.1
-CF_STEP = 0.1
-NORMAL_HORIZON = 2
 
 
 class FrontierPublisher(object):
