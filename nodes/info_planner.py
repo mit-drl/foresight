@@ -9,6 +9,7 @@ import planar
 import scipy.optimize as opt
 import scipy.spatial as spatial
 import shapely.geometry as geom
+import networkx as nx
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -77,6 +78,8 @@ class InfoPlanner(object):
     def scan_polygon_cb(self, ps):
         arrs = self.points_to_arrs(ps.polygon.points)
         self.poly = geom.Polygon(arrs)
+        G = self.sampled_poly_graph(self.poly, 0.1)
+        print len(G.nodes())
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
@@ -104,7 +107,24 @@ class InfoPlanner(object):
         return opt_res.x
 
     def find_path(self, ps, polys):
-        pass
+        perc_opt_thresh = 0.5
+        max_time = 3.0
+        avg_speed = 1.0
+        total_poly_area = sum(p.area for p in polys)
+        q = deque([poly.centroid, poly.centroid])
+        seen = set([(poly.centroid.x, poly.centroid.y)])
+        nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
+        G = nx.Graph()
+        while len(q) > 0 and not rospy.is_shutdown():
+            p = q.popleft()
+            for nbr in nbrs:
+                nbr_t = (p.x + nbr[0], p.x + nbr[1])
+                nbr_p = geom.Point(*nbr_t)
+                if poly.contains(nbr_p) and not nbr_t in seen:
+                    seen.add(nbr_t)
+                    q.append(nbr_p)
+                    G.add_edge((p.x, p.y), nbr_t)
+        return G
 
     def objective(self, state, polys):
         obj = 0
@@ -117,6 +137,22 @@ class InfoPlanner(object):
         else:
             obj = float("inf")
         return obj
+
+    def sampled_poly_graph(self, poly, step):
+        q = deque([poly.centroid, poly.centroid])
+        seen = set([(poly.centroid.x, poly.centroid.y)])
+        nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
+        G = nx.Graph()
+        while len(q) > 0 and not rospy.is_shutdown():
+            p = q.popleft()
+            for nbr in nbrs:
+                nbr_t = (p.x + nbr[0], p.x + nbr[1])
+                nbr_p = geom.Point(*nbr_t)
+                if poly.contains(nbr_p) and not nbr_t in seen:
+                    seen.add(nbr_t)
+                    q.append(nbr_p)
+                    G.add_edge((p.x, p.y), nbr_t)
+        return G
 
     def get_relative_pose(self, parent_frame, child_frame):
         self.tfl.waitForTransform(
