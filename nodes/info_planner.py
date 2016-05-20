@@ -109,12 +109,11 @@ class InfoPlanner(object):
     def find_path(self, ps, polys):
         perc_opt_thresh = 0.5
         max_time = 3.0
-        avg_speed = 1.0
+        max_speed = 1.0
         total_poly_area = sum(p.area for p in polys)
-        q = deque([poly.centroid, poly.centroid])
+        q = deque([poly.centroid])
         seen = set([(poly.centroid.x, poly.centroid.y)])
         nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
-        G = nx.Graph()
         while len(q) > 0 and not rospy.is_shutdown():
             p = q.popleft()
             for nbr in nbrs:
@@ -123,8 +122,18 @@ class InfoPlanner(object):
                 if poly.contains(nbr_p) and not nbr_t in seen:
                     seen.add(nbr_t)
                     q.append(nbr_p)
-                    G.add_edge((p.x, p.y), nbr_t)
-        return G
+
+    def find_best_yaw(self, state_2d, polys):
+        init = math.pi
+        options = {"disp": False, "maxiter": None, "maxfev": 20}
+        args = (state_2d, polys)
+        kwargs = {"options": options, "method": "Powell", "args": args}
+        opt_res = opt.minimize(self.yaw_objective, init, **kwargs)
+        return opt_res.x
+
+    def yaw_objective(self, yaw, state_2d, polys):
+        state = np.array([state_2d + yaw])
+        return self.objective(state, polys)
 
     def objective(self, state, polys):
         obj = 0
