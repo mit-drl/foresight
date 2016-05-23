@@ -78,3 +78,9 @@ class SpaceHeapValue(object):
 
     def __cmp__(self, other):
         return -cmp(self.area, other.area)
+
+    def __hash__(self):
+        return hash("{} {}".format(str(self.point), self.ct))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)

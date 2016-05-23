@@ -16,8 +16,10 @@ from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
 from collections import defaultdict, deque
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
+from geometry_msgs.msg import PoseArray
 from sensor_msgs.msg import PointCloud
 from sensor_msgs.msg import ChannelFloat32
 from foresight.msg import PolygonArray
@@ -35,6 +37,7 @@ POLYGON_TOPIC = "/projection"
 FRONTIER_TOPIC = "/blind_spots"
 OPT_POLYGON_TOPIC = "/opt_projection"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
+POSE_ARRAY_TOPIC = "/optimal_path"
 
 
 class InfoPlanner(object):
@@ -57,6 +60,8 @@ class InfoPlanner(object):
 
     def start(self):
         self.pose_pub = rospy.Publisher(POSE_TOPIC, PoseStamped, queue_size=1)
+        self.path_pub = rospy.Publisher(
+            POSE_ARRAY_TOPIC, PoseArray, queue_size=1)
         self.polygon_pub = rospy.Publisher(
             POLYGON_TOPIC, PolygonStamped, queue_size=1)
         self.opt_polygon_pub = rospy.Publisher(
@@ -97,14 +102,8 @@ class InfoPlanner(object):
                 multi_polygon = geom_poly
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
-        self.find_path(self.pose, multi_polygon, self.poly, 0.2)
-        print "here"
-        # bp = self.find_best_point(self.pose, multi_polygon)
-        # set_ps = self.state_to_pose(bp)
-        # opt_projection = self.get_projection(bp)
-        # self.opt_ps = set_ps
-        # self.publish_projection(opt_projection, self.opt_polygon_pub)
-        # self.pose_pub.publish(set_ps)
+        shvs = self.find_path(self.pose, multi_polygon, self.poly, 0.3, 0.1)
+        self.publish_pose_array(shvs)
 
     def find_best_point(self, ps, polys):
         init = self.pose_to_state(ps)
@@ -121,8 +120,8 @@ class InfoPlanner(object):
         proj_poly = geom.Polygon(proj)
         return polys.difference(proj_poly)
 
-    def find_path(self, ps, bs_polys, free_poly, step):
-        perc_opt_thresh = 0.5
+    def find_path(self, ps, bs_polys, free_poly, step, timeout):
+        perc_opt_thresh = 0.7
         max_time = 5.0
         max_speed = 1.0
         pt = self.pose_to_geom_point(ps)
@@ -138,8 +137,11 @@ class InfoPlanner(object):
         seen = set()
         parents = dict()
         nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
+        start_time = rospy.get_time()
         while len(hq) > 0 and not rospy.is_shutdown():
             shv = heapq.heappop(hq)
+            if rospy.get_time() - start_time >= timeout:
+                return self.backtrack_path(parents, shv)
             area = shv.get_area()
             pt = shv.get_point()
             polys = shv.get_polygons()
@@ -158,11 +160,19 @@ class InfoPlanner(object):
                         .set_yaw(yaw_res.x) \
                         .set_polygons(res_ps) \
                         .set_area(-yaw_res.fun)
-                    parents[nbr_p] = pt
-                    optimality = res_ps.area / bs_polys.area
+                    parents[nbr_shv] = shv
+                    optimality = 1 - res_ps.area / bs_polys.area
                     if optimality >= perc_opt_thresh:
-                        return
+                        return self.backtrack_path(parents, nbr_shv)
                     heapq.heappush(hq, nbr_shv)
+
+    def backtrack_path(self, parents, shv):
+        cur = shv
+        path = [shv]
+        while cur in parents.keys():
+            cur = parents[cur]
+            path.append(cur)
+        return list(reversed(path))
 
     def find_best_yaw(self, pt, polys):
         init = math.pi
@@ -261,13 +271,23 @@ class InfoPlanner(object):
     def publish_projection(self, projection, pub):
         poly = PolygonStamped()
         poly.header.stamp = rospy.Time.now()
-        poly.header.frame_id = MAP_FRAME
+        poly.header.frame_id = self.map_frame
         for v in projection:
             p = Point32()
             p.x = v[0]
             p.y = v[1]
             poly.polygon.points.append(p)
         pub.publish(poly)
+
+    def publish_pose_array(self, shvs):
+        pa = PoseArray()
+        pa.header.stamp = rospy.Time.now()
+        pa.header.frame_id = self.map_frame
+        for shv in shvs:
+            pose = Pose()
+            pose = self.point_yaw_to_pose(shv.point, shv.yaw)
+            pa.poses.append(pose)
+        self.path_pub.publish(pa)
 
     """ Conversions """
 
@@ -283,6 +303,18 @@ class InfoPlanner(object):
         pose_mq.pose.orientation.y = quat[1]
         pose_mq.pose.orientation.z = quat[2]
         pose_mq.pose.orientation.w = quat[3]
+        return pose_mq
+
+    def point_yaw_to_pose(self, pt, yaw):
+        quat = quaternion_from_euler(0, 0, yaw)
+        pose_mq = Pose()
+        pose_mq.position.x = pt.x
+        pose_mq.position.y = pt.y
+        pose_mq.position.z = self.min_alt
+        pose_mq.orientation.x = quat[0]
+        pose_mq.orientation.y = quat[1]
+        pose_mq.orientation.z = quat[2]
+        pose_mq.orientation.w = quat[3]
         return pose_mq
 
     def pose_to_state(self, pose):
