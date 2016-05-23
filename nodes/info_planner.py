@@ -49,6 +49,10 @@ class InfoPlanner(object):
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
         self.min_alt = rospy.get_param("~min_alt", 1)
+        self.perc_opt_thresh = rospy.get_param("~optimality_threshold", 0.7)
+        self.max_time = rospy.get_param("~max_execution_time", 5.0)
+        self.max_speed = rospy.get_param("~max_speed", 1.0)
+        self.timeout = rospy.get_param("~timeout", 0.2)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
         self.pose = None
@@ -102,7 +106,7 @@ class InfoPlanner(object):
                 multi_polygon = geom_poly
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
-        shvs = self.find_path(self.pose, multi_polygon, self.poly, 0.3, 0.1)
+        shvs = self.find_path(self.pose, multi_polygon, self.poly, 0.3, 0.2)
         self.publish_pose_array(shvs)
 
     def find_best_point(self, ps, polys):
@@ -121,9 +125,6 @@ class InfoPlanner(object):
         return polys.difference(proj_poly)
 
     def find_path(self, ps, bs_polys, free_poly, step, timeout):
-        perc_opt_thresh = 0.7
-        max_time = 5.0
-        max_speed = 1.0
         pt = self.pose_to_geom_point(ps)
         opt_res = self.find_best_yaw(pt, bs_polys)
         res_polys = self.get_residual_polys(pt, opt_res.x, bs_polys)
@@ -148,9 +149,9 @@ class InfoPlanner(object):
             ct = shv.get_current_time()
             for nbr in nbrs:
                 nbr_p = Point(pt.x + nbr[0], pt.y + nbr[1])
-                next_time = ct + pt.distance(nbr_p) / max_speed
+                next_time = ct + pt.distance(nbr_p) / self.max_speed
                 cfree = free_poly.contains(nbr_p)
-                within_time = next_time < max_time
+                within_time = next_time < self.max_time
                 if cfree and within_time:
                     yaw_res = self.find_best_yaw(nbr_p, polys)
                     res_ps = self.get_residual_polys(nbr_p, yaw_res.x, polys)
@@ -162,7 +163,7 @@ class InfoPlanner(object):
                         .set_area(-yaw_res.fun)
                     parents[nbr_shv] = shv
                     optimality = 1 - res_ps.area / bs_polys.area
-                    if optimality >= perc_opt_thresh:
+                    if optimality >= self.perc_opt_thresh:
                         return self.backtrack_path(parents, nbr_shv)
                     heapq.heappush(hq, nbr_shv)
 

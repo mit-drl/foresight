@@ -33,7 +33,7 @@ class FrontierPublisher(object):
     def __init__(self):
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
-        self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 1)
+        self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 0.5)
         self.tfl = tf.TransformListener()
 
     def start(self):
