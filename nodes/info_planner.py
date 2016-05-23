@@ -106,7 +106,8 @@ class InfoPlanner(object):
                 multi_polygon = geom_poly
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
-        shvs = self.find_path(self.pose, multi_polygon, self.poly, 0.3, 0.2)
+        shvs = self.find_path(self.pose, multi_polygon, self.poly, 0.3,
+                              self.timeout)
         self.publish_pose_array(shvs)
 
     def find_best_point(self, ps, polys):
