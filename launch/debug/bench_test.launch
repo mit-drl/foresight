@@ -29,7 +29,7 @@
         args="pub $(arg topic_name) $(arg msg_type) $(arg set_pos) -r 30"/>
 
     <node pkg="tf" type="static_transform_publisher" name="map_to_quad"
-        args="0 0 1 0 0 0 map base_link 100" />
+        args="0.4 0 1 0 0 0 map base_link 100" />
 
     <node pkg="foresight" type="tf_to_pose.py" name="vision_pose" output="screen">
         <param name="pose_topic" value="/mavros/vision_pose/pose"/>

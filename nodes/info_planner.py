@@ -10,6 +10,7 @@ import scipy.optimize as opt
 import scipy.spatial as spatial
 import shapely.geometry as geom
 import networkx as nx
+import heapq
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -20,6 +21,8 @@ from geometry_msgs.msg import Point32
 from sensor_msgs.msg import PointCloud
 from sensor_msgs.msg import ChannelFloat32
 from foresight.msg import PolygonArray
+from geometry import Point
+from geometry import SpaceHeapValue
 
 
 NODE_NAME = "info_planner"
@@ -78,8 +81,6 @@ class InfoPlanner(object):
     def scan_polygon_cb(self, ps):
         arrs = self.points_to_arrs(ps.polygon.points)
         self.poly = geom.Polygon(arrs)
-        G = self.sampled_poly_graph(self.poly, 0.1)
-        print len(G.nodes())
 
     def pose_callback(self, ps):
         projection = self.get_current_projection()
@@ -88,15 +89,22 @@ class InfoPlanner(object):
 
     def frontier_callback(self, polys):
         pt_polys = list()
+        multi_polygon = None
         for poly in polys.polygons:
             pts = self.points_to_arrs(poly.points)
-            pt_polys.append(geom.Polygon(pts))
-        bp = self.find_best_point(self.pose, pt_polys)
-        set_ps = self.state_to_pose(bp)
-        opt_projection = self.get_projection(bp)
-        self.opt_ps = set_ps
-        self.publish_projection(opt_projection, self.opt_polygon_pub)
-        self.pose_pub.publish(set_ps)
+            geom_poly = geom.Polygon(pts)
+            if multi_polygon is None:
+                multi_polygon = geom_poly
+            else:
+                multi_polygon = multi_polygon.union(geom_poly)
+        self.find_path(self.pose, multi_polygon, self.poly, 0.2)
+        print "here"
+        # bp = self.find_best_point(self.pose, multi_polygon)
+        # set_ps = self.state_to_pose(bp)
+        # opt_projection = self.get_projection(bp)
+        # self.opt_ps = set_ps
+        # self.publish_projection(opt_projection, self.opt_polygon_pub)
+        # self.pose_pub.publish(set_ps)
 
     def find_best_point(self, ps, polys):
         init = self.pose_to_state(ps)
@@ -106,33 +114,67 @@ class InfoPlanner(object):
         self.last_opt = opt_res.x
         return opt_res.x
 
-    def find_path(self, ps, polys):
+    def get_residual_polys(self, pt, yaw, polys):
+        state = np.array([pt.x, pt.y, yaw])
+        projection = self.get_projection(state)
+        proj = np.array(projection).reshape(4, 2)
+        proj_poly = geom.Polygon(proj)
+        return polys.difference(proj_poly)
+
+    def find_path(self, ps, bs_polys, free_poly, step):
         perc_opt_thresh = 0.5
-        max_time = 3.0
+        max_time = 5.0
         max_speed = 1.0
-        total_poly_area = sum(p.area for p in polys)
-        q = deque([poly.centroid])
-        seen = set([(poly.centroid.x, poly.centroid.y)])
+        pt = self.pose_to_geom_point(ps)
+        opt_res = self.find_best_yaw(pt, bs_polys)
+        res_polys = self.get_residual_polys(pt, opt_res.x, bs_polys)
+        first_value = SpaceHeapValue() \
+            .set_point(pt) \
+            .set_area(-opt_res.fun) \
+            .set_current_time(0) \
+            .set_polygons(bs_polys) \
+            .set_yaw(opt_res.x)
+        hq = [first_value]
+        seen = set()
+        parents = dict()
         nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
-        while len(q) > 0 and not rospy.is_shutdown():
-            p = q.popleft()
+        while len(hq) > 0 and not rospy.is_shutdown():
+            shv = heapq.heappop(hq)
+            area = shv.get_area()
+            pt = shv.get_point()
+            polys = shv.get_polygons()
+            ct = shv.get_current_time()
             for nbr in nbrs:
-                nbr_t = (p.x + nbr[0], p.x + nbr[1])
-                nbr_p = geom.Point(*nbr_t)
-                if poly.contains(nbr_p) and not nbr_t in seen:
-                    seen.add(nbr_t)
-                    q.append(nbr_p)
+                nbr_p = Point(pt.x + nbr[0], pt.y + nbr[1])
+                next_time = ct + pt.distance(nbr_p) / max_speed
+                cfree = free_poly.contains(nbr_p)
+                within_time = next_time < max_time
+                if cfree and within_time:
+                    yaw_res = self.find_best_yaw(nbr_p, polys)
+                    res_ps = self.get_residual_polys(nbr_p, yaw_res.x, polys)
+                    nbr_shv = SpaceHeapValue() \
+                        .set_point(nbr_p) \
+                        .set_current_time(next_time) \
+                        .set_yaw(yaw_res.x) \
+                        .set_polygons(res_ps) \
+                        .set_area(-yaw_res.fun)
+                    parents[nbr_p] = pt
+                    optimality = res_ps.area / bs_polys.area
+                    if optimality >= perc_opt_thresh:
+                        return
+                    heapq.heappush(hq, nbr_shv)
 
     def find_best_yaw(self, pt, polys):
         init = math.pi
-        options = {"disp": False, "maxiter": None, "maxfev": 20}
         args = (list(pt), polys)
-        kwargs = {"options": options, "method": "Powell", "args": args}
-        opt_res = opt.minimize(self.yaw_objective, init, **kwargs)
-        return opt_res.x
+        options = {"disp": False, "maxiter": None}
+        kwargs = {"options": options, "method": "Bounded", "args": args,
+                  "bounds": (0, 2 * math.pi)}
+        opt_res = opt.minimize_scalar(self.yaw_objective, init, **kwargs)
+        return opt_res
 
     def yaw_objective(self, yaw, state_2d, polys):
-        state = np.array([state_2d + yaw])
+        state = np.array(state_2d + [yaw])
         return self.objective(state, polys)
 
     def objective(self, state, polys):
@@ -140,11 +182,7 @@ class InfoPlanner(object):
         projection = self.get_projection(state)
         proj = np.array(projection).reshape(4, 2)
         poly = geom.Polygon(proj)
-        if self.poly.contains(geom.Point(state[0], state[1])):
-            for p in polys:
-                obj -= p.intersection(poly).area
-        else:
-            obj = float("inf")
+        obj -= polys.intersection(poly).area
         return obj
 
     def sampled_poly_graph(self, poly, step):
@@ -254,6 +292,9 @@ class InfoPlanner(object):
         pos = pose.pose.position
         state = np.array([pos.x, pos.y, yaw])
         return state
+
+    def pose_to_geom_point(self, ps):
+        return Point(ps.pose.position.x, ps.pose.position.y)
 
     def points_to_arrs(self, ps):
         arrs = np.zeros((len(ps), 2))
