@@ -15,7 +15,7 @@ class SpaceHeapValue(object):
         return repr(self)
 
     def __cmp__(self, other):
-        return -cmp(self.area, other.area)
+        return cmp(self.polys.area, other.polys.area)
 
     def __hash__(self):
         return hash("{} {}".format(str(self.point), self.ct))
@@ -33,12 +33,11 @@ class TreeSearchResult(object):
         self.planner_time = planner_time
 
     def __str__(self):
-        tsr_str = """
-            TreeSearchResult:
-                optimality: {},
-                path_exec_time: {},
-                planner_time: {}
-                """
+        tsr_str = """TreeSearchResult:
+        optimality: {},
+        path_exec_time: {},
+        planner_time: {}
+        """
         return tsr_str.format(self.optimality, self.path_exec_time,
                               self.planner_time)
 

@@ -52,8 +52,8 @@
         <param name="altitude" value="1"/>
 
         <!-- Parameters for planner -->
-        <param name="optimality_threshold" value="0.7"/>
-        <param name="max_execution_time" value="5.0"/>
+        <param name="optimality_threshold" value="1.0"/>
+        <param name="max_execution_time" value="10"/>
         <param name="max_speed" value="1.0"/>
         <param name="neighbour_dist" value="0.3"/>
         <param name="timeout" value="0.2"/>

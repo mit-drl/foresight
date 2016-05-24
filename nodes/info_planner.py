@@ -133,8 +133,7 @@ class InfoPlanner(object):
             term, res = self.search_terminator(parents, shv, bs_polys, st)
             if term:
                 return res
-            nbr_shvs = self.propogate_neighbours(shv)
-            for nbr_shv in nbr_shvs:
+            for nbr_shv in self.propogate_neighbours(shv):
                 parents[nbr_shv] = shv
                 heapq.heappush(hq, nbr_shv)
 
@@ -143,15 +142,12 @@ class InfoPlanner(object):
         for nbr in self.nbrs:
             nbr_p = Point(shv.point.x + nbr[0], shv.point.y + nbr[1])
             next_time = shv.ct + shv.point.distance(nbr_p) / self.max_speed
-            cfree = self.poly.contains(nbr_p)
-            within_time = next_time < self.max_time
-            if cfree and within_time:
+            if self.poly.contains(nbr_p) and next_time < self.max_time:
                 yaw_res = self.find_best_yaw(nbr_p, shv.polys)
                 res_ps = self.get_residual_polys(nbr_p, yaw_res.x, shv.polys)
                 args = [nbr_p, -yaw_res.fun, res_ps, next_time, yaw_res.x]
                 nbr_shv = SpaceHeapValue(*args)
-                nbr_shvs.append(nbr_shv)
-        return nbr_shvs
+                yield nbr_shv
 
     def search_terminator(self, parents, shv, bs_polys, start_time):
         optimality = 1 - shv.polys.area / bs_polys.area
