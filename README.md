@@ -1,4 +1,4 @@
 # foresight
 
-![foresight](https://github.com/wallarelvo/raw/master/sandbox/path.png "Most informative path")
+![foresight](https://raw.githubusercontent.com/wallarelvo/foresight/master/sandbox/path.png "Most informative path")
 
