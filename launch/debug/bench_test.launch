@@ -22,7 +22,8 @@
     <include file="$(find foresight)/launch/localization/static_transformations.launch"/>
 
     <arg name="set_pos" 
-        value="'{header: {frame_id: 'map'}, pose: {position: {z: 1}, orientation: {w: 1}}}'"/>
+        value="'{header: {frame_id: 'map'},
+        pose: {position: {z: 1}, orientation: {w: 1}}}'"/>
     <arg name="msg_type" value="geometry_msgs/PoseStamped"/>
     <arg name="topic_name" value="/mavros/local_position/pose"/>
     <node pkg="rostopic" type="rostopic" name="setter"
