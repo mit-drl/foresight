@@ -42,7 +42,7 @@ class InfoPlanner(object):
         self.init_planner()
         self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
         self.pose = None
-        self.opt_ps = None
+        self.opt_tsr = None
         self.poly = None
         self.last_opt = None
 
@@ -85,8 +85,8 @@ class InfoPlanner(object):
 
     def run(self):
         while not rospy.is_shutdown():
-            if not self.opt_ps is None:
-                pass
+            if not self.opt_tsr is None:
+                self.publish_pose_array(self.opt_tsr.path)
             self.rate.sleep()
 
     def scan_polygon_cb(self, ps):
@@ -109,8 +109,8 @@ class InfoPlanner(object):
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
         tsr = self.find_path(multi_polygon)
+        self.opt_tsr = tsr
         print tsr
-        self.publish_pose_array(tsr.path)
 
     def get_residual_polys(self, pt, yaw, polys):
         state = np.array([pt.x, pt.y, yaw])
