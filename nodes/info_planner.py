@@ -48,11 +48,12 @@ class InfoPlanner(object):
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
-        self.min_alt = rospy.get_param("~min_alt", 1)
+        self.altitude = rospy.get_param("~altitude", 1)
         self.perc_opt_thresh = rospy.get_param("~optimality_threshold", 0.7)
         self.max_time = rospy.get_param("~max_execution_time", 5.0)
         self.max_speed = rospy.get_param("~max_speed", 1.0)
         self.timeout = rospy.get_param("~timeout", 0.2)
+        self.neighbour_dist = rospy.get_param("~neighbour_dist", 0.3)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 100))
         self.cam = camproj.CameraProjection(fov_v, fov_h)
         self.pose = None
@@ -106,17 +107,8 @@ class InfoPlanner(object):
                 multi_polygon = geom_poly
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
-        shvs = self.find_path(self.pose, multi_polygon, self.poly, 0.3,
-                              self.timeout)
+        shvs = self.find_path(multi_polygon)
         self.publish_pose_array(shvs)
-
-    def find_best_point(self, ps, polys):
-        init = self.pose_to_state(ps)
-        options = {"disp": False, "maxiter": None, "maxfev": 20}
-        kwargs = {"options": options, "method": "Powell", "args": (polys,)}
-        opt_res = opt.minimize(self.objective, init, **kwargs)
-        self.last_opt = opt_res.x
-        return opt_res.x
 
     def get_residual_polys(self, pt, yaw, polys):
         state = np.array([pt.x, pt.y, yaw])
@@ -125,8 +117,8 @@ class InfoPlanner(object):
         proj_poly = geom.Polygon(proj)
         return polys.difference(proj_poly)
 
-    def find_path(self, ps, bs_polys, free_poly, step, timeout):
-        pt = self.pose_to_geom_point(ps)
+    def find_path(self, bs_polys):
+        pt = self.pose_to_geom_point(self.ps)
         opt_res = self.find_best_yaw(pt, bs_polys)
         res_polys = self.get_residual_polys(pt, opt_res.x, bs_polys)
         first_value = SpaceHeapValue() \
@@ -138,11 +130,12 @@ class InfoPlanner(object):
         hq = [first_value]
         seen = set()
         parents = dict()
-        nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
+        nbrs = [(self.neighbour_dist, 0), (0, self.neighbour_dist),
+                (-self.neighbour_dist, 0), (0, -self.neighbour_dist)]
         start_time = rospy.get_time()
         while len(hq) > 0 and not rospy.is_shutdown():
             shv = heapq.heappop(hq)
-            if rospy.get_time() - start_time >= timeout:
+            if rospy.get_time() - start_time >= self.timeout:
                 return self.backtrack_path(parents, shv)
             area = shv.get_area()
             pt = shv.get_point()
@@ -151,7 +144,7 @@ class InfoPlanner(object):
             for nbr in nbrs:
                 nbr_p = Point(pt.x + nbr[0], pt.y + nbr[1])
                 next_time = ct + pt.distance(nbr_p) / self.max_speed
-                cfree = free_poly.contains(nbr_p)
+                cfree = self.poly.contains(nbr_p)
                 within_time = next_time < self.max_time
                 if cfree and within_time:
                     yaw_res = self.find_best_yaw(nbr_p, polys)
@@ -196,22 +189,6 @@ class InfoPlanner(object):
         poly = geom.Polygon(proj)
         obj -= polys.intersection(poly).area
         return obj
-
-    def sampled_poly_graph(self, poly, step):
-        q = deque([poly.centroid, poly.centroid])
-        seen = set([(poly.centroid.x, poly.centroid.y)])
-        nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
-        G = nx.Graph()
-        while len(q) > 0 and not rospy.is_shutdown():
-            p = q.popleft()
-            for nbr in nbrs:
-                nbr_t = (p.x + nbr[0], p.x + nbr[1])
-                nbr_p = geom.Point(*nbr_t)
-                if poly.contains(nbr_p) and not nbr_t in seen:
-                    seen.add(nbr_t)
-                    q.append(nbr_p)
-                    G.add_edge((p.x, p.y), nbr_t)
-        return G
 
     def get_relative_pose(self, parent_frame, child_frame):
         self.tfl.waitForTransform(
@@ -300,7 +277,7 @@ class InfoPlanner(object):
         pose_mq.header.stamp = rospy.Time()
         pose_mq.pose.position.x = state[0]
         pose_mq.pose.position.y = state[1]
-        pose_mq.pose.position.z = self.min_alt
+        pose_mq.pose.position.z = self.altitude
         pose_mq.pose.orientation.x = quat[0]
         pose_mq.pose.orientation.y = quat[1]
         pose_mq.pose.orientation.z = quat[2]
@@ -312,7 +289,7 @@ class InfoPlanner(object):
         pose_mq = Pose()
         pose_mq.position.x = pt.x
         pose_mq.position.y = pt.y
-        pose_mq.position.z = self.min_alt
+        pose_mq.position.z = self.altitude
         pose_mq.orientation.x = quat[0]
         pose_mq.orientation.y = quat[1]
         pose_mq.orientation.z = quat[2]
