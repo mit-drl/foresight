@@ -38,12 +38,5 @@ class TreeSearchResult(object):
         path_exec_time: {},
         planner_time: {}
         """
-        return tsr_str.format(self.optimality, self.path_exec_time,
-                              self.planner_time)
-
-
-class Heap(object):
-
-    def __init__(self, hq):
-        self.hq = hq
-        self.parents = dict()
+        return tsr_str.format(
+            self.optimality, self.path_exec_time, self.planner_time)
