@@ -16,6 +16,7 @@ class SpaceHeapValue(object):
 
     def __cmp__(self, other):
         return cmp(self.polys.area, other.polys.area)
+        # return -cmp(self.ct / self.polys.area, other.ct / other.polys.area)
 
     def __hash__(self):
         return hash("{} {}".format(str(self.point), self.ct))

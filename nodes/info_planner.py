@@ -16,7 +16,9 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PoseArray
+from nav_msgs.msg import Path
 from foresight.msg import PolygonArray
+from foresight.msg import TreeSearchResultMsg
 from point import Point
 from search import SpaceHeapValue
 from search import TreeSearchResult
@@ -32,7 +34,9 @@ POLYGON_TOPIC = "/projection"
 FRONTIER_TOPIC = "/blind_spots"
 OPT_POLYGON_TOPIC = "/opt_projection"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
-POSE_ARRAY_TOPIC = "/optimal_path"
+POSE_ARRAY_TOPIC = "/optimal_poses"
+PATH_TOPIC = "/optimal_path"
+OPT_INFO_TOPIC = "/optimization_info"
 
 
 class InfoPlanner(object):
@@ -66,8 +70,11 @@ class InfoPlanner(object):
         self.tfl = tf.TransformListener()
 
     def start(self):
-        self.path_pub = rospy.Publisher(
+        self.pose_array_pub = rospy.Publisher(
             POSE_ARRAY_TOPIC, PoseArray, queue_size=1)
+        self.opt_info_pub = rospy.Publisher(
+            OPT_INFO_TOPIC, TreeSearchResultMsg, queue_size=1)
+        self.path_pub = rospy.Publisher(PATH_TOPIC, Path, queue_size=1)
         self.polygon_pub = rospy.Publisher(
             POLYGON_TOPIC, PolygonStamped, queue_size=1)
         self.opt_polygon_pub = rospy.Publisher(
@@ -87,6 +94,8 @@ class InfoPlanner(object):
         while not rospy.is_shutdown():
             if not self.opt_tsr is None:
                 self.publish_pose_array(self.opt_tsr.path)
+                self.publish_path(self.opt_tsr.path)
+                self.publish_opt_info(self.opt_tsr)
             self.rate.sleep()
 
     def scan_polygon_cb(self, ps):
@@ -110,7 +119,6 @@ class InfoPlanner(object):
                 multi_polygon = multi_polygon.union(geom_poly)
         tsr = self.find_path(multi_polygon)
         self.opt_tsr = tsr
-        print tsr
 
     def get_residual_polys(self, pt, yaw, polys):
         state = np.array([pt.x, pt.y, yaw])
@@ -256,10 +264,29 @@ class InfoPlanner(object):
         pa.header.stamp = rospy.Time.now()
         pa.header.frame_id = self.map_frame
         for shv in shvs:
-            pose = Pose()
             pose = self.point_yaw_to_pose(shv.point, shv.yaw)
             pa.poses.append(pose)
+        self.pose_array_pub.publish(pa)
+
+    def publish_path(self, shvs):
+        pa = Path()
+        pa.header.stamp = rospy.Time.now()
+        pa.header.frame_id = self.map_frame
+        for shv in shvs:
+            ps = PoseStamped()
+            ps.header.frame_id = self.map_frame
+            ps.header.stamp = rospy.Time.now() + rospy.Duration(shv.ct)
+            ps.pose = self.point_yaw_to_pose(shv.point, shv.yaw)
+            pa.poses.append(ps)
         self.path_pub.publish(pa)
+
+    def publish_opt_info(self, tsr):
+        tsr_msg = TreeSearchResultMsg()
+        tsr_msg.header.stamp = rospy.Time.now()
+        tsr_msg.optimality = tsr.optimality
+        tsr_msg.execution_time = tsr.path_exec_time
+        tsr_msg.planner_time = tsr.planner_time
+        self.opt_info_pub.publish(tsr_msg)
 
     """ Conversions """
 
