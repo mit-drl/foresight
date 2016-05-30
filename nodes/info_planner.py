@@ -25,9 +25,8 @@ from search import TreeSearchResult
 
 
 NODE_NAME = "info_planner"
-POSE_TOPIC = "/mavros/setpoint_position/local"
 POSE_SUB_TOPIC = "/mavros/local_position/pose"
-MAP_FRAME = "map"
+MAP_FRAME = "golfcartdj/base_link"
 QUAD_FRAME = "base_link"
 CAM_FRAME = "back_camera_link"
 POLYGON_TOPIC = "/projection"
@@ -57,7 +56,6 @@ class InfoPlanner(object):
         self.timeout = rospy.get_param("~timeout", 0.2)
         step = rospy.get_param("~neighbour_dist", 0.3)
         self.nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
-
 
     def init_camera_projection(self):
         fov_v = rospy.get_param("~fov_v", 0.2 * math.pi)
@@ -108,7 +106,6 @@ class InfoPlanner(object):
         self.pose = ps
 
     def frontier_callback(self, polys):
-        pt_polys = list()
         multi_polygon = None
         for poly in polys.polygons:
             pts = self.points_to_arrs(poly.points)
@@ -131,9 +128,8 @@ class InfoPlanner(object):
         pt = self.pose_to_geom_point(self.pose)
         opt_res = self.find_best_yaw(pt, bs_polys)
         res_polys = self.get_residual_polys(pt, opt_res.x, bs_polys)
-        first_value = SpaceHeapValue(pt, -opt_res.fun, bs_polys, 0, opt_res.x)
+        first_value = SpaceHeapValue(pt, -opt_res.fun, res_polys, 0, opt_res.x)
         hq = [first_value]
-        seen = set()
         parents = dict()
         st = rospy.get_time()
         while len(hq) > 0 and not rospy.is_shutdown():
@@ -146,7 +142,6 @@ class InfoPlanner(object):
                 heapq.heappush(hq, nbr_shv)
 
     def propogate_neighbours(self, shv):
-        nbr_shvs = list()
         for nbr in self.nbrs:
             nbr_p = Point(shv.point.x + nbr[0], shv.point.y + nbr[1])
             next_time = shv.ct + shv.point.distance(nbr_p) / self.max_speed

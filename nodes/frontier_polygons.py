@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 import rospy
-import math
 import tf
 import planar
 import sensor_msgs.point_cloud2 as pc2
-from collections import defaultdict, deque
 from foresight.msg import PolygonArray
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point32
@@ -14,14 +12,13 @@ from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Polygon
 from sensor_msgs.msg import PointCloud
 from sensor_msgs.msg import PointCloud2
-from sensor_msgs.msg import ChannelFloat32
 from visualization_msgs.msg import MarkerArray
 from visualization_msgs.msg import Marker
 
 
 NODE_NAME = "frontier_publisher"
 PC_TOPIC = "/frontier"
-MAP_FRAME = "map"
+MAP_FRAME = "golfcartdj/odom"
 SCAN_TOPIC = "/merged_cloud"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
 MARKER_TOPIC = "/blind_spots_marker"
