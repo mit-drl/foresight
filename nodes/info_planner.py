@@ -8,6 +8,7 @@ import numpy as np
 import scipy.optimize as opt
 import shapely.geometry as geom
 import heapq
+import fontais
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -26,7 +27,7 @@ from search import TreeSearchResult
 
 NODE_NAME = "info_planner"
 POSE_SUB_TOPIC = "/mavros/local_position/pose"
-MAP_FRAME = "golfcartdj/base_link"
+MAP_FRAME = "map"
 QUAD_FRAME = "base_link"
 CAM_FRAME = "back_camera_link"
 POLYGON_TOPIC = "/projection"
@@ -206,6 +207,7 @@ class InfoPlanner(object):
         ps.pose.orientation.w = nquat[3]
         return ps
 
+    @fontais.memoize()
     def get_inverse_pose(self, pose, frame_id):
         pos = pose.pose.position
         quat = pose.pose.orientation
@@ -222,6 +224,7 @@ class InfoPlanner(object):
         inv_pose.pose.orientation.w = inv_quat[3]
         return inv_pose
 
+    @fontais.memoize()
     def get_projection(self, state):
         pose_mq = self.state_to_pose(state)
         pose_qm = self.get_inverse_pose(pose_mq, "base_link")
@@ -285,6 +288,7 @@ class InfoPlanner(object):
 
     """ Conversions """
 
+    @fontais.memoize()
     def state_to_pose(self, state):
         quat = quaternion_from_euler(0, 0, state[2])
         pose_mq = PoseStamped()
@@ -299,21 +303,24 @@ class InfoPlanner(object):
         pose_mq.pose.orientation.w = quat[3]
         return pose_mq
 
+    @fontais.memoize()
     def point_yaw_to_pose(self, pt, yaw):
         quat = quaternion_from_euler(0, 0, yaw)
         pose_mq = Pose()
         pose_mq.position.x = pt.x
         pose_mq.position.y = pt.y
-        pose_mq.position.z = self.altitude
+        pose_mq.position.z = 0
         pose_mq.orientation.x = quat[0]
         pose_mq.orientation.y = quat[1]
         pose_mq.orientation.z = quat[2]
         pose_mq.orientation.w = quat[3]
         return pose_mq
 
+    @fontais.memoize()
     def pose_to_geom_point(self, ps):
         return Point(ps.pose.position.x, ps.pose.position.y)
 
+    @fontais.memoize()
     def points_to_arrs(self, ps):
         arrs = np.zeros((len(ps), 2))
         for i in xrange(len(ps)):
@@ -321,6 +328,7 @@ class InfoPlanner(object):
             arrs[i][1] = ps[i].y
         return arrs
 
+    @fontais.memoize()
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
                            -ps.pose.position.y,

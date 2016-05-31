@@ -4,8 +4,11 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
+        - /Grid1
         - /TF1/Frames1
         - /Imu1/Axes properties1
+        - /Polygon3/Status1
       Splitter Ratio: 0.498294
     Tree Height: 753
   - Class: rviz/Selection
@@ -27,7 +30,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Displays
@@ -51,11 +54,11 @@ Visualization Manager:
       Name: Grid
       Normal Cell Count: 0
       Offset:
-        X: 0
-        Y: 0
+        X: 1
+        Y: 2
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
+      Plane Cell Count: 5
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
@@ -194,7 +197,7 @@ Visualization Manager:
       Value: false
     - Alpha: 1
       Class: rviz/Polygon
-      Color: 255; 0; 127
+      Color: 255; 170; 255
       Enabled: true
       Name: Polygon
       Topic: /scan_polygon
@@ -243,24 +246,24 @@ Visualization Manager:
       Marker Topic: /blind_spots_marker
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Arrow Length: 0.3
       Class: rviz/PoseArray
       Color: 0; 255; 255
-      Enabled: true
+      Enabled: false
       Name: PoseArray
       Topic: /optimal_poses
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
       Color: 85; 255; 0
-      Enabled: true
+      Enabled: false
       Line Style: Billboards
-      Line Width: 0.05
+      Line Width: 0.03
       Name: Path
       Offset:
         X: 0
@@ -268,7 +271,7 @@ Visualization Manager:
         Z: 0
       Topic: /optimal_path
       Unreliable: false
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -293,22 +296,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 15.6634
+      Distance: 8.72948
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.400363
-        Y: 0.441519
-        Z: 0.0275296
+        X: 1.29833
+        Y: 2.34176
+        Z: -1.18363
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.7148
+      Pitch: 1.5698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1318
+      Yaw: 3.13681
     Saved: ~
 Window Geometry:
   Displays:

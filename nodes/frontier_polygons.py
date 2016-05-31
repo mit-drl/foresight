@@ -18,7 +18,7 @@ from visualization_msgs.msg import Marker
 
 NODE_NAME = "frontier_publisher"
 PC_TOPIC = "/frontier"
-MAP_FRAME = "golfcartdj/odom"
+MAP_FRAME = "golfcartdj/base_link"
 SCAN_TOPIC = "/merged_cloud"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
 MARKER_TOPIC = "/blind_spots_marker"
@@ -30,7 +30,7 @@ class FrontierPublisher(object):
     def __init__(self):
         self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
         self.rate = rospy.Rate(rospy.get_param("~frequency", 30))
-        self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 0.1)
+        self.scan_break_thresh = rospy.get_param("~scan_break_thresh", 1)
         self.tfl = tf.TransformListener()
 
     def start(self):
@@ -54,7 +54,7 @@ class FrontierPublisher(object):
     def get_blind_polygons(self, scan, poly):
         polys = list()
         for p, q in self.get_laser_breaks(scan, poly):
-            dr = (p - q).perpendicular().scaled_to(0.5 * p.distance_to(q))
+            dr = (p - q).perpendicular().scaled_to(0.2 * p.distance_to(q))
             polys.append([p, q, q + dr, p + dr])
         return polys
 
