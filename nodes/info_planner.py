@@ -9,6 +9,7 @@ import scipy.optimize as opt
 import shapely.geometry as geom
 import heapq
 import fontais
+import roshelper
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
@@ -38,7 +39,10 @@ POSE_ARRAY_TOPIC = "/optimal_poses"
 PATH_TOPIC = "/optimal_path"
 OPT_INFO_TOPIC = "/optimization_info"
 
+n = roshelper.Node(NODE_NAME, __name__, anonymous=False)
 
+
+@n.start_node()
 class InfoPlanner(object):
 
     def __init__(self):
@@ -49,6 +53,7 @@ class InfoPlanner(object):
         self.opt_tsr = None
         self.poly = None
         self.last_opt = None
+        # self.start()
 
     def init_planner(self):
         self.perc_opt_thresh = rospy.get_param("~optimality_threshold", 0.7)
@@ -68,44 +73,25 @@ class InfoPlanner(object):
         self.altitude = rospy.get_param("~altitude", 1)
         self.tfl = tf.TransformListener()
 
-    def start(self):
-        self.pose_array_pub = rospy.Publisher(
-            POSE_ARRAY_TOPIC, PoseArray, queue_size=1)
-        self.opt_info_pub = rospy.Publisher(
-            OPT_INFO_TOPIC, TreeSearchResultMsg, queue_size=1)
-        self.path_pub = rospy.Publisher(PATH_TOPIC, Path, queue_size=1)
-        self.polygon_pub = rospy.Publisher(
-            POLYGON_TOPIC, PolygonStamped, queue_size=1)
-        self.opt_polygon_pub = rospy.Publisher(
-            OPT_POLYGON_TOPIC, PolygonStamped, queue_size=1)
-        self.frontier_sub = rospy.Subscriber(
-            FRONTIER_TOPIC, PolygonArray,
-            self.frontier_callback, queue_size=1)
-        self.pose_sub = rospy.Subscriber(
-            POSE_SUB_TOPIC, PoseStamped,
-            self.pose_callback, queue_size=1)
-        self.scan_polygon_sub = rospy.Subscriber(
-            SCAN_POLYGON_TOPIC, PolygonStamped,
-            self.scan_polygon_cb, queue_size=1)
-        self.run()
-
+    @n.main_loop()
     def run(self):
-        while not rospy.is_shutdown():
-            if not self.opt_tsr is None:
-                self.publish_pose_array(self.opt_tsr.path)
-                self.publish_path(self.opt_tsr.path)
-                self.publish_opt_info(self.opt_tsr)
-            self.rate.sleep()
+        if not self.opt_tsr is None:
+            self.publish_pose_array(self.opt_tsr.path)
+            self.publish_path(self.opt_tsr.path)
+            self.publish_opt_info(self.opt_tsr)
 
+    @n.subscriber(SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
     def scan_polygon_cb(self, ps):
         arrs = self.points_to_arrs(ps.polygon.points)
         self.poly = geom.Polygon(arrs)
 
+    @n.subscriber(POSE_SUB_TOPIC, PoseStamped, queue_size=1)
     def pose_callback(self, ps):
-        projection = self.get_current_projection()
-        self.publish_projection(projection, self.polygon_pub)
+        # projection = self.get_current_projection()
+        # self.publish_projection(projection, self.polygon_pub)
         self.pose = ps
 
+    @n.subscriber(FRONTIER_TOPIC, PolygonArray, queue_size=1)
     def frontier_callback(self, polys):
         multi_polygon = None
         for poly in polys.polygons:
@@ -119,6 +105,49 @@ class InfoPlanner(object):
         if not tsr is None:
             self.opt_tsr = tsr
 
+    def publish_projection(self, projection, pub):
+        poly = PolygonStamped()
+        poly.header.stamp = rospy.Time.now()
+        poly.header.frame_id = self.map_frame
+        for v in projection:
+            p = Point32()
+            p.x = v[0]
+            p.y = v[1]
+            poly.polygon.points.append(p)
+        pub.publish(poly)
+
+    @n.publisher(POSE_ARRAY_TOPIC, PoseArray, queue_size=1)
+    def publish_pose_array(self, shvs):
+        pa = PoseArray()
+        pa.header.stamp = rospy.Time.now()
+        pa.header.frame_id = self.map_frame
+        for shv in shvs:
+            pose = self.point_yaw_to_pose(shv.point, shv.yaw)
+            pa.poses.append(pose)
+        return pa
+
+    @n.publisher(PATH_TOPIC, Path, queue_size=1)
+    def publish_path(self, shvs):
+        pa = Path()
+        pa.header.stamp = rospy.Time.now()
+        pa.header.frame_id = self.map_frame
+        for shv in shvs:
+            ps = PoseStamped()
+            ps.header.frame_id = self.map_frame
+            ps.header.stamp = rospy.Time.now() + rospy.Duration(shv.ct)
+            ps.pose = self.point_yaw_to_pose(shv.point, shv.yaw)
+            pa.poses.append(ps)
+        return pa
+
+    @n.publisher(OPT_INFO_TOPIC, TreeSearchResultMsg, queue_size=1)
+    def publish_opt_info(self, tsr):
+        tsr_msg = TreeSearchResultMsg()
+        tsr_msg.header.stamp = rospy.Time.now()
+        tsr_msg.optimality = tsr.optimality
+        tsr_msg.execution_time = tsr.path_exec_time
+        tsr_msg.planner_time = tsr.planner_time
+        return tsr_msg
+
     def get_residual_polys(self, pt, yaw, polys):
         state = np.array([pt.x, pt.y, yaw])
         projection = self.get_projection(state)
@@ -130,9 +159,7 @@ class InfoPlanner(object):
         if bs_polys is None:
             return None
         pt = self.pose_to_geom_point(self.pose)
-        opt_res = self.find_best_yaw(pt, bs_polys)
-        res_polys = self.get_residual_polys(pt, opt_res.x, bs_polys)
-        first_value = SpaceHeapValue(pt, -opt_res.fun, res_polys, 0, opt_res.x)
+        first_value = self.make_space_heap_value(pt, bs_polys, 0)
         hq = [first_value]
         parents = dict()
         st = rospy.get_time()
@@ -145,16 +172,18 @@ class InfoPlanner(object):
                 parents[nbr_shv] = shv
                 heapq.heappush(hq, nbr_shv)
 
+    def make_space_heap_value(self, pt, bs_polys, t):
+        opt_res = self.find_best_yaw(pt, bs_polys)
+        res_polys = self.get_residual_polys(pt, opt_res.x, bs_polys)
+        val = SpaceHeapValue(pt, -opt_res.fun, res_polys, t, opt_res.x)
+        return val
+
     def propogate_neighbours(self, shv):
         for nbr in self.nbrs:
             nbr_p = Point(shv.point.x + nbr[0], shv.point.y + nbr[1])
-            next_time = shv.ct + shv.point.distance(nbr_p) / self.max_speed
-            if self.poly.contains(nbr_p) and next_time < self.max_time:
-                yaw_res = self.find_best_yaw(nbr_p, shv.polys)
-                res_ps = self.get_residual_polys(nbr_p, yaw_res.x, shv.polys)
-                args = [nbr_p, -yaw_res.fun, res_ps, next_time, yaw_res.x]
-                nbr_shv = SpaceHeapValue(*args)
-                yield nbr_shv
+            nt = shv.ct + shv.point.distance(nbr_p) / self.max_speed
+            if self.poly.contains(nbr_p) and nt < self.max_time:
+                yield self.make_space_heap_value(nbr_p, shv.polys, nt)
 
     def search_terminator(self, parents, shv, bs_polys, start_time):
         optimality = 1 - shv.polys.area / bs_polys.area
@@ -250,48 +279,6 @@ class InfoPlanner(object):
                                              trans_qm, trans_cq)
         return projection
 
-    """ Publisher helpers """
-
-    def publish_projection(self, projection, pub):
-        poly = PolygonStamped()
-        poly.header.stamp = rospy.Time.now()
-        poly.header.frame_id = self.map_frame
-        for v in projection:
-            p = Point32()
-            p.x = v[0]
-            p.y = v[1]
-            poly.polygon.points.append(p)
-        pub.publish(poly)
-
-    def publish_pose_array(self, shvs):
-        pa = PoseArray()
-        pa.header.stamp = rospy.Time.now()
-        pa.header.frame_id = self.map_frame
-        for shv in shvs:
-            pose = self.point_yaw_to_pose(shv.point, shv.yaw)
-            pa.poses.append(pose)
-        self.pose_array_pub.publish(pa)
-
-    def publish_path(self, shvs):
-        pa = Path()
-        pa.header.stamp = rospy.Time.now()
-        pa.header.frame_id = self.map_frame
-        for shv in shvs:
-            ps = PoseStamped()
-            ps.header.frame_id = self.map_frame
-            ps.header.stamp = rospy.Time.now() + rospy.Duration(shv.ct)
-            ps.pose = self.point_yaw_to_pose(shv.point, shv.yaw)
-            pa.poses.append(ps)
-        self.path_pub.publish(pa)
-
-    def publish_opt_info(self, tsr):
-        tsr_msg = TreeSearchResultMsg()
-        tsr_msg.header.stamp = rospy.Time.now()
-        tsr_msg.optimality = tsr.optimality
-        tsr_msg.execution_time = tsr.path_exec_time
-        tsr_msg.planner_time = tsr.planner_time
-        self.opt_info_pub.publish(tsr_msg)
-
     """ Conversions """
 
     def state_to_pose(self, state):
@@ -346,8 +333,8 @@ class InfoPlanner(object):
         return rot, trans
 
 
-if __name__ == "__main__":
-    rospy.init_node(NODE_NAME, anonymous=False)
-    infopl = InfoPlanner()
-    infopl.start()
-    rospy.spin()
+# if __name__ == "__main__":
+#     rospy.init_node(NODE_NAME, anonymous=False)
+#     infopl = InfoPlanner()
+#     infopl.start()
+#     rospy.spin()

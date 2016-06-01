@@ -43,13 +43,13 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 1
-      Cell Size: 1
+      Cell Size: 5
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
       Line Style:
         Line Width: 0.03
-        Value: Lines
+        Value: Billboards
       Name: Grid
       Normal Cell Count: 0
       Offset:
@@ -58,7 +58,7 @@ Visualization Manager:
         Z: 0
       Plane: XY
       Plane Cell Count: 200
-      Reference Frame: <Fixed Frame>
+      Reference Frame: golfcartdj/odom
       Value: true
     - Class: rviz/TF
       Enabled: false
@@ -241,26 +241,26 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /blind_spots_marker
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Arrow Length: 0.3
       Class: rviz/PoseArray
       Color: 0; 255; 255
-      Enabled: false
+      Enabled: true
       Name: PoseArray
       Topic: /optimal_poses
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
       Color: 85; 255; 0
-      Enabled: false
+      Enabled: true
       Line Style: Billboards
       Line Width: 0.03
       Name: Path
@@ -270,60 +270,19 @@ Visualization Manager:
         Z: 0
       Topic: /optimal_path
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        body:
-          Value: true
-        encoder:
-          Value: true
-        front_lidar:
-          Value: true
-        front_top_lidar:
-          Value: true
-        golfcartdj/base_link:
-          Value: true
-        golfcartdj/odom:
-          Value: true
-        imu:
-          Value: true
-        rear_left_lidar:
-          Value: true
-        rear_right_lidar:
-          Value: true
-        usb_cam:
-          Value: true
-        velodyne:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        golfcartdj/odom:
-          golfcartdj/base_link:
-            body:
-              {}
-            encoder:
-              {}
-            front_lidar:
-              {}
-            front_top_lidar:
-              {}
-            imu:
-              {}
-            rear_left_lidar:
-              {}
-            rear_right_lidar:
-              {}
-            usb_cam:
-              {}
-            velodyne:
-              {}
+        {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -350,22 +309,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 13.0987
+      Distance: 31.5425
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.502273
-        Y: -0.0395912
-        Z: -1.1916
+        X: -4.81865
+        Y: 1.64454
+        Z: -0.0048286
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.5698
-      Target Frame: golfcartdj/base_link
+      Target Frame: front_lidar
       Value: Orbit (rviz)
-      Yaw: 3.14681
+      Yaw: 3.1154
     Saved: ~
 Window Geometry:
   Displays:
