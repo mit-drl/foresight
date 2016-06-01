@@ -116,7 +116,8 @@ class InfoPlanner(object):
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
         tsr = self.find_path(multi_polygon)
-        self.opt_tsr = tsr
+        if not tsr is None:
+            self.opt_tsr = tsr
 
     def get_residual_polys(self, pt, yaw, polys):
         state = np.array([pt.x, pt.y, yaw])
@@ -126,6 +127,8 @@ class InfoPlanner(object):
         return polys.difference(proj_poly)
 
     def find_path(self, bs_polys):
+        if bs_polys is None:
+            return None
         pt = self.pose_to_geom_point(self.pose)
         opt_res = self.find_best_yaw(pt, bs_polys)
         res_polys = self.get_residual_polys(pt, opt_res.x, bs_polys)
@@ -188,26 +191,30 @@ class InfoPlanner(object):
         return -polys.intersection(poly).area
 
     def get_relative_pose(self, parent_frame, child_frame):
-        self.tfl.waitForTransform(
-            parent_frame, child_frame, rospy.Time(),
-            rospy.Duration(0.1))
-        tr, _ = self.tfl.lookupTransform(
-            parent_frame, child_frame, rospy.Time())
-        _, quat = self.tfl.lookupTransform(
-            child_frame, parent_frame, rospy.Time())
-        r, p, y = euler_from_quaternion(quat)
-        nquat = quaternion_from_euler(r, p, -y)
-        ps = PoseStamped()
-        ps.pose.position.x = -tr[0]
-        ps.pose.position.y = -tr[1]
-        ps.pose.position.z = -tr[2]
-        ps.pose.orientation.x = nquat[0]
-        ps.pose.orientation.y = nquat[1]
-        ps.pose.orientation.z = nquat[2]
-        ps.pose.orientation.w = nquat[3]
-        return ps
+        try:
+            self.tfl.waitForTransform(
+                parent_frame, child_frame, rospy.Time(),
+                rospy.Duration(0.2))
+            tr, _ = self.tfl.lookupTransform(
+                parent_frame, child_frame, rospy.Time())
+            _, quat = self.tfl.lookupTransform(
+                child_frame, parent_frame, rospy.Time())
+            r, p, y = euler_from_quaternion(quat)
+            nquat = quaternion_from_euler(r, p, -y)
+            ps = PoseStamped()
+            ps.pose.position.x = -tr[0]
+            ps.pose.position.y = -tr[1]
+            ps.pose.position.z = -tr[2]
+            ps.pose.orientation.x = nquat[0]
+            ps.pose.orientation.y = nquat[1]
+            ps.pose.orientation.z = nquat[2]
+            ps.pose.orientation.w = nquat[3]
+            return ps
+        except Exception:
+            s = "No transform from {} to {}".format(parent_frame, child_frame)
+            rospy.logwarn(s)
+        return PoseStamped()
 
-    @fontais.memoize()
     def get_inverse_pose(self, pose, frame_id):
         pos = pose.pose.position
         quat = pose.pose.orientation
@@ -224,7 +231,6 @@ class InfoPlanner(object):
         inv_pose.pose.orientation.w = inv_quat[3]
         return inv_pose
 
-    @fontais.memoize()
     def get_projection(self, state):
         pose_mq = self.state_to_pose(state)
         pose_qm = self.get_inverse_pose(pose_mq, "base_link")
@@ -288,7 +294,6 @@ class InfoPlanner(object):
 
     """ Conversions """
 
-    @fontais.memoize()
     def state_to_pose(self, state):
         quat = quaternion_from_euler(0, 0, state[2])
         pose_mq = PoseStamped()

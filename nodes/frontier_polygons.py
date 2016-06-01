@@ -18,7 +18,7 @@ from visualization_msgs.msg import Marker
 
 NODE_NAME = "frontier_publisher"
 PC_TOPIC = "/frontier"
-MAP_FRAME = "golfcartdj/base_link"
+MAP_FRAME = "front_lidar"
 SCAN_TOPIC = "/merged_cloud"
 SCAN_POLYGON_TOPIC = "/scan_polygon"
 MARKER_TOPIC = "/blind_spots_marker"
