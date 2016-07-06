@@ -45,17 +45,25 @@ module screw_mount(x)
     }
 }
 
-screw_mount(0);
-
-translate([-0.5 * mount_screw_d - screw_thickness, -plate_y_size / 2, 0])
-cube([mount_screw_d + 2 * screw_thickness, bar_thickness, mount_z_size + 2]);
-
-translate([-0.5 * mount_screw_d - screw_thickness, (plate_y_size - 2 * mount_screw_d - screw_thickness - bar_thickness) / 2 + 1, 0])
-cube([mount_screw_d + 2 * screw_thickness, bar_thickness, mount_z_size + 2]);
-
-for (j = [-1, 1])
+difference()
 {
-    screw_hole(mount_x_size / 2 - sensor_size / 2, j * sensor_size / 2, mount_z_size);
-    translate([-4, j * sensor_size / 2 - 4, mount_z_size - 2])
-    cube([23, mount_screw_d + 2 * screw_thickness, screw_height], center=false);
+    union()
+    {
+        screw_mount(0);
+
+        translate([-0.5 * mount_screw_d - screw_thickness, -plate_y_size / 2, 0])
+        cube([mount_screw_d + 2 * screw_thickness, bar_thickness, mount_z_size + 2]);
+
+        translate([-0.5 * mount_screw_d - screw_thickness, (plate_y_size - 2 * mount_screw_d - screw_thickness - bar_thickness) / 2 + 1, 0])
+        cube([mount_screw_d + 2 * screw_thickness, bar_thickness, mount_z_size + 2]);
+
+        for (j = [-1, 1])
+        {
+            screw_hole(mount_x_size / 2 - sensor_size / 2, j * sensor_size / 2, mount_z_size);
+            translate([-4, j * sensor_size / 2 - 4, mount_z_size - 2])
+            cube([23, mount_screw_d + 2 * screw_thickness, screw_height], center=false);
+        }
+    }
+
+    cube([20, 30, 10], center=true);
 }
