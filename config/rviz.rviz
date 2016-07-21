@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Displays
@@ -245,7 +245,7 @@ Visualization Manager:
       Marker Topic: /blind_spots_marker
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Arrow Length: 0.3
@@ -276,13 +276,72 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        back_camera_link:
+          Value: true
+        base_link:
+          Value: true
+        body:
+          Value: true
+        encoder:
+          Value: true
+        fcu:
+          Value: true
+        front_lidar:
+          Value: true
+        front_top_lidar:
+          Value: true
+        golfcartdj/base_link:
+          Value: true
+        golfcartdj/odom:
+          Value: true
+        imu:
+          Value: true
+        left:
+          Value: true
+        rear_left_lidar:
+          Value: true
+        rear_right_lidar:
+          Value: true
+        right:
+          Value: true
+        usb_cam:
+          Value: true
+        velodyne:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        golfcartdj/odom:
+          golfcartdj/base_link:
+            body:
+              {}
+            encoder:
+              {}
+            front_lidar:
+              base_link:
+                back_camera_link:
+                  {}
+                fcu:
+                  {}
+                left:
+                  {}
+                right:
+                  {}
+            front_top_lidar:
+              {}
+            imu:
+              {}
+            rear_left_lidar:
+              {}
+            rear_right_lidar:
+              {}
+            usb_cam:
+              {}
+            velodyne:
+              {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -309,22 +368,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 31.5425
+      Distance: 25.7458
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -4.81865
-        Y: 1.64454
-        Z: -0.0048286
+        X: 0.978577
+        Y: -2.27439
+        Z: 0.0883214
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.5698
+      Pitch: 0.919796
       Target Frame: front_lidar
       Value: Orbit (rviz)
-      Yaw: 3.1154
+      Yaw: 3.2104
     Saved: ~
 Window Geometry:
   Displays:

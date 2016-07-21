@@ -39,10 +39,10 @@ POSE_ARRAY_TOPIC = "/optimal_poses"
 PATH_TOPIC = "/optimal_path"
 OPT_INFO_TOPIC = "/optimization_info"
 
-n = roshelper.Node(NODE_NAME, __name__, anonymous=False)
+n = roshelper.Node(NODE_NAME, anonymous=False)
 
 
-@n.start_node()
+@n.entry_point()
 class InfoPlanner(object):
 
     def __init__(self):
@@ -73,7 +73,7 @@ class InfoPlanner(object):
         self.altitude = rospy.get_param("~altitude", 1)
         self.tfl = tf.TransformListener()
 
-    @n.main_loop()
+    @n.main_loop(frequency=30)
     def run(self):
         if not self.opt_tsr is None:
             self.publish_pose_array(self.opt_tsr.path)
@@ -333,8 +333,5 @@ class InfoPlanner(object):
         return rot, trans
 
 
-# if __name__ == "__main__":
-#     rospy.init_node(NODE_NAME, anonymous=False)
-#     infopl = InfoPlanner()
-#     infopl.start()
-#     rospy.spin()
+if __name__ == "__main__":
+    n.start(spin=True)
