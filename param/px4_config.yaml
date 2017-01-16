@@ -52,7 +52,7 @@ global_position:
 
 # imu_pub
 imu:
-  frame_id: "fcu"
+  frame_id: "map"
   # need find actual values
   linear_acceleration_stdev: 0.003
   angular_velocity_stdev: !degrees 1
@@ -65,7 +65,7 @@ local_position:
   tf:
     send: false
     frame_id: "map"
-    child_frame_id: "base_link"
+    child_frame_id: "car/base_link"
 
 # param
 # None, used for FCU params

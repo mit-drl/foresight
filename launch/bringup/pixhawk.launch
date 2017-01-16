@@ -10,4 +10,8 @@
         <arg name="tgt_component" value="1" />
         <arg name="log_output" value="screen" />
     </include>
+<!--     <include file="$(find foresight)/launch/localization/static_transformations.launch"/> -->
+<!--     <include file="$(find foresight)/launch/localization/ukf_fuser.launch" /> -->
+
+    <node name="imu_tf" pkg="foresight" type="imu_tf.py" args="--test"/>
 </launch>

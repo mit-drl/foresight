@@ -10,6 +10,8 @@ plugin_blacklist:
     - actuator_control
     - cam_imu_sync
     - global_position
+    #- local_position
+    - vision_pose
     - setpoint_raw
     - safety_area
     - vfr_hud

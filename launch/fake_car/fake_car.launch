@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find foresight)/launch/bringup/pixhawk.launch" />
+
+    <include file="$(find foresight)/launch/sensors/hokuyo.launch" />
+
+</launch>

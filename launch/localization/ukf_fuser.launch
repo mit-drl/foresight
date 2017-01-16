@@ -7,19 +7,19 @@
 
         <param name="map_frame" value="map"/>
         <param name="odom_frame" value="odom"/>
-        <param name="base_link_frame" value="base_link"/>
+        <param name="base_link_frame" value="car/base_link"/>
         <param name="world_frame" value="odom"/>
 
         <param name="transform_time_offset" value="0.0"/>
 
-        <param name="odom0" value="/foresight/px4flow/odom"/>
-        <param name="imu0" value="/imu/data"/>
+        <!-- <param name="odom0" value="/foresight/px4flow/odom"/> -->
+        <param name="imu0" value="/mavros/imu/data"/>
 
-        <rosparam param="odom0_config">[true, true, true,
+        <!-- <rosparam param="odom0_config">[true, true, true,
                                         false, false, false,
                                         false, false, false,
                                         false, false, false,
-                                        false, false, false]</rosparam>
+                                        false, false, false]</rosparam> -->
 
         <rosparam param="imu0_config">[false, false, false,
                                        true, true, true,
