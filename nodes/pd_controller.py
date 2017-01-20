@@ -22,6 +22,7 @@ class PID(object):
         self.prev_time = rospy.Time()
         self.integral = 0.0
         self.max = 0.0
+        self.feedforward = 0.0
 
     def step(self, state):
         error = self.setpoint - state
@@ -30,7 +31,7 @@ class PID(object):
         derror = error - self.old_error
         self.integral += error*dt
 
-        output = self.kp*error + self.kd*(derror/dt) + self.ki*self.integral
+        output = self.kp*error + self.kd*(derror/dt) + self.ki*self.integral + self.feedforward
 
         if output > self.max:
             output = self.max
@@ -61,6 +62,7 @@ class PD_Controller(object):
         self.yaw_p = rospy.get_param(server + '/yaw_gains_P')
         self.yaw_i = rospy.get_param(server + '/yaw_gains_I')
         self.yaw_d = rospy.get_param(server + '/yaw_gains_D')
+        self.yaw_feedforward = rospy.get_param(server + '/yaw_feedforward')
         self.yaw_setpoint = rospy.get_param(server + '/yaw_setpoint')
         self.yaw_vel_max = 1 #rospy.get_param(BEBOP_NODE_NAME + '/SpeedSettingsMaxRotationSpeedCurrent')
 
@@ -71,12 +73,15 @@ class PD_Controller(object):
         self.z_p = rospy.get_param(server + '/z_gains_P')
         self.z_i = rospy.get_param(server + '/z_gains_I')
         self.z_d = rospy.get_param(server + '/z_gains_D')
+        self.z_feedforward = rospy.get_param(server + '/z_setpoint')
         self.z_setpoint = rospy.get_param(server + '/z_setpoint')
         self.z_vel_max = 1 #rospy.get_param(BEBOP_NODE_NAME + '/SpeedSettingsMaxVerticalSpeedCurrent')
 
         self.z_control = PID(self.z_p,self.z_i,self.z_d)
         self.z_control.max = self.z_vel_max
         self.z_control.setpoint = self.z_setpoint
+
+        
 
         self.client = dynamic_reconfigure.client.Client("pd_server", timeout=30, config_callback=self.callback)
 
@@ -123,9 +128,11 @@ class PD_Controller(object):
             self.yaw_control.kp = config['yaw_gains_P']
             self.yaw_control.ki = config['yaw_gains_I']
             self.yaw_control.kd = config['yaw_gains_D']
+            self.yaw_control.feedforward = config['yaw_feedforward']
             self.z_control.kp = config['z_gains_P']
             self.z_control.ki = config['z_gains_I']
             self.z_control.kd = config['z_gains_D']
+            self.z_control.feedforward = config['z_feedforward']
 
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
