@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <launch>
     <node pkg="foresight" type="server.py" name="pd_server" output="screen" />
-    <node pkg="foresight" type="pd_controller.py" name="pd_controller" output="screen" />
+    <node pkg="foresight" type="pd_controller.py" name="pd_controller" output="screen">
+        <param name="cmd_vel" value="/bebop/cmd_vel" />
+    </node>
     <node pkg="rqt_gui" type="rqt_gui" name="rqt_gui" args="-s reconfigure"/>
 
 </launch>
