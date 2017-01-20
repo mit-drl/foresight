@@ -47,13 +47,8 @@ class PID(object):
 class PD_Controller(object):
 
     def __init__(self, frequency, cmd_vel_topic, fixed_frame, child_frame):
-        print 'ABOUT TO WAIT'
 
         #rospy.wait_for_service("pd_server")
-        self.client = dynamic_reconfigure.client.Client("pd_server", timeout=30, config_callback=self.callback)
-
-        print "CLIENT MADE"
-
         self.cmd_vel_topic = cmd_vel_topic
         self.fixed_frame = fixed_frame
         self.child_frame = child_frame
@@ -67,7 +62,7 @@ class PD_Controller(object):
         self.yaw_i = rospy.get_param(server + '/yaw_gains_I')
         self.yaw_d = rospy.get_param(server + '/yaw_gains_D')
         self.yaw_setpoint = rospy.get_param(server + '/yaw_setpoint')
-        self.yaw_vel_max = rospy.get_param(BEBOP_NODE_NAME + '/SpeedSettingsMaxRotationSpeedCurrent')
+        self.yaw_vel_max = 1 #rospy.get_param(BEBOP_NODE_NAME + '/SpeedSettingsMaxRotationSpeedCurrent')
 
         self.yaw_control = PID(self.yaw_p,self.yaw_i,self.yaw_d)
         self.yaw_control.max = self.yaw_vel_max
@@ -76,12 +71,14 @@ class PD_Controller(object):
         self.z_p = rospy.get_param(server + '/z_gains_P')
         self.z_i = rospy.get_param(server + '/z_gains_I')
         self.z_d = rospy.get_param(server + '/z_gains_D')
-        self.z_setpoint = rospy.get_param('z_setpoint')
-        self.z_vel_max = rospy.get_param(BEBOP_NODE_NAME + '/SpeedSettingsMaxVerticalSpeedCurrent')
+        self.z_setpoint = rospy.get_param(server + '/z_setpoint')
+        self.z_vel_max = 1 #rospy.get_param(BEBOP_NODE_NAME + '/SpeedSettingsMaxVerticalSpeedCurrent')
 
         self.z_control = PID(self.z_p,self.z_i,self.z_d)
         self.z_control.max = self.z_vel_max
         self.z_control.setpoint = self.z_setpoint
+
+        self.client = dynamic_reconfigure.client.Client("pd_server", timeout=30, config_callback=self.callback)
 
     def start(self):
         while not rospy.is_shutdown():
@@ -119,16 +116,16 @@ class PD_Controller(object):
                 print "TF ERROR"
             self.rate.sleep()
 
-    def callback(config):
-        self.yaw_control.setpoint = config['yaw_setpoint']
-        self.z_control.setpoint = config['z_setpoint']
-        self.yaw_control.kp = config['yaw_gains_P']
-        self.yaw_control.ki = config['yaw_gains_I']
-        self.yaw_control.kd = config['yaw_gains_D']
-        self.z_control.kp = config['z_gains_P']
-        self.z_control.ki = config['z_gains_I']
-        self.z_control.kd = config['z_gains_D']
-        print self.yaw_control.setpoint
+    def callback(self, config):
+        if not (self.yaw_control == None or self.z_control == None):
+            self.yaw_control.setpoint = config['yaw_setpoint']
+            self.z_control.setpoint = config['z_setpoint']
+            self.yaw_control.kp = config['yaw_gains_P']
+            self.yaw_control.ki = config['yaw_gains_I']
+            self.yaw_control.kd = config['yaw_gains_D']
+            self.z_control.kp = config['z_gains_P']
+            self.z_control.ki = config['z_gains_I']
+            self.z_control.kd = config['z_gains_D']
 
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
