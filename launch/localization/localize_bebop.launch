@@ -71,16 +71,16 @@
 
     <!-- Because bebop doesn't publish the odom with a covariance -->
 
-    <node pkg="odom_covariance" type="odom_covariance_node"
-        name="odom_covariance_node">
-        <remap from="inputOdom" to="bebop/odom" />
-        <remap from="outputOdom" to="bebop/odom_cov" />
-        <param name="posX" value="0.01" />
-        <param name="posY" value="0.01" />
-        <param name="posZ" value="0.01" />
-        <param name="rotX" value="0.0001" />
-        <param name="rotY" value="0.0001" />
-        <param name="rotZ" value="0.0001" />
+    <node pkg="foresight" type="odom_covariance.py"
+        name="odom_covariance" output="screen">
+        <remap from="odom_input" to="bebop/odom" />
+        <remap from="odom_output" to="bebop/odom_cov" />
+        <param name="px" value="0.01" />
+        <param name="py" value="0.01" />
+        <param name="pz" value="0.01" />
+        <param name="rx" value="0.0001" />
+        <param name="ry" value="0.0001" />
+        <param name="rz" value="0.0001" />
     </node>
 
     <!-- Robot localization -->

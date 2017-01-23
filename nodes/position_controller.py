@@ -30,12 +30,6 @@ class PositionController(object):
     @n.publisher("/bebop/cmd_vel", Twist)
     def publish_cmd_vel(self, vx, vy, vz):
         vel = Twist()
-        # if vx > 0.03:
-        #     vel.linear.x = vx
-        # if vy > 0.03:
-        #     vel.linear.y = vy
-        # if vz > 0.03:
-        #     vel.linear.z = vz
         if self.dist_to_goal() > 0.1:
             vel.linear.x = vx
             vel.linear.y = vy
@@ -54,20 +48,30 @@ class PositionController(object):
 
     @n.subscriber("/bebop/odom", Odometry)
     def odom_sub(self, odom):
-        self.float_pub(odom.pose.pose.position.x).publish("/pid_x/state")
-        self.float_pub(odom.pose.pose.position.y).publish("/pid_y/state")
-        self.float_pub(odom.pose.pose.position.z).publish("/pid_z/state")
-        self.pose = odom.pose.pose
+        try:
+            ps = PoseStamped()
+            ps.header = odom.header
+            ps.pose = odom.pose.pose
+            self.listener.waitForTransform(ps.header.frame_id, self.frame_id,
+                                           rospy.Time(), rospy.Duration(1))
+            ps_tf = self.listener.transformPose(self.frame_id, ps)
+            self.float_pub(ps_tf.pose.position.x).publish("/pid_x/state")
+            self.float_pub(ps_tf.pose.position.y).publish("/pid_y/state")
+            self.float_pub(ps_tf.pose.position.z).publish("/pid_z/state")
+            self.pose = odom.pose.pose
+        except:
+            print "tf error"
 
     @n.subscriber("/setpoint_pose", PoseStamped)
     def setpoint_sub(self, ps):
-        # print ps
         self.setpoint = ps.pose
-        ps_tf = self.listener.transformPose(self.frame_id, ps)
-        print ps_tf
-        self.float_pub(ps.pose.position.x).publish("/pid_x/setpoint")
-        self.float_pub(ps.pose.position.y).publish("/pid_y/setpoint")
-        self.float_pub(ps.pose.position.z).publish("/pid_z/setpoint")
+        try:
+            ps_tf = self.listener.transformPose(self.frame_id, ps)
+            self.float_pub(ps_tf.pose.position.x).publish("/pid_x/setpoint")
+            self.float_pub(ps_tf.pose.position.y).publish("/pid_y/setpoint")
+            self.float_pub(ps_tf.pose.position.z).publish("/pid_z/setpoint")
+        except:
+            print "tf error"
 
     def dist_to_goal(self):
         pos = self.pose.position
