@@ -18,7 +18,7 @@ def pub_setpoint(x, y, z):
 
 @n.entry_point(frequency=30)
 def run():
-    pub_setpoint(0, 0, 2)
+    pub_setpoint(0.5, 0.5, 2)
 
 
 if __name__ == "__main__":
