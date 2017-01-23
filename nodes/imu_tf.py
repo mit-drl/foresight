@@ -3,7 +3,6 @@
 import rospy
 import tf
 from sensor_msgs.msg import Imu
-from geometry_msgs.msg import Quaternion
 
 
 NODE_NAME = "imu_tf"
@@ -25,7 +24,7 @@ class IMU_TF(object):
         print quat
         return [quat.x, quat.y, quat.z, quat.w]
 
-    def imu_cb(self,data):
+    def imu_cb(self, data):
         self.quat = data.orientation
 
     def start(self):
@@ -39,6 +38,7 @@ class IMU_TF(object):
                     rospy.Time.now(),
                     self.child_frame, self.fixed_frame)
             self.rate.sleep()
+
 
 def main():
     rospy.init_node(NODE_NAME, anonymous=False)
