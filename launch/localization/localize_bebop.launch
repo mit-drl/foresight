@@ -141,24 +141,24 @@
     <arg name="lower_limit" value="-1"/>
 
     <node name="pid_x" pkg="pid" type="controller" ns="pid_x">
-        <param name="Kp" value="0.1" />
-        <param name="Ki" value="0.0" />
-        <param name="Kd" value="0.05" />
+        <param name="Kp" value="0.09" />
+        <param name="Ki" value="0.05" />
+        <param name="Kd" value="0.1" />
         <param name="upper_limit" value="$(arg upper_limit)" />
         <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="10" />
+        <param name="windup_limit" value="0.05" />
         <param name="diagnostic_period" value="0.25" />
         <param name="max_loop_frequency" value="100.0" />
         <param name="min_loop_frequency" value="100.0" />
     </node>
 
     <node name="pid_y" pkg="pid" type="controller" ns="pid_y">
-        <param name="Kp" value="0.1" />
-        <param name="Ki" value="0.0" />
-        <param name="Kd" value="0.05" />
+        <param name="Kp" value="0.09" />
+        <param name="Ki" value="0.05" />
+        <param name="Kd" value="0.1" />
         <param name="upper_limit" value="$(arg upper_limit)" />
         <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="10" />
+        <param name="windup_limit" value="0.05" />
         <param name="diagnostic_period" value="0.25" />
         <param name="max_loop_frequency" value="100.0" />
         <param name="min_loop_frequency" value="100.0" />
@@ -170,7 +170,19 @@
         <param name="Kd" value="0.1" />
         <param name="upper_limit" value="$(arg upper_limit)" />
         <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="10" />
+        <param name="windup_limit" value="0.05" />
+        <param name="diagnostic_period" value="0.25" />
+        <param name="max_loop_frequency" value="100.0" />
+        <param name="min_loop_frequency" value="100.0" />
+    </node>
+
+    <node name="pid_yaw" pkg="pid" type="controller" ns="pid_yaw">
+        <param name="Kp" value="0.5" />
+        <param name="Ki" value="0.0" />
+        <param name="Kd" value="0.1" />
+        <param name="upper_limit" value="$(arg upper_limit)" />
+        <param name="lower_limit" value="$(arg lower_limit)" />
+        <param name="windup_limit" value="1" />
         <param name="diagnostic_period" value="0.25" />
         <param name="max_loop_frequency" value="100.0" />
         <param name="min_loop_frequency" value="100.0" />

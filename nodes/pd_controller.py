@@ -31,11 +31,7 @@ class PID(object):
         derror = error - self.old_error
         self.integral += dt.to_sec() * error
 
-<<<<<<< HEAD
-        output = self.kp*error + self.kd*(derror/dt) + self.ki*self.integral + self.feedforward
-=======
         output = self.kp*error - self.kd*(derror/(dt.to_sec() + 1e-5)) + self.ki*self.integral
->>>>>>> eb583ff0d8a2ff5df5e9d3eb04a40333399c5e2f
 
         if output > self.max:
             output = self.max
@@ -133,7 +129,7 @@ class PD_Controller(object):
                 r_y = goal_y - y
                 phi = math.atan2(r_y,r_x)
                 theta = yaw - phi
-                
+
                 #lin, ang = self.tfl.lookupTwist(
                 #    self.fixed_frame, self.child_frame, rospy.Time(),0.05)
 
