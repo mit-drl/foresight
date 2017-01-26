@@ -7,22 +7,24 @@ from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Quaternion
+from foresight.msg import PoseArrayWithTimes
 
 n = roshelper.Node("trajectory_node", anonymous=False)
 
 
-@n.publisher("/trajectory", PoseArray)
+@n.publisher("/waypoints", PoseArrayWithTimes)
 def pub_setpoint():
     points = [0, 0, 0, 0, 0, 0, 0]
-    points[0] = [0.0, 0.0, 2, 0]
-    points[1] = [0.75, 0.0, 2, 0]
-    points[2] = [0.75, 0.75, 2, 0]
-    points[3] = [0.0, 0.75, 2, 0]
-    points[4] = [0.0, 0.0, 2, 0]
-    points[5] = [0.0, 0.0, 2, 1.57]
-    points[6] = [0.0, 0.0, 2, 3.14]
+    points[0] = [0.0, 0.0, 2, 0, 5.0]
+    points[1] = [0.75, -0.75, 2, 0, 5.0]
+    points[2] = [0.75, 0.75, 2, 0, 5.0]
+    points[3] = [0.0, 0.75, 2, 0, 5.0]
+    points[4] = [0.0, 0.0, 2, 0, 5.0]
+    points[5] = [0.0, 0.0, 2, 1.57, 0.0]
+    points[6] = [0.0, 0.0, 2, 3.14, 0.0]
 
     poses = []
+    times = []
 
     for point in points:
         p = Pose()
@@ -39,9 +41,12 @@ def pub_setpoint():
         p.orientation = quat
         poses.append(p)
 
-    traj = PoseArray()
-    traj.header.frame_id = "odom"
-    traj.poses = poses
+        times.append(point[4])
+
+    traj = PoseArrayWithTimes()
+    traj.pose_array.header.frame_id = "odom"
+    traj.pose_array.poses = poses
+    traj.wait_times = times
 
     return traj
 

@@ -19,16 +19,17 @@ Panels:
     SyncMode: 0
     SyncSource: ""
   - Class: rviz/Displays
-    Help Height: 61
+    Help Height: 78
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
+        - /Path1
         - /Odometry3
-        - /Odometry3/Status1
+        - /Pose2
       Splitter Ratio: 0.5
-    Tree Height: 769
+    Tree Height: 747
 Visualization Manager:
   Class: ""
   Displays:
@@ -67,23 +68,15 @@ Visualization Manager:
           Value: true
         car/base_link:
           Value: true
-        car_to_tag_left_front:
-          Value: true
         map:
           Value: true
         odom:
-          Value: true
-        tag_bottom_right:
           Value: true
         tag_left_back:
           Value: true
         tag_left_front:
           Value: true
         tag_right_center:
-          Value: true
-        tag_top_left:
-          Value: true
-        tag_top_right:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -93,19 +86,19 @@ Visualization Manager:
       Tree:
         map:
           car/base_link:
+            odom:
+              base_link:
+                camera_base_link:
+                  camera_pan_link:
+                    camera_tilt_link:
+                      camera_optical:
+                        {}
             tag_left_back:
               {}
             tag_left_front:
               {}
             tag_right_center:
               {}
-        odom:
-          base_link:
-            camera_base_link:
-              camera_pan_link:
-                camera_tilt_link:
-                  camera_optical:
-                    {}
       Update Interval: 0
       Value: true
     - Alpha: 0.7
@@ -115,6 +108,7 @@ Visualization Manager:
       Enabled: false
       Name: Map
       Topic: /map
+      Unreliable: false
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -142,6 +136,7 @@ Visualization Manager:
       Size (m): 0.1
       Style: Spheres
       Topic: /front_scan
+      Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -171,6 +166,7 @@ Visualization Manager:
       Size (m): 0.01
       Style: Flat Squares
       Topic: /front_scan_changed_range
+      Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -181,6 +177,7 @@ Visualization Manager:
       History Length: 1
       Name: Imu
       Topic: /imu_with_orientation
+      Unreliable: false
       Value: false
     - Angle Tolerance: 0.1
       Class: rviz/Odometry
@@ -218,6 +215,7 @@ Visualization Manager:
       Size (m): 0.01
       Style: Flat Squares
       Topic: /rear_left_scan
+      Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -247,6 +245,7 @@ Visualization Manager:
       Size (m): 0.01
       Style: Flat Squares
       Topic: /rear_right_scan
+      Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -260,6 +259,7 @@ Visualization Manager:
       Normalize Range: true
       Queue Size: 2
       Transport Hint: compressed
+      Unreliable: false
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -287,6 +287,7 @@ Visualization Manager:
       Size (m): 0.01
       Style: Flat Squares
       Topic: /scan
+      Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -298,6 +299,7 @@ Visualization Manager:
       Name: Range
       Queue Size: 100
       Topic: /tag_bottom_right/range
+      Unreliable: false
       Value: false
     - Alpha: 0.5
       Buffer Length: 1
@@ -307,6 +309,7 @@ Visualization Manager:
       Name: Range
       Queue Size: 100
       Topic: /tag_top_left/range
+      Unreliable: false
       Value: false
     - Alpha: 0.5
       Buffer Length: 1
@@ -316,6 +319,7 @@ Visualization Manager:
       Name: Range
       Queue Size: 100
       Topic: /tag_top_right/range
+      Unreliable: false
       Value: false
     - Alpha: 1
       Axes Length: 0.3
@@ -330,6 +334,7 @@ Visualization Manager:
       Shaft Radius: 0.05
       Shape: Axes
       Topic: /pose
+      Unreliable: false
       Value: false
     - Angle Tolerance: 0.1
       Class: rviz/Odometry
@@ -345,7 +350,10 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 25; 255; 0
-      Enabled: false
+      Enabled: true
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Length: 0.3
       Line Style: Lines
       Line Width: 0.03
       Name: Path
@@ -353,8 +361,13 @@ Visualization Manager:
         X: 0
         Y: 0
         Z: 0
-      Topic: /trajectory
-      Value: false
+      Pose Style: None
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
+      Topic: /path
+      Unreliable: false
+      Value: true
     - Angle Tolerance: 0
       Class: rviz/Odometry
       Color: 0; 0; 255
@@ -366,8 +379,8 @@ Visualization Manager:
       Topic: /bebop/odom
       Value: true
     - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.1
+      Axes Length: 0.4
+      Axes Radius: 0.05
       Class: rviz/Pose
       Color: 255; 25; 0
       Enabled: true
@@ -376,8 +389,17 @@ Visualization Manager:
       Name: Pose
       Shaft Length: 1
       Shaft Radius: 0.05
-      Shape: Arrow
+      Shape: Axes
       Topic: /setpoint_pose
+      Unreliable: false
+      Value: true
+    - Arrow Length: 0.3
+      Class: rviz/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Name: PoseArray
+      Topic: /trajectory
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -403,7 +425,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.2405
+      Distance: 11.54
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -415,20 +437,20 @@ Visualization Manager:
         Z: -0.195345
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.409796
+      Pitch: 1.1598
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.03807
+      Yaw: 3.11307
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: true
-  Height: 1039
-  Hide Left Dock: true
+    collapsed: false
+  Height: 1028
+  Hide Left Dock: false
   Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000013c0000037bfc0200000019fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005300fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000002cc000000e50000001600fffffffb0000000c00430061006d00650072006100000002e8000000c90000000000000000fb0000000a0049006d0061006700650000000308000000bd0000000000000000fb0000000a0049006d00610067006500000002de000000d30000000000000000fb0000000c00430061006d00650072006101000002d2000000160000000000000000fb0000000a0049006d00610067006501000002e8000000c90000000000000000fb0000000a0049006d00610067006501000002e8000000c90000000000000000fb0000000a0049006d00610067006501000002c2000000ef0000000000000000fb0000000a0049006d00610067006501000002f7000000ce0000000000000000fb0000000c00430061006d00650072006100000002fb000000ca0000000000000000fb0000000c00430061006d00650072006100000002fb000000ca0000000000000000fb0000000c00430061006d00650072006101000002e5000000160000000000000000fb0000000a0049006d00610067006501000002fb000000ca0000000000000000fb0000000a0049006d00610067006501000002fb000000ca0000000000000000fb0000000a0049006d006100670065010000022e000000c70000000000000000fb0000000a0049006d00610067006501000002bf000001060000000000000000fb0000000a0049006d00610067006501000002b4000001110000000000000000fb000000100044006900730070006c00610079007300000000360000037b000000b700ffffff000000010000010f0000037bfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000360000037b0000009b00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000780000000b7fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003be0000003efc0100000002fb0000000800540069006d00650100000000000003be0000024600fffffffb0000000800540069006d00650100000000000004500000000000000000000003be0000037b00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a0000037afc0200000019fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000002cc000000e50000001600fffffffb0000000c00430061006d00650072006100000002e8000000c90000000000000000fb0000000a0049006d0061006700650000000308000000bd0000000000000000fb0000000a0049006d00610067006500000002de000000d30000000000000000fb0000000c00430061006d00650072006101000002d2000000160000000000000000fb0000000a0049006d00610067006501000002e8000000c90000000000000000fb0000000a0049006d00610067006501000002e8000000c90000000000000000fb0000000a0049006d00610067006501000002c2000000ef0000000000000000fb0000000a0049006d00610067006501000002f7000000ce0000000000000000fb0000000c00430061006d00650072006100000002fb000000ca0000000000000000fb0000000c00430061006d00650072006100000002fb000000ca0000000000000000fb0000000c00430061006d00650072006101000002e5000000160000000000000000fb0000000a0049006d00610067006501000002fb000000ca0000000000000000fb0000000a0049006d00610067006501000002fb000000ca0000000000000000fb0000000a0049006d006100670065010000022e000000c70000000000000000fb0000000a0049006d00610067006501000002bf000001060000000000000000fb0000000a0049006d00610067006501000002b4000001110000000000000000fb000000100044006900730070006c00610079007301000000280000037a000000dd00ffffff000000010000010f0000037bfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000360000037b000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000780000000b7fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003be0000003efc0100000002fb0000000800540069006d00650100000000000003be000002f600fffffffb0000000800540069006d006501000000000000045000000000000000000000024e0000037a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -438,5 +460,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 958
-  X: 0
-  Y: 39
+  X: 55
+  Y: 14

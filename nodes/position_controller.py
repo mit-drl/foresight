@@ -24,7 +24,10 @@ class PositionController(object):
         self.listener = tf.TransformListener()
         self.efforts = [0, 0, 0, 0]
         self.pose = Pose()
-        self.setpoint = Pose()
+        self.setpoint = None
+        self.wait_time = 0.0
+        self.start_time = rospy.Time()
+        #self.made_target = False
         self.topics = {"/pid_x/control_effort": 0,
                        "/pid_y/control_effort": 1,
                        "/pid_z/control_effort": 2,
@@ -34,10 +37,19 @@ class PositionController(object):
     @n.publisher("/bebop/cmd_vel", Twist)
     def publish_cmd_vel(self, vx, vy, vz, vyaw):
         vel = Twist()
-        if self.dist_to_goal() > 0.1:
+        if self.dist_to_goal() > 0.15:
             vel.linear.x = vx
             vel.linear.y = vy
             vel.linear.z = vz
+            self.made_target = True
+            self.start_time = rospy.Time.now()
+
+        # elif self.made_target == True:
+        #     if rospy.Time.now() - self.start_time < rospy.Duration(self.wait_time):
+        #         print "waiting"
+        #         vel.linear.x = 0.0
+        #         vel.linear.y = 0.0
+        #         vel.linear.z = 0.0
         vel.angular.z = vyaw
         return vel
 
@@ -86,6 +98,7 @@ class PositionController(object):
 
     @n.subscriber("/setpoint_pose", PoseStamped)
     def setpoint_sub(self, ps):
+        #self.made_target = False
         self.setpoint = ps.pose
         #try:
         ps_tf = self.listener.transformPose(self.frame_id, ps)
@@ -99,12 +112,15 @@ class PositionController(object):
         #    print "tf error"
 
     def dist_to_goal(self):
-        pos = self.pose.position
-        spos = self.setpoint.position
-        x_dist = pow(pos.x - spos.x, 2)
-        y_dist = pow(pos.y - spos.y, 2)
-        z_dist = pow(pos.z - spos.z, 2)
-        return math.sqrt(x_dist + y_dist + z_dist)
+        if not self.setpoint == None:
+            pos = self.pose.position
+            spos = self.setpoint.position
+            x_dist = pow(pos.x - spos.x, 2)
+            y_dist = pow(pos.y - spos.y, 2)
+            z_dist = pow(pos.z - spos.z, 2)
+            return math.sqrt(x_dist + y_dist + z_dist)
+        else:
+            return 0
 
     @n.subscriber("/bebop/land", Empty)
     def on_land(self, empty):
@@ -113,7 +129,8 @@ class PositionController(object):
     @n.main_loop(frequency=30)
     def run(self):
         if not self.land:
-            self.publish_cmd_vel(*self.efforts)
+            if not self.setpoint == None:
+                self.publish_cmd_vel(*self.efforts)
 
 
 if __name__ == "__main__":

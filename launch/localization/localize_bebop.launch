@@ -133,17 +133,18 @@
     <node pkg="hector_trajectory_server" type="hector_trajectory_server"
         name="hector_trajectory_server">
         <param name="source_frame_name" value="base_link"/>
-        <param name="target_frame_name" value="map"/>
+        <param name="target_frame_name" value="odom"/>
         <param name="trajectory_publish_rate" value="4"/>
+	<remap from="/trajectory" to="/path"/>
     </node>
 
     <arg name="upper_limit" value="1"/>
     <arg name="lower_limit" value="-1"/>
 
     <node name="pid_x" pkg="pid" type="controller" ns="pid_x">
-        <param name="Kp" value="0.09" />
-        <param name="Ki" value="0.05" />
-        <param name="Kd" value="0.1" />
+        <param name="Kp" value="0.11" />
+        <param name="Ki" value="0.01" />
+        <param name="Kd" value="0.17" />
         <param name="upper_limit" value="$(arg upper_limit)" />
         <param name="lower_limit" value="$(arg lower_limit)" />
         <param name="windup_limit" value="0.05" />
@@ -153,9 +154,9 @@
     </node>
 
     <node name="pid_y" pkg="pid" type="controller" ns="pid_y">
-        <param name="Kp" value="0.09" />
-        <param name="Ki" value="0.05" />
-        <param name="Kd" value="0.1" />
+        <param name="Kp" value="0.11" />
+        <param name="Ki" value="0.01" />
+        <param name="Kd" value="0.17" />
         <param name="upper_limit" value="$(arg upper_limit)" />
         <param name="lower_limit" value="$(arg lower_limit)" />
         <param name="windup_limit" value="0.05" />

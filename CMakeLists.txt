@@ -15,6 +15,8 @@ add_message_files(
   FILES
   PolygonArray.msg
   TreeSearchResultMsg.msg
+  PoseArrayWithTimes.msg
+  PoseStampedWithTime.msg
 )
 
 generate_messages(
