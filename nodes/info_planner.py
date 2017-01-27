@@ -39,6 +39,7 @@ SCAN_POLYGON_TOPIC = "/bounding_poly"
 POSE_ARRAY_TOPIC = "/plan_poses"
 PATH_TOPIC = "/plan_path"
 OPT_INFO_TOPIC = "/optimization_info"
+PROJECTION_MARKERS_TOPIC = "/projection_markers"
 POSE_ARRAY_WITH_TIMES_TOPIC = "/waypoints"
 
 NODE_NAME = "info_planner"
@@ -57,7 +58,7 @@ class InfoPlanner(object):
         self.poly = None
         self.last_opt = None
         self.opt_tsr_pubbing = None
-        self.added_opt_thresh = 1.1
+        self.added_opt_thresh = 1.0
 
     def init_planner(self):
         self.perc_opt_thresh = rospy.get_param("~optimality_threshold", 0.7)
@@ -80,7 +81,7 @@ class InfoPlanner(object):
         self.altitude = rospy.get_param("~altitude", 1)
         self.tfl = tf.TransformListener()
 
-    def should_publish_path(self):
+    def update_publishing_path(self):
         if self.opt_tsr is None:
             return False
 
@@ -104,7 +105,8 @@ class InfoPlanner(object):
     @n.main_loop(frequency=30)
     def run(self):
         self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
-        if self.should_publish_path():
+        self.update_publishing_path()
+        if self.opt_tsr is not None:
             pa = self.publish_pose_array(self.opt_tsr_pubbing.path)
             self.publish_pose_array_with_times(pa)
             self.publish_path(self.opt_tsr_pubbing.path)
@@ -181,7 +183,7 @@ class InfoPlanner(object):
         tsr_msg.planner_time = tsr.planner_time
         return tsr_msg
 
-    @n.publisher("/opt_projection_markers", MarkerArray)
+    @n.publisher(PROJECTION_MARKERS_TOPIC, MarkerArray)
     def publish_opt_proj_markers(self, shvs):
         markers = MarkerArray()
         for i, shv in enumerate(shvs):

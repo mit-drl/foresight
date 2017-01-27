@@ -55,8 +55,9 @@ class WaypointController(object):
         if self.made_target:
             if rospy.Time.now() - self.start_time > rospy.Duration(time):
                 self.made_target = False
-                self.index = self.index + 1
-                goal = self.traj.pose_array.poses[self.index]
+                if self.index < len(self.traj.pose_array.poses) - 1:
+                    self.index = self.index + 1
+                    goal = self.traj.pose_array.poses[self.index]
             
         ps = PoseStamped()
         ps.header.frame_id = "odom"
@@ -107,6 +108,7 @@ class WaypointController(object):
                 if dist >= self.step_size:
                     num_points = int(dist/self.step_size)
                     diff = p2 - p1
+                    check_if_waypoint_is_reached = waypoint.position
                     for i in range(1,num_points):
                         new_point = Pose()
                         new_point.orientation = waypoint.orientation
@@ -115,12 +117,13 @@ class WaypointController(object):
                         new_point.position.x = newp[0]
                         new_point.position.y = newp[1]
                         new_point.position.z = newp[2]
+                        check_if_waypoint_is_reached = new_point.position
                         traj.append(new_point)
                         if new_point.position == waypoint.position:
                             times.append(wait_times[k])
                         else:
                             times.append(0)
-                    if not new_point.position == waypoint.position:
+                    if not check_if_waypoint_is_reached == waypoint.position:
                         traj.append(waypoint)
                         times.append(wait_times[k])
                 else:
