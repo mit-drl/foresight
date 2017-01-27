@@ -1,0 +1,2 @@
+geometry_msgs/PoseStamped ps
+float64 wait_time
