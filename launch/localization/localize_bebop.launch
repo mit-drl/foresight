@@ -187,6 +187,7 @@
         <param name="diagnostic_period" value="0.25" />
         <param name="max_loop_frequency" value="100.0" />
         <param name="min_loop_frequency" value="100.0" />
+        <param name="angle_error" value="True" />
     </node>
 
     <node name="position_controller" pkg="foresight"
