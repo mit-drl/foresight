@@ -25,7 +25,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
-        - /Polygon1
       Splitter Ratio: 0.5
     Tree Height: 766
 Visualization Manager:
@@ -75,7 +74,16 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          {}
+          car/base_link:
+            base_link:
+              camera_base_link:
+                {}
+            tag_left_back:
+              {}
+            tag_left_front:
+              {}
+            tag_right_center:
+              {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0.1
@@ -146,7 +154,7 @@ Visualization Manager:
       Marker Topic: /blind_spot_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 1
       Value: true
     - Alpha: 1
@@ -175,23 +183,23 @@ Visualization Manager:
         X: 0
         Y: 0
         Z: 0
-      Topic: /optimal_path
+      Topic: /plan_path
       Value: true
     - Arrow Length: 0.3
       Class: rviz/PoseArray
       Color: 255; 25; 0
       Enabled: true
       Name: PoseArray
-      Topic: /optimal_poses
+      Topic: /plan_poses
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /opt_projection_markers
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -216,7 +224,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 9.96051
+      Distance: 14.734
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -228,10 +236,10 @@ Visualization Manager:
         Z: 0.441952
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.764797
+      Pitch: 1.4648
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.24486
+      Yaw: 3.48484
     Saved: ~
 Window Geometry:
   Displays:

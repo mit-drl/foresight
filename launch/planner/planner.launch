@@ -1,34 +1,35 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- <include file="$(find foresight)/launch/bringup/pixhawk.launch"/> -->
-    <!-- <include file="$(find foresight)/launch/localization/static_transformations.launch"/> -->
-    <!-- <node pkg="foresight" type="tf_to_pose.py" name="vision_pose" output="screen"> -->
-    <!--     <param name="pose_topic" value="/mavros/vision_pose/pose"/> -->
-    <!--     <param name="fixed_frame" value="map"/> -->
-    <!--     <param name="child_frame" value="wallar_shaqiri"/> -->
-    <!-- </node> -->
-    <!--  -->
-    <!-- <node pkg="tf" type="static_transform_publisher" name="shaqiri_to_base_link" -->
-    <!--     args="0 0 0 0 0 0 wallar_shaqiri base_link 100" /> -->
-    <!--  -->
-    <!-- <node pkg="foresight" type="tf_to_pose.py" name="tf_to_pose"> -->
-    <!--     <param name="pose_topic" value="/mavros/local_position/pose"/> -->
-    <!--     <param name="fixed_frame" value="map"/> -->
-    <!--     <param name="child_frame" value="base_link"/> -->
-    <!-- </node> -->
-    <!-- <node pkg="foresight" type="info_planner.py" name="planner" output="screen"> -->
-    <!--     <remap from="/frontier" to="/car/frontier"/> -->
-    <!--     <remap from="/scan_polygon" to="/car/scan_polygon"/> -->
-    <!-- </node> -->
+    <arg name="car_frame_id" default="car/base_link"/>
+    <arg name="quad_frame_id" default="base_link"/>
+    <arg name="camera_frame_id" default="camera_base_link"/>
 
     <node pkg="foresight" type="blind_spots.py" name="blind_spots"
         output="screen">
-        <param name="map_frame" value="car/base_link"/>
         <param name="scan_break_thresh" value="1.0"/>
+
+        <!-- Frame ids -->
+        <param name="map_frame" value="$(arg car_frame_id)"/>
+        <param name="quad_frame" value="$(arg quad_frame_id)"/>
+        <param name="camera_frame" value="$(arg camera_frame_id)"/>
     </node>
 
     <node pkg="foresight" type="info_planner.py" name="info_planner"
         output="screen">
+        <param name="optimality_threshold" value="0.7"/>
+        <param name="max_execution_time" value="5.0"/>
+        <param name="max_speed" value="1.0"/>
+        <param name="timeout" value="0.2"/>
+        <param name="neighbour_dist" value="0.3"/>
+        <param name="fov_v" value="0.628"/>
+        <param name="fov_h" value="0.628"/>
+        <param name="altitude" value="1.0"/>
+        <param name="wait_time" value="2.0"/>
+
+        <!-- Frame ids -->
+        <param name="map_frame" value="$(arg car_frame_id)"/>
+        <param name="quad_frame" value="$(arg quad_frame_id)"/>
+        <param name="camera_frame" value="$(arg camera_frame_id)"/>
     </node>
 
 </launch>

@@ -12,6 +12,19 @@ from geometry_msgs.msg import PolygonStamped
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
+
+""" Default parameters """
+MAP_FRAME = "car/base_link"
+QUAD_FRAME = "base_link"
+CAMERA_FRAME = "camera_base_link"
+SCAN_BREAK_THRESH = 1.0
+
+""" Default topic names """
+SCAN_TOPIC = "/scan"
+BLIND_SPOT_MARKERS_TOPIC = "/blind_spot_markers"
+BLIND_SPOTS_TOPIC = "/blind_spots"
+SCAN_POLYGON_TOPIC = "/bounding_poly"
+
 NODE_NAME = "blind_spots"
 n = roshelper.Node(NODE_NAME, anonymous=False)
 
@@ -19,15 +32,15 @@ n = roshelper.Node(NODE_NAME, anonymous=False)
 @n.entry_point()
 class BlindSpotPublisher(object):
 
-    def __init__(self, map_frame, scan_break_thresh):
-        self.map_frame = map_frame
-        self.quad_frame = rospy.get_param("~quad_frame", "base_link")
-        self.camera_frame = rospy.get_param("~camera_frame",
-                                            "camera_base_link")
-        self.scan_break_thresh = scan_break_thresh
+    def __init__(self):
+        self.map_frame = rospy.get_param("~map_frame", MAP_FRAME)
+        self.quad_frame = rospy.get_param("~quad_frame", QUAD_FRAME)
+        self.camera_frame = rospy.get_param("~camera_frame", CAMERA_FRAME)
+        self.scan_break_thresh = rospy.get_param(
+            "~scan_break_thresh", SCAN_BREAK_THRESH)
         self.polys = None
 
-    @n.subscriber("/scan", LaserScan)
+    @n.subscriber(SCAN_TOPIC, LaserScan)
     def laser_sub(self, scan):
         pts = self.get_laser_pts(scan)
         self.polys = self.get_blind_polys(pts)
@@ -35,7 +48,7 @@ class BlindSpotPublisher(object):
         self.pub_blind_polys(self.polys)
         self.pub_bounding_poly(pts)
 
-    @n.publisher("/blind_spot_markers", MarkerArray)
+    @n.publisher(BLIND_SPOT_MARKERS_TOPIC, MarkerArray)
     def pub_blind_spot_markers(self, polys):
         markers = MarkerArray()
         for i, poly in enumerate(polys):
@@ -56,7 +69,7 @@ class BlindSpotPublisher(object):
             markers.markers.append(marker)
         return markers
 
-    @n.publisher("/blind_spots", PolygonArray)
+    @n.publisher(BLIND_SPOTS_TOPIC, PolygonArray)
     def pub_blind_polys(self, b_polys):
         polys = PolygonArray()
         polys.header.frame_id = self.map_frame
@@ -68,7 +81,7 @@ class BlindSpotPublisher(object):
             polys.polygons.append(p_poly)
         return polys
 
-    @n.publisher("/bounding_poly", PolygonStamped)
+    @n.publisher(SCAN_POLYGON_TOPIC, PolygonStamped)
     def pub_bounding_poly(self, pts):
         poly = PolygonStamped()
         poly.header.stamp = rospy.Time.now()

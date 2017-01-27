@@ -22,22 +22,26 @@ from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 from foresight.msg import PolygonArray
 from foresight.msg import TreeSearchResultMsg
+from foresight.msg import PoseArrayWithTimes
 from point import Point
 from search import SpaceHeapValue
 from search import TreeSearchResult
 
 
-NODE_NAME = "info_planner"
+""" Default parameters """
 MAP_FRAME = "car/base_link"
 QUAD_FRAME = "base_link"
 CAM_FRAME = "camera_base_link"
-FRONTIER_TOPIC = "/blind_spots"
-OPT_POLYGON_TOPIC = "/opt_projection"
-SCAN_POLYGON_TOPIC = "/bounding_poly"
-POSE_ARRAY_TOPIC = "/optimal_poses"
-PATH_TOPIC = "/optimal_path"
-OPT_INFO_TOPIC = "/optimization_info"
 
+""" Default topics """
+BLIND_SPOTS_TOPIC = "/blind_spots"
+SCAN_POLYGON_TOPIC = "/bounding_poly"
+POSE_ARRAY_TOPIC = "/plan_poses"
+PATH_TOPIC = "/plan_path"
+OPT_INFO_TOPIC = "/optimization_info"
+POSE_ARRAY_WITH_TIMES_TOPIC = "/waypoints"
+
+NODE_NAME = "info_planner"
 n = roshelper.Node(NODE_NAME, anonymous=False)
 
 
@@ -52,13 +56,15 @@ class InfoPlanner(object):
         self.opt_tsr = None
         self.poly = None
         self.last_opt = None
-        # self.start()
+        self.opt_tsr_pubbing = None
+        self.added_opt_thresh = 1.1
 
     def init_planner(self):
         self.perc_opt_thresh = rospy.get_param("~optimality_threshold", 0.7)
         self.max_time = rospy.get_param("~max_execution_time", 5.0)
         self.max_speed = rospy.get_param("~max_speed", 1.0)
         self.timeout = rospy.get_param("~timeout", 0.2)
+        self.wait_time = rospy.get_param("~wait_time", 2.0)
         step = rospy.get_param("~neighbour_dist", 0.3)
         self.nbrs = [(step, 0), (0, step), (-step, 0), (0, -step),
                      (step, step), (-step, step), (step, -step),
@@ -74,22 +80,44 @@ class InfoPlanner(object):
         self.altitude = rospy.get_param("~altitude", 1)
         self.tfl = tf.TransformListener()
 
+    def should_publish_path(self):
+        if self.opt_tsr is None:
+            return False
+
+        if self.opt_tsr_pubbing is None:
+            self.opt_tsr_pubbing = self.opt_tsr
+            return True
+
+        for shv in self.opt_tsr_pubbing.path:
+            if not self.poly.contains(shv.point):
+                self.opt_tsr_pubbing = self.opt_tsr
+                return True
+
+        n_opt = self.opt_tsr.optimality
+        c_opt = self.opt_tsr_pubbing.optimality
+        if n_opt > self.added_opt_thresh * c_opt:
+            self.opt_tsr_pubbing = self.opt_tsr
+            return True
+
+        return False
+
     @n.main_loop(frequency=30)
     def run(self):
         self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
-        if self.opt_tsr is not None:
-            self.publish_pose_array(self.opt_tsr.path)
-            self.publish_path(self.opt_tsr.path)
-            self.publish_opt_info(self.opt_tsr)
-            self.publish_opt_proj_markers(self.opt_tsr.path)
+        if self.should_publish_path():
+            pa = self.publish_pose_array(self.opt_tsr_pubbing.path)
+            self.publish_pose_array_with_times(pa)
+            self.publish_path(self.opt_tsr_pubbing.path)
+            self.publish_opt_info(self.opt_tsr_pubbing)
+            self.publish_opt_proj_markers(self.opt_tsr_pubbing.path)
 
     @n.subscriber(SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
     def scan_polygon_cb(self, ps):
         arrs = self.points_to_arrs(ps.polygon.points)
         self.poly = geom.Polygon(arrs)
 
-    @n.subscriber(FRONTIER_TOPIC, PolygonArray, queue_size=1)
-    def frontier_callback(self, polys):
+    @n.subscriber(BLIND_SPOTS_TOPIC, PolygonArray, queue_size=1)
+    def blind_spots_callback(self, polys):
         multi_polygon = None
         for poly in polys.polygons:
             pts = self.points_to_arrs(poly.points)
@@ -123,6 +151,13 @@ class InfoPlanner(object):
             pose = self.point_yaw_to_pose(shv.point, shv.yaw)
             pa.poses.append(pose)
         return pa
+
+    @n.publisher(POSE_ARRAY_WITH_TIMES_TOPIC, PoseArrayWithTimes)
+    def publish_pose_array_with_times(self, pa):
+        pawt = PoseArrayWithTimes()
+        pawt.pose_array = pa
+        pawt.wait_times = [self.wait_time] * len(pa.poses)
+        return pawt
 
     @n.publisher(PATH_TOPIC, Path, queue_size=1)
     def publish_path(self, shvs):
