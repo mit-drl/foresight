@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="car_frame_id" default="car/base_link"/>
+    <arg name="car_frame_id" default="odom"/>
     <arg name="map_frame_id" default="map"/>
     <arg name="quad_frame_id" default="base_link"/>
     <arg name="camera_frame_id" default="camera_base_link"/>

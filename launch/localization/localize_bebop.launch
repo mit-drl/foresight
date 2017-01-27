@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <arg name="car_frame_id" default="car/base_link"/>
+    <arg name="car_frame_id" default="odom"/>
     <arg name="map_frame_id" default="map"/>
     <arg name="quad_frame_id" default="base_link"/>
 
@@ -34,15 +34,15 @@
 
     <!-- Static transforms from the car frame to the tags -->
 
-    <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_front"
-        args="0.51 0.37 0 0 0 0 $(arg car_frame_id) tag_left_front 100" />
-
-    <node pkg="tf" type="static_transform_publisher" name="car_to_tag_right_center"
-        args="-0.03 -0.31 0 0 0 0 $(arg car_frame_id) tag_right_center 100" />
-
-    <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_back"
-        args="-0.54 0.29 0 0 0 0 $(arg car_frame_id) tag_left_back 100" />
-
+    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_front" -->
+    <!--     args="0.51 0.37 0 0 0 0 $(arg car_frame_id) tag_left_front 100" /> -->
+    <!--  -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_tag_right_center" -->
+    <!--     args="&#45;0.03 &#45;0.31 0 0 0 0 $(arg car_frame_id) tag_right_center 100" /> -->
+    <!--  -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_back" -->
+    <!--     args="&#45;0.54 0.29 0 0 0 0 $(arg car_frame_id) tag_left_back 100" /> -->
+    <!--  -->
     <!-- Dummy transform from map to car -->
 
     <node pkg="tf" type="static_transform_publisher" name="map_to_car"
@@ -71,63 +71,63 @@
 
     <!-- Because bebop doesn't publish the odom with a covariance -->
 
-    <node pkg="foresight" type="odom_covariance.py"
-        name="odom_covariance" output="screen">
-        <remap from="odom_input" to="bebop/odom" />
-        <remap from="odom_output" to="bebop/odom_cov" />
-        <param name="px" value="0.01" />
-        <param name="py" value="0.01" />
-        <param name="pz" value="0.01" />
-        <param name="rx" value="0.0001" />
-        <param name="ry" value="0.0001" />
-        <param name="rz" value="0.0001" />
-    </node>
+    <!-- <node pkg="foresight" type="odom_covariance.py" -->
+    <!--     name="odom_covariance" output="screen"> -->
+    <!--     <remap from="odom_input" to="bebop/odom" /> -->
+    <!--     <remap from="odom_output" to="bebop/odom_cov" /> -->
+    <!--     <param name="px" value="0.01" /> -->
+    <!--     <param name="py" value="0.01" /> -->
+    <!--     <param name="pz" value="0.01" /> -->
+    <!--     <param name="rx" value="0.0001" /> -->
+    <!--     <param name="ry" value="0.0001" /> -->
+    <!--     <param name="rz" value="0.0001" /> -->
+    <!-- </node> -->
 
     <!-- Robot localization -->
 
-    <node pkg="robot_localization" type="ukf_localization_node"
-        name="ukf_localization" clear_params="true">
-
-        <param name="frequency" value="30"/>
-        <param name="sensor_timeout" value="0.1"/>
-        <param name="two_d_mode" value="false"/>
-
-        <param name="map_frame" value="$(arg car_frame_id)"/>
-        <param name="odom_frame" value="odom"/>
-        <param name="base_link_frame" value="$(arg quad_frame_id)"/>
-        <param name="world_frame" value="$(arg car_frame_id)"/>
-
-        <param name="transform_time_offset" value="0.0"/>
-
-        <param name="odom0" value="/bebop/odom_cov"/>
-        <param name="pose0" value="/pose_cov"/>
-
-        <rosparam param="odom0_config">[false, false, false,
-                                        false, false, false,
-                                        true, true, true,
-                                        true, true, true,
-                                        false, false, false]</rosparam>
-
-        <rosparam param="pose0_config">[true, true, false,
-                                       false, false, false,
-                                       false, false, false,
-                                       false, false, false,
-                                       false, false, false]</rosparam>
-
-        <param name="odom0_differential" value="false"/>
-        <param name="pose0_differential" value="false"/>
-
-        <param name="odom0_relative" value="false"/>
-        <param name="pose0_relative" value="false"/>
-        <param name="odom0_pose_rejection_threshold" value="100"/>
-
-        <param name="print_diagnostics" value="true"/>
-
-        <param name="odom0_queue_size" value="2"/>
-        <param name="pose0_queue_size" value="2"/>
-
-        <param name="debug"           value="false"/>
-    </node>
+    <!-- <node pkg="robot_localization" type="ukf_localization_node" -->
+    <!--     name="ukf_localization" clear_params="true"> -->
+    <!--  -->
+    <!--     <param name="frequency" value="30"/> -->
+    <!--     <param name="sensor_timeout" value="0.1"/> -->
+    <!--     <param name="two_d_mode" value="false"/> -->
+    <!--  -->
+    <!--     <param name="map_frame" value="$(arg car_frame_id)"/> -->
+    <!--     <param name="odom_frame" value="odom"/> -->
+    <!--     <param name="base_link_frame" value="$(arg quad_frame_id)"/> -->
+    <!--     <param name="world_frame" value="$(arg car_frame_id)"/> -->
+    <!--  -->
+    <!--     <param name="transform_time_offset" value="0.0"/> -->
+    <!--  -->
+    <!--     <param name="odom0" value="/bebop/odom_cov"/> -->
+    <!--     <param name="pose0" value="/pose_cov"/> -->
+    <!--  -->
+    <!--     <rosparam param="odom0_config">[false, false, false, -->
+    <!--                                     false, false, false, -->
+    <!--                                     true, true, true, -->
+    <!--                                     true, true, true, -->
+    <!--                                     false, false, false]</rosparam> -->
+    <!--  -->
+    <!--     <rosparam param="pose0_config">[true, true, false, -->
+    <!--                                    false, false, false, -->
+    <!--                                    false, false, false, -->
+    <!--                                    false, false, false, -->
+    <!--                                    false, false, false]</rosparam> -->
+    <!--  -->
+    <!--     <param name="odom0_differential" value="false"/> -->
+    <!--     <param name="pose0_differential" value="false"/> -->
+    <!--  -->
+    <!--     <param name="odom0_relative" value="false"/> -->
+    <!--     <param name="pose0_relative" value="false"/> -->
+    <!--     <param name="odom0_pose_rejection_threshold" value="100"/> -->
+    <!--  -->
+    <!--     <param name="print_diagnostics" value="true"/> -->
+    <!--  -->
+    <!--     <param name="odom0_queue_size" value="2"/> -->
+    <!--     <param name="pose0_queue_size" value="2"/> -->
+    <!--  -->
+    <!--     <param name="debug"           value="false"/> -->
+    <!-- </node> -->
 
     <!-- starts trajectory server -->
     <node pkg="hector_trajectory_server" type="hector_trajectory_server"
