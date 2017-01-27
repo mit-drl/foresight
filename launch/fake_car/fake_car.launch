@@ -19,11 +19,11 @@
     <node pkg="tf" type="static_transform_publisher" name="map_to_car"
         args="1 0 0 0 0 0 $(arg map_frame_id) $(arg car_frame_id) 100" />
 
-    <node pkg="tf" type="static_transform_publisher" name="car_to_quad"
+<!--     <node pkg="tf" type="static_transform_publisher" name="car_to_quad"
         args="0.3 0 1 0 0 0 $(arg car_frame_id) $(arg quad_frame_id) 100" />
-
+ -->
     <node pkg="tf" type="static_transform_publisher" name="quad_to_camera"
-        args="0 0 0 0 2.4 0 $(arg quad_frame_id) $(arg camera_frame_id) 100" /> -->
+        args="0 0 0 0 2.4 0 $(arg quad_frame_id) $(arg camera_frame_id) 100" />
 
     <include file="$(find foresight)/launch/bringup/pixhawk.launch" />
     <include file="$(find foresight)/launch/sensors/hokuyo.launch" />
