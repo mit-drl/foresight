@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="planner_topics"
-    	value="/blind_spots /bounding_poly /plan_poses /plan_path /optimization_info /waypoints /blind_spot_markers /path /projection_markers"/>
+    	value="/blind_spots /bounding_poly /plan_poses /plan_path /optimization_info /waypoints /blind_spot_markers /path /projection_markers /bebop/image_raw/compressed"/>
     <arg name="tf_topics" value="/tf"/>
     <node type="record" pkg="rosbag" name="bagger"
-        args="-j -O $(find foresight)/data/flight-data $(arg planner_topics) $(arg tf_topics)"/>
+        args="-j -o $(find foresight)/data/flight-data $(arg planner_topics) $(arg tf_topics)"/>
 </launch>

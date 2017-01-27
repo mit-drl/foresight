@@ -25,6 +25,7 @@ class WaypointController(object):
         self.y = 0
         self.z = 0
         self.yaw = 0
+        self.current_pose = Pose()
         self.waypoints = None
         self.wait_times = []
         self.prev_traj = None
@@ -85,7 +86,7 @@ class WaypointController(object):
     def traj_sub(self, waypoints):
         if not self.waypoints == waypoints.pose_array.poses:
             self.waypoints = waypoints.pose_array.poses
-            self.wait_times = waypoints.wait_times
+            self.wait_times = list(waypoints.wait_times)
             self.index = 0
             self.traj = self.process_waypoints(self.waypoints, self.wait_times)
 
@@ -93,6 +94,10 @@ class WaypointController(object):
         prev = None
         traj = []
         times = []
+        new_waypoints = []
+        wait_times = [0.1] + wait_times
+        waypoints = [self.current_pose] + waypoints
+
         for k in range(len(waypoints)):
             waypoint = waypoints[k]
             if k == 0:
@@ -153,6 +158,8 @@ class WaypointController(object):
             quat = self.quat_to_list(quat)
             euler = tf.transformations.euler_from_quaternion(quat)
             self.yaw = euler[2]
+
+            self.current_pose = ps.pose
 
         except:
             print "tf error"

@@ -58,7 +58,7 @@ class InfoPlanner(object):
         self.poly = None
         self.last_opt = None
         self.opt_tsr_pubbing = None
-        self.added_opt_thresh = 1.0
+        self.added_opt_thresh = 1.1
 
     def init_planner(self):
         self.perc_opt_thresh = rospy.get_param("~optimality_threshold", 0.7)
@@ -66,6 +66,7 @@ class InfoPlanner(object):
         self.max_speed = rospy.get_param("~max_speed", 1.0)
         self.timeout = rospy.get_param("~timeout", 0.2)
         self.wait_time = rospy.get_param("~wait_time", 2.0)
+        self.buffer_dist = rospy.get_param("~buffer_dist", 0)
         step = rospy.get_param("~neighbour_dist", 0.3)
         self.nbrs = [(step, 0), (0, step), (-step, 0), (0, -step),
                      (step, step), (-step, step), (step, -step),
@@ -116,7 +117,7 @@ class InfoPlanner(object):
     @n.subscriber(SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
     def scan_polygon_cb(self, ps):
         arrs = self.points_to_arrs(ps.polygon.points)
-        self.poly = geom.Polygon(arrs).buffer(-0.3)
+        self.poly = geom.Polygon(arrs).buffer(-self.buffer_dist)
 
     @n.subscriber(BLIND_SPOTS_TOPIC, PolygonArray, queue_size=1)
     def blind_spots_callback(self, polys):
