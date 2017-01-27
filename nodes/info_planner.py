@@ -116,7 +116,7 @@ class InfoPlanner(object):
     @n.subscriber(SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
     def scan_polygon_cb(self, ps):
         arrs = self.points_to_arrs(ps.polygon.points)
-        self.poly = geom.Polygon(arrs)
+        self.poly = geom.Polygon(arrs).buffer(-0.3)
 
     @n.subscriber(BLIND_SPOTS_TOPIC, PolygonArray, queue_size=1)
     def blind_spots_callback(self, polys):
