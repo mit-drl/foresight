@@ -31,7 +31,7 @@ class IMU_TF(object):
         self.sub = rospy.Subscriber(self.imu_topic, Imu,
                                     self.imu_cb)
         while not rospy.is_shutdown():
-            if not self.quat is None:
+            if self.quat is not None:
                 self.br.sendTransform(
                     [0, 0, 0],
                     self.quat_to_list(self.quat),

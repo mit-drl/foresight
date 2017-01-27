@@ -8,7 +8,6 @@ import numpy as np
 import scipy.optimize as opt
 import shapely.geometry as geom
 import heapq
-import fontais
 import roshelper
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
@@ -19,6 +18,8 @@ from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PoseArray
 from nav_msgs.msg import Path
+from visualization_msgs.msg import Marker
+from visualization_msgs.msg import MarkerArray
 from foresight.msg import PolygonArray
 from foresight.msg import TreeSearchResultMsg
 from point import Point
@@ -27,14 +28,12 @@ from search import TreeSearchResult
 
 
 NODE_NAME = "info_planner"
-POSE_SUB_TOPIC = "/mavros/local_position/pose"
-MAP_FRAME = "map"
+MAP_FRAME = "car/base_link"
 QUAD_FRAME = "base_link"
-CAM_FRAME = "back_camera_link"
-POLYGON_TOPIC = "/projection"
+CAM_FRAME = "camera_base_link"
 FRONTIER_TOPIC = "/blind_spots"
 OPT_POLYGON_TOPIC = "/opt_projection"
-SCAN_POLYGON_TOPIC = "/scan_polygon"
+SCAN_POLYGON_TOPIC = "/bounding_poly"
 POSE_ARRAY_TOPIC = "/optimal_poses"
 PATH_TOPIC = "/optimal_path"
 OPT_INFO_TOPIC = "/optimization_info"
@@ -61,7 +60,9 @@ class InfoPlanner(object):
         self.max_speed = rospy.get_param("~max_speed", 1.0)
         self.timeout = rospy.get_param("~timeout", 0.2)
         step = rospy.get_param("~neighbour_dist", 0.3)
-        self.nbrs = [(step, 0), (0, step), (-step, 0), (0, -step)]
+        self.nbrs = [(step, 0), (0, step), (-step, 0), (0, -step),
+                     (step, step), (-step, step), (step, -step),
+                     (-step, -step)]
 
     def init_camera_projection(self):
         fov_v = rospy.get_param("~fov_v", 0.2 * math.pi)
@@ -75,21 +76,17 @@ class InfoPlanner(object):
 
     @n.main_loop(frequency=30)
     def run(self):
-        if not self.opt_tsr is None:
+        self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
+        if self.opt_tsr is not None:
             self.publish_pose_array(self.opt_tsr.path)
             self.publish_path(self.opt_tsr.path)
             self.publish_opt_info(self.opt_tsr)
+            self.publish_opt_proj_markers(self.opt_tsr.path)
 
     @n.subscriber(SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
     def scan_polygon_cb(self, ps):
         arrs = self.points_to_arrs(ps.polygon.points)
         self.poly = geom.Polygon(arrs)
-
-    @n.subscriber(POSE_SUB_TOPIC, PoseStamped, queue_size=1)
-    def pose_callback(self, ps):
-        # projection = self.get_current_projection()
-        # self.publish_projection(projection, self.polygon_pub)
-        self.pose = ps
 
     @n.subscriber(FRONTIER_TOPIC, PolygonArray, queue_size=1)
     def frontier_callback(self, polys):
@@ -102,19 +99,20 @@ class InfoPlanner(object):
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
         tsr = self.find_path(multi_polygon)
-        if not tsr is None:
+        if tsr is not None:
             self.opt_tsr = tsr
 
-    def publish_projection(self, projection, pub):
+    @n.publisher(PolygonStamped)
+    def pub_proj(self, proj):
         poly = PolygonStamped()
         poly.header.stamp = rospy.Time.now()
         poly.header.frame_id = self.map_frame
-        for v in projection:
+        for v in proj:
             p = Point32()
             p.x = v[0]
             p.y = v[1]
             poly.polygon.points.append(p)
-        pub.publish(poly)
+        return poly
 
     @n.publisher(POSE_ARRAY_TOPIC, PoseArray, queue_size=1)
     def publish_pose_array(self, shvs):
@@ -148,6 +146,28 @@ class InfoPlanner(object):
         tsr_msg.planner_time = tsr.planner_time
         return tsr_msg
 
+    @n.publisher("/opt_projection_markers", MarkerArray)
+    def publish_opt_proj_markers(self, shvs):
+        markers = MarkerArray()
+        for i, shv in enumerate(shvs):
+            marker = Marker()
+            marker.header.stamp = rospy.Time.now()
+            marker.header.frame_id = self.map_frame
+            marker.type = Marker.LINE_STRIP
+            marker.id = i
+            marker.action = Marker.ADD
+            marker.scale.x = 0.03
+            marker.lifetime = rospy.Duration(0.1)
+            marker.color.a = 1.0
+            marker.color.g = 0.8
+            poly = self.get_projection(
+                np.array([shv.point.x, shv.point.y, shv.yaw]))
+            for v in poly:
+                marker.points.append(self.arr_to_point32(v))
+            marker.points.append(self.arr_to_point32(poly[0]))
+            markers.markers.append(marker)
+        return markers
+
     def get_residual_polys(self, pt, yaw, polys):
         state = np.array([pt.x, pt.y, yaw])
         projection = self.get_projection(state)
@@ -156,7 +176,7 @@ class InfoPlanner(object):
         return polys.difference(proj_poly)
 
     def find_path(self, bs_polys):
-        if bs_polys is None:
+        if bs_polys is None or self.pose is None:
             return None
         pt = self.pose_to_geom_point(self.pose)
         first_value = self.make_space_heap_value(pt, bs_polys, 0)
@@ -229,11 +249,11 @@ class InfoPlanner(object):
             _, quat = self.tfl.lookupTransform(
                 child_frame, parent_frame, rospy.Time())
             r, p, y = euler_from_quaternion(quat)
-            nquat = quaternion_from_euler(r, p, -y)
+            nquat = quaternion_from_euler(r, p, y)
             ps = PoseStamped()
-            ps.pose.position.x = -tr[0]
-            ps.pose.position.y = -tr[1]
-            ps.pose.position.z = -tr[2]
+            ps.pose.position.x = tr[0]
+            ps.pose.position.y = tr[1]
+            ps.pose.position.z = tr[2]
             ps.pose.orientation.x = nquat[0]
             ps.pose.orientation.y = nquat[1]
             ps.pose.orientation.z = nquat[2]
@@ -262,7 +282,7 @@ class InfoPlanner(object):
 
     def get_projection(self, state):
         pose_mq = self.state_to_pose(state)
-        pose_qm = self.get_inverse_pose(pose_mq, "base_link")
+        pose_qm = self.get_inverse_pose(pose_mq, self.quad_frame)
         pose_cq = self.get_relative_pose(self.quad_frame, self.camera_frame)
         rot_qm, trans_qm = self.pose_to_matrix(pose_qm)
         rot_cq, trans_cq = self.pose_to_matrix(pose_cq)
@@ -295,24 +315,21 @@ class InfoPlanner(object):
         pose_mq.pose.orientation.w = quat[3]
         return pose_mq
 
-    @fontais.memoize()
     def point_yaw_to_pose(self, pt, yaw):
         quat = quaternion_from_euler(0, 0, yaw)
         pose_mq = Pose()
         pose_mq.position.x = pt.x
         pose_mq.position.y = pt.y
-        pose_mq.position.z = 0
+        pose_mq.position.z = self.altitude
         pose_mq.orientation.x = quat[0]
         pose_mq.orientation.y = quat[1]
         pose_mq.orientation.z = quat[2]
         pose_mq.orientation.w = quat[3]
         return pose_mq
 
-    @fontais.memoize()
     def pose_to_geom_point(self, ps):
         return Point(ps.pose.position.x, ps.pose.position.y)
 
-    @fontais.memoize()
     def points_to_arrs(self, ps):
         arrs = np.zeros((len(ps), 2))
         for i in xrange(len(ps)):
@@ -320,7 +337,12 @@ class InfoPlanner(object):
             arrs[i][1] = ps[i].y
         return arrs
 
-    @fontais.memoize()
+    def arr_to_point32(self, arr):
+        p = Point32()
+        p.x = arr[0]
+        p.y = arr[1]
+        return p
+
     def pose_to_matrix(self, ps):
         trans = np.matrix([-ps.pose.position.x,
                            -ps.pose.position.y,
