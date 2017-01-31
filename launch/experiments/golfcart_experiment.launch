@@ -5,7 +5,7 @@
     <arg name="quad_frame_id" default="base_link"/>
     <arg name="camera_frame_id" default="camera_base_link_dummy"/>
     <arg name="laser_frame_id" default="golfcartlw_front_bottom_lidar"/>
-    <arg name="scan_topic" default="/golfcartlw/front_bottom_scan"/>
+    <arg name="scan_topic" default="/golfcartlw/front_top_scan_filtered"/>
 
 <!--<node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_front"
         args="0.51 0.37 0 0 0 0 $(arg car_frame_id) tag_left_front 100" />

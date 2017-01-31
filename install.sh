@@ -1,6 +1,7 @@
 apt-get install python-scipy
+apt-get install ros-indigo-pid
+apt-get install ros-indigo-hector-trajectory-server
 pip install roshelper
 pip install shapely
 pip install planar
-mkdir third_party
-git clone https://github.com/wallarelvo/decawave_localization third_party/decawave_localization
+pip install pykalman

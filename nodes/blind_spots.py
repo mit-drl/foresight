@@ -64,8 +64,8 @@ class BlindSpotPublisher(object):
             marker.scale.x = 0.03
             marker.lifetime = rospy.Duration(0.1)
             marker.color.a = 1.0
-            marker.color.b = 0.8
-            marker.color.r = 0.2
+            marker.color.b = 0.2
+            marker.color.r = 0.8
             for v in poly:
                 marker.points.append(self.vec_to_point(v))
             marker.points.append(self.vec_to_point(poly[0]))
