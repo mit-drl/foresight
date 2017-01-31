@@ -43,10 +43,6 @@
     <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_back" -->
     <!--     args="&#45;0.54 0.29 0 0 0 0 $(arg car_frame_id) tag_left_back 100" /> -->
     <!--  -->
-    <!-- Dummy transform from map to car -->
-
-    <node pkg="tf" type="static_transform_publisher" name="map_to_car"
-        args="1 0 0 0 0 0 $(arg map_frame_id) $(arg car_frame_id) 100" />
 
     <!-- Running the trilateration node -->
 
