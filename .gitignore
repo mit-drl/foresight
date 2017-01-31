@@ -141,3 +141,4 @@ target/
 .ropeproject/
 data/
 third_party/
+*.swp
