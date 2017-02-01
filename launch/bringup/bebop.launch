@@ -1,9 +1,13 @@
 <?xml version="1.0"?>
 <launch>
     <!-- starts bebop driver -->
-    <include file="$(find bebop_driver)/launch/bebop_node.launch"/>
+    <include file="$(find bebop_driver)/launch/bebop_node.launch">
+        <arg name="config_file"
+            value="$(find foresight)/param/bebop_config.yaml"/>
+    </include>
 
     <!-- starts joystick control -->
-    <include file="$(find bebop_tools)/launch/joy_teleop.launch"/>
-
+    <include file="$(find bebop_tools)/launch/joy_teleop.launch">
+        <arg name="joy_dev" value="/dev/input/js0"/>
+    </include>
 </launch>

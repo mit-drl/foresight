@@ -3,8 +3,9 @@
     <arg name="car_frame_id" default="golfcartlw/base_link"/>
     <arg name="map_frame_id" default="golfcartlw/map"/>
     <arg name="quad_frame_id" default="base_link"/>
+    <arg name="quad_odom_frame_id" default="odom"/>
     <arg name="camera_frame_id" default="camera_base_link_dummy"/>
-    <arg name="laser_frame_id" default="golfcartlw_front_bottom_lidar"/>
+    <arg name="front_laser_frame_id" default="golfcartlw/front_bottom_lidar"/>
     <arg name="scan_topic" default="/golfcartlw/front_top_scan_filtered"/>
 
 <!--<node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_front"
@@ -16,10 +17,19 @@
     <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_back"
         args="-0.54 0.29 0 0 0 0 $(arg car_frame_id) tag_left_back 100" /> -->
 
-    <!-- Dummy transforms -->
+    <!-- Dummy transform from the quad to the camera -->
 
     <node pkg="tf" type="static_transform_publisher" name="quad_to_camera"
         args="0 0 0 0 2.4 0 $(arg quad_frame_id) $(arg camera_frame_id) 100" />
+
+    <!-- Dummy transform from the car base link to odom -->
+
+    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_odom" -->
+    <!--     args="3 0 0 0 0 0 $(arg car_frame_id) $(arg quad_odom_frame_id) 100" /> -->
+
+    <node pkg="foresight" type="imu_offset_broadcaster.py"
+        name="imu_offset_broadcaster"
+        output="screen"/>
 
     <include file="$(find foresight)/launch/localization/localize_bebop.launch">
 	    <arg name="car_frame_id" value="$(arg car_frame_id)"/>
@@ -27,12 +37,10 @@
 	    <arg name="quad_frame_id" value="$(arg quad_frame_id)"/>
     </include>
 
-    <include file="$(find foresight)/launch/planner/planner.launch">
-	    <arg name="car_frame_id" value="$(arg car_frame_id)"/>
-	    <!--<arg name="map_frame_id" value="$(arg map_frame_id)"/>-->
-	    <arg name="quad_frame_id" value="$(arg quad_frame_id)"/>
-	    <arg name="camera_frame_id" value="$(arg camera_frame_id)"/>
-	    <!--<arg name="laser_frame_id" value="$(arg laser_frame_id)"/>-->
-	    <arg name="scan_topic" value="$(arg scan_topic)"/>
-    </include>
+    <!-- <include file="$(find foresight)/launch/planner/planner.launch"> -->
+	<!--     <arg name="car_frame_id" value="$(arg car_frame_id)"/> -->
+	<!--     <arg name="quad_frame_id" value="$(arg quad_frame_id)"/> -->
+	<!--     <arg name="camera_frame_id" value="$(arg camera_frame_id)"/> -->
+	<!--     <arg name="scan_topic" value="$(arg scan_topic)"/> -->
+    <!-- </include> -->
 </launch>

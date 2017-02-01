@@ -27,7 +27,7 @@
         <param name="neighbour_dist" value="1"/>
         <param name="fov_v" value="0.628"/>
         <param name="fov_h" value="0.628"/>
-        <param name="altitude" value="1.5"/>
+        <param name="altitude" value="2.0"/>
         <param name="wait_time" value="2.0"/>
         <param name="buffer_dist" value="0.8"/>
 

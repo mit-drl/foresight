@@ -66,26 +66,26 @@ class PositionController(object):
 
     @n.subscriber("/bebop/odom", Odometry)
     def odom_sub(self, odom):
-        try:
-            ps = PoseStamped()
-            ps.header = odom.header
-            ps.pose = odom.pose.pose
-            self.listener.waitForTransform(ps.header.frame_id, self.frame_id,
-                                           rospy.Time(), rospy.Duration(1))
-            ps_tf = self.listener.transformPose(self.frame_id, ps)
-            self.float_pub(ps_tf.pose.position.x).publish("/pid_x/state")
-            self.float_pub(ps_tf.pose.position.y).publish("/pid_y/state")
-            self.float_pub(ps_tf.pose.position.z).publish("/pid_z/state")
+        # try:
+        ps = PoseStamped()
+        ps.header = odom.header
+        ps.pose = odom.pose.pose
+        self.listener.waitForTransform(ps.header.frame_id, self.frame_id,
+                                        rospy.Time(), rospy.Duration(1))
+        ps_tf = self.listener.transformPose(self.frame_id, ps)
+        self.float_pub(ps_tf.pose.position.x).publish("/pid_x/state")
+        self.float_pub(ps_tf.pose.position.y).publish("/pid_y/state")
+        self.float_pub(ps_tf.pose.position.z).publish("/pid_z/state")
 
-            quat = ps.pose.orientation
-            quat = self.quat_to_list(quat)
-            euler = tf.transformations.euler_from_quaternion(quat)
-            yaw = euler[2]
+        quat = ps.pose.orientation
+        quat = self.quat_to_list(quat)
+        euler = tf.transformations.euler_from_quaternion(quat)
+        yaw = euler[2]
 
-            self.float_pub(yaw).publish("/pid_yaw/state")
-            self.pose = odom.pose.pose
-        except:
-            print "tf error"
+        self.float_pub(yaw).publish("/pid_yaw/state")
+        self.pose = odom.pose.pose
+        # except:
+        #     print "tf error"
 
     def quat_to_list(self, quat):
         return [quat.x, quat.y, quat.z, quat.w]
