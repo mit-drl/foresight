@@ -107,7 +107,7 @@ class BlindSpotPublisher(object):
     def get_laser_pts(self, scan):
         pts = list()
         self.tfl.waitForTransform(scan.header.frame_id, self.map_frame,
-            rospy.Time(), rospy.Duration(1))
+                                  rospy.Time(), rospy.Duration(1))
         for i, r in enumerate(scan.ranges):
             if r < scan.range_max and r > scan.range_min:
                 angle = scan.angle_min + i * scan.angle_increment

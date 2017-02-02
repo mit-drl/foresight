@@ -10,4 +10,62 @@
     <include file="$(find bebop_tools)/launch/joy_teleop.launch">
         <arg name="joy_dev" value="/dev/input/js0"/>
     </include>
+
+    <arg name="upper_limit" value="1"/>
+    <arg name="lower_limit" value="-1"/>
+
+    <node name="pid_x" pkg="pid" type="controller" ns="pid_x">
+        <param name="Kp" value="0.11" />
+        <param name="Ki" value="0.01" />
+        <param name="Kd" value="0.17" />
+        <param name="upper_limit" value="$(arg upper_limit)" />
+        <param name="lower_limit" value="$(arg lower_limit)" />
+        <param name="windup_limit" value="0.05" />
+        <param name="diagnostic_period" value="0.25" />
+        <param name="max_loop_frequency" value="100.0" />
+        <param name="min_loop_frequency" value="100.0" />
+    </node>
+
+    <node name="pid_y" pkg="pid" type="controller" ns="pid_y">
+        <param name="Kp" value="0.11" />
+        <param name="Ki" value="0.01" />
+        <param name="Kd" value="0.17" />
+        <param name="upper_limit" value="$(arg upper_limit)" />
+        <param name="lower_limit" value="$(arg lower_limit)" />
+        <param name="windup_limit" value="0.05" />
+        <param name="diagnostic_period" value="0.25" />
+        <param name="max_loop_frequency" value="100.0" />
+        <param name="min_loop_frequency" value="100.0" />
+    </node>
+
+    <node name="pid_z" pkg="pid" type="controller" ns="pid_z">
+        <param name="Kp" value="0.3" />
+        <param name="Ki" value="0.0" />
+        <param name="Kd" value="0.1" />
+        <param name="upper_limit" value="$(arg upper_limit)" />
+        <param name="lower_limit" value="$(arg lower_limit)" />
+        <param name="windup_limit" value="0.05" />
+        <param name="diagnostic_period" value="0.25" />
+        <param name="max_loop_frequency" value="100.0" />
+        <param name="min_loop_frequency" value="100.0" />
+    </node>
+
+    <node name="pid_yaw" pkg="pid" type="controller" ns="pid_yaw">
+        <param name="Kp" value="0.5" />
+        <param name="Ki" value="0.0" />
+        <param name="Kd" value="0.1" />
+        <param name="upper_limit" value="$(arg upper_limit)" />
+        <param name="lower_limit" value="$(arg lower_limit)" />
+        <param name="windup_limit" value="1" />
+        <param name="diagnostic_period" value="0.25" />
+        <param name="max_loop_frequency" value="100.0" />
+        <param name="min_loop_frequency" value="100.0" />
+        <param name="angle_error" value="True" />
+    </node>
+
+    <node name="position_controller" pkg="foresight"
+        type="position_controller.py" output="screen"/>
+
+    <node pkg="foresight" type="waypoint_test.py" name="waypoint_test_node" output="screen" />
+
 </launch>

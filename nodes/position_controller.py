@@ -64,11 +64,11 @@ class PositionController(object):
     def effort_sub(self, effort, topic_name):
         self.efforts[self.topics[topic_name]] = effort.data
 
-    @n.subscriber("/bebop/odom", Odometry)
+    @n.subscriber("/odometry/filtered", Odometry)
     def odom_sub(self, odom):
         # try:
         ps = PoseStamped()
-        ps.header = odom.header
+        ps.header.frame_id = odom.header.frame_id
         ps.pose = odom.pose.pose
         self.listener.waitForTransform(ps.header.frame_id, self.frame_id,
                                         rospy.Time(), rospy.Duration(1))
@@ -82,10 +82,11 @@ class PositionController(object):
         euler = tf.transformations.euler_from_quaternion(quat)
         yaw = euler[2]
 
+        self.yaw = yaw
         self.float_pub(yaw).publish("/pid_yaw/state")
         self.pose = odom.pose.pose
-        # except:
-        #     print "tf error"
+        # except tf.ExtrapolationException:
+        #     print "fucking error"
 
     def quat_to_list(self, quat):
         return [quat.x, quat.y, quat.z, quat.w]
@@ -107,7 +108,7 @@ class PositionController(object):
         self.float_pub(ps_tf.pose.position.z).publish("/pid_z/setpoint")
         yaw = self.yaw_from_tf(ps)
         self.float_pub(yaw).publish("/pid_yaw/setpoint")
-        print "setpoint yaw: %f" % yaw
+        # print "setpoint yaw: %f" % yaw
         #except:
         #    print "tf error"
 

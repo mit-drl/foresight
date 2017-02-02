@@ -3,44 +3,39 @@
     <arg name="car_frame_id" default="golfcartlw/base_link"/>
     <arg name="map_frame_id" default="golfcartlw/map"/>
     <arg name="quad_frame_id" default="base_link"/>
-    <arg name="quad_odom_frame_id" default="odom"/>
     <arg name="camera_frame_id" default="camera_base_link_dummy"/>
-    <arg name="front_laser_frame_id" default="golfcartlw/front_bottom_lidar"/>
     <arg name="scan_topic" default="/golfcartlw/front_top_scan_filtered"/>
 
-<!--<node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_front"
-        args="0.51 0.37 0 0 0 0 $(arg car_frame_id) tag_left_front 100" />
-
-    <node pkg="tf" type="static_transform_publisher" name="car_to_tag_right_center"
-        args="-0.03 -0.31 0 0 0 0 $(arg car_frame_id) tag_right_center 100" />
-
-    <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_back"
-        args="-0.54 0.29 0 0 0 0 $(arg car_frame_id) tag_left_back 100" /> -->
-
     <!-- Dummy transform from the quad to the camera -->
-
     <node pkg="tf" type="static_transform_publisher" name="quad_to_camera"
         args="0 0 0 0 2.4 0 $(arg quad_frame_id) $(arg camera_frame_id) 100" />
 
-    <!-- Dummy transform from the car base link to odom -->
+    <!-- Publishes the imu offset -->
+    <node pkg="foresight" type="imu_offset_publisher.py"
+        name="imu_offset_publisher"
+        output="screen">
+        <param name="x0" value="3.29"/>
+        <param name="y0" value="0"/>
+        <param name="z0" value="0"/>
+    </node>
 
-    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_odom" -->
-    <!--     args="3 0 0 0 0 0 $(arg car_frame_id) $(arg quad_odom_frame_id) 100" /> -->
-
-    <node pkg="foresight" type="imu_offset_broadcaster.py"
-        name="imu_offset_broadcaster"
-        output="screen"/>
-
+    <!-- Uses the UWBs and the odometry to localize the bebop -->
     <include file="$(find foresight)/launch/localization/localize_bebop.launch">
 	    <arg name="car_frame_id" value="$(arg car_frame_id)"/>
 	    <arg name="map_frame_id" value="$(arg map_frame_id)"/>
 	    <arg name="quad_frame_id" value="$(arg quad_frame_id)"/>
     </include>
 
-    <!-- <include file="$(find foresight)/launch/planner/planner.launch"> -->
-	<!--     <arg name="car_frame_id" value="$(arg car_frame_id)"/> -->
-	<!--     <arg name="quad_frame_id" value="$(arg quad_frame_id)"/> -->
-	<!--     <arg name="camera_frame_id" value="$(arg camera_frame_id)"/> -->
-	<!--     <arg name="scan_topic" value="$(arg scan_topic)"/> -->
-    <!-- </include> -->
+    <!-- Publishes the blind spots -->
+    <node pkg="foresight" type="blind_spots.py" name="blind_spots"
+        output="screen">
+        <param name="scan_break_thresh" value="1.0"/>
+        <remap from="/scan" to="$(arg scan_topic)"/>
+
+        <!-- Frame ids -->
+        <param name="map_frame" value="$(arg car_frame_id)"/>
+        <param name="quad_frame" value="$(arg quad_frame_id)"/>
+        <param name="camera_frame" value="$(arg camera_frame_id)"/>
+    </node>
+
 </launch>

@@ -18,6 +18,7 @@ from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PoseArray
 from nav_msgs.msg import Path
+from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 from foresight.msg import PolygonArray
@@ -103,9 +104,15 @@ class InfoPlanner(object):
 
         return False
 
+    @n.subscriber("/odometry/filtered", Odometry)
+    def odom_sub(self, odom):
+        self.pose = PoseStamped()
+        self.pose.header = odom.header
+        self.pose.pose = odom.pose.pose
+
     @n.main_loop(frequency=30)
     def run(self):
-        self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
+        # self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
         self.update_publishing_path()
         if self.opt_tsr is not None:
             pa = self.publish_pose_array(self.opt_tsr_pubbing.path)

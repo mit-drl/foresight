@@ -5,68 +5,7 @@
     <arg name="map_frame_id" default="map"/>
     <arg name="quad_frame_id" default="base_link"/>
 
-    <rosparam param="tag_names">
-        ["tag_right_center", "tag_left_back", "tag_left_front"]
-    </rosparam>
-
-    <!-- Reading from tag sensors -->
-
-    <!-- <node name="reader_top_left" type="tag.py" pkg="decawave_localization" -->
-    <!--     output="screen"> -->
-    <!--     <param name="port" value="/dev/ttyACM0"/> -->
-    <!--     <param name="baud" value="115200"/> -->
-    <!--     <param name="frequency" value="100"/> -->
-    <!-- </node> -->
-    <!--  -->
-    <!-- <node name="reader_top_right" type="tag.py" pkg="decawave_localization" -->
-    <!--     output="screen"> -->
-    <!--     <param name="port" value="/dev/ttyACM1"/> -->
-    <!--     <param name="baud" value="115200"/> -->
-    <!--     <param name="frequency" value="100"/> -->
-    <!-- </node> -->
-    <!--  -->
-    <!-- <node name="reader_bottom_right" type="tag.py" pkg="decawave_localization" -->
-    <!--     output="screen"> -->
-    <!--     <param name="port" value="/dev/ttyACM2"/> -->
-    <!--     <param name="baud" value="115200"/> -->
-    <!--     <param name="frequency" value="100"/> -->
-    <!-- </node> -->
-
-    <!-- Static transforms from the car frame to the tags -->
-
-    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_front" -->
-    <!--     args="0.51 0.37 0 0 0 0 $(arg car_frame_id) tag_left_front 100" /> -->
-    <!--  -->
-    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_tag_right_center" -->
-    <!--     args="&#45;0.03 &#45;0.31 0 0 0 0 $(arg car_frame_id) tag_right_center 100" /> -->
-    <!--  -->
-    <!-- <node pkg="tf" type="static_transform_publisher" name="car_to_tag_left_back" -->
-    <!--     args="&#45;0.54 0.29 0 0 0 0 $(arg car_frame_id) tag_left_back 100" /> -->
-    <!--  -->
-
-    <!-- Running the trilateration node -->
-
-    <node pkg="decawave_localization" type="localize.py"
-        name="decawave_localization" output="screen">
-        <param name="frame_id" value="$(arg car_frame_id)"/>
-        <param name="frequency" value="30"/>
-        <param name="cov_x" value="0.6"/>
-        <param name="cov_y" value="0.6"/>
-        <param name="cov_sensor" value="0.3"/>
-        <rosparam>
-            tag_range_topics:
-                - tag_left_front/range
-                - tag_left_back/range
-                - tag_right_center/range
-            transition_matrix: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
-            observation_matrix: [1, 0, 0, 0, 1, 0, 0, 0, 1]
-            initial_state: [0, 0, 0]
-            initial_cov: [0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1]
-        </rosparam>
-    </node>
-
     <!-- Because bebop doesn't publish the odom with a covariance -->
-
     <node pkg="foresight" type="odom_covariance.py"
         name="odom_covariance" output="screen">
         <remap from="odom_input" to="/bebop/odom" />
@@ -79,8 +18,7 @@
         <param name="rz" value="0.0001" />
     </node>
 
-    <!-- Robot localization -->
-
+    <!-- Fuses UWB position estimate with the odometry -->
     <node pkg="robot_localization" type="ukf_localization_node"
         name="ukf_localization" clear_params="true">
 
@@ -92,24 +30,23 @@
         <param name="odom_frame" value="odom"/>
         <param name="base_link_frame" value="$(arg quad_frame_id)"/>
         <param name="world_frame" value="$(arg car_frame_id)"/>
-        <!-- <param name="world_frame" value="odom"/> -->
 
-        <param name="transform_time_offset" value="0.0"/>
+        <param name="transform_time_offset" value="1"/>
 
-        <param name="odom0" value="/bebop/odom_cov/tits"/>
+        <param name="odom0" value="/bebop/odom_cov"/>
         <param name="odom1" value="/odom_offset_cov"/>
 
-        <rosparam param="odom0_config">[false, false, true,
+        <rosparam param="odom0_config">[true, true, true,
+                                        false, false, false,
                                         true, true, true,
-                                        true, true, false,
+                                        false, false, false,
+                                        false, false, true]</rosparam>
+
+        <rosparam param="odom1_config">[true, true, true,
+                                        true, true, true,
+                                        false, false, false,
                                         false, false, false,
                                         false, false, false]</rosparam>
-
-        <rosparam param="odom1_config">[true, true, false,
-                                       false, false, false,
-                                       false, false, false,
-                                       false, false, false,
-                                       false, false, false]</rosparam>
 
         <param name="odom0_differential" value="false"/>
         <param name="odom1_differential" value="false"/>
@@ -127,70 +64,13 @@
         <param name="debug"           value="false"/>
     </node>
 
-    <!-- starts trajectory server -->
+    <!-- Starts trajectory server -->
     <node pkg="hector_trajectory_server" type="hector_trajectory_server"
         name="hector_trajectory_server">
         <param name="source_frame_name" value="base_link"/>
         <param name="target_frame_name" value="odom"/>
         <param name="trajectory_publish_rate" value="4"/>
-	<remap from="/trajectory" to="/path"/>
-    </node>
-
-    <arg name="upper_limit" value="1"/>
-    <arg name="lower_limit" value="-1"/>
-
-    <node name="pid_x" pkg="pid" type="controller" ns="pid_x">
-        <param name="Kp" value="0.11" />
-        <param name="Ki" value="0.01" />
-        <param name="Kd" value="0.17" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="0.05" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-    </node>
-
-    <node name="pid_y" pkg="pid" type="controller" ns="pid_y">
-        <param name="Kp" value="0.11" />
-        <param name="Ki" value="0.01" />
-        <param name="Kd" value="0.17" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="0.05" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-    </node>
-
-    <node name="pid_z" pkg="pid" type="controller" ns="pid_z">
-        <param name="Kp" value="0.3" />
-        <param name="Ki" value="0.0" />
-        <param name="Kd" value="0.1" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="0.05" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-    </node>
-
-    <node name="pid_yaw" pkg="pid" type="controller" ns="pid_yaw">
-        <param name="Kp" value="0.5" />
-        <param name="Ki" value="0.0" />
-        <param name="Kd" value="0.1" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="1" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-        <param name="angle_error" value="True" />
-    </node>
-
-    <node name="position_controller" pkg="foresight"
-        type="position_controller.py" output="screen">
-        <!-- <remap from="/setpoint_pose" to="/move_base_simple/goal"/> -->
+        <remap from="/trajectory" to="/path"/>
     </node>
 
 </launch>
