@@ -18,6 +18,12 @@
         <param name="rz" value="0.0001" />
     </node>
 
+    <!-- Provides a pose from the car to the bebop -->
+    <include file="$(find decawave_localization)/localize_bebop4.launch">
+        <arg name="car_frame_id" value="$(arg car_frame_id)"/>
+        <arg name="pose_cov_topic" value="pose_cov"/>
+    </include>
+
     <!-- Fuses UWB position estimate with the odometry -->
     <node pkg="robot_localization" type="ukf_localization_node"
         name="ukf_localization" clear_params="true">
