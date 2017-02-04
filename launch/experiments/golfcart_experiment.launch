@@ -4,7 +4,7 @@
     <arg name="map_frame_id" default="golfcartlw/map"/>
     <arg name="quad_frame_id" default="base_link"/>
     <arg name="camera_frame_id" default="camera_base_link_dummy"/>
-    <arg name="scan_topic" default="/golfcartlw/front_top_scan_filtered"/>
+    <arg name="scan_topic" default="/golfcartlw/front_bottom_scan_filtered"/>
 
     <!-- Dummy transform from the quad to the camera -->
     <node pkg="tf" type="static_transform_publisher" name="quad_to_camera"

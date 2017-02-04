@@ -19,9 +19,11 @@
     </node>
 
     <!-- Provides a pose from the car to the bebop -->
-    <include file="$(find decawave_localization)/localize_bebop4.launch">
+    <include file="$(find decawave_localization)/launch/localize_bebop4.launch">
         <arg name="car_frame_id" value="$(arg car_frame_id)"/>
-        <arg name="pose_cov_topic" value="pose_cov"/>
+        <arg name="pose_cov_topic" value="uwb_pose_cov"/>
+        <arg name="cov_x" value="0.45"/>
+        <arg name="cov_y" value="0.45"/>
     </include>
 
     <!-- Fuses UWB position estimate with the odometry -->
@@ -42,7 +44,7 @@
         <param name="odom0" value="/bebop/odom_cov"/>
         <param name="odom1" value="/odom_offset_cov"/>
 
-        <rosparam param="odom0_config">[true, true, true,
+        <rosparam param="odom0_config">[false, false, true,
                                         false, false, false,
                                         true, true, true,
                                         false, false, false,
@@ -74,7 +76,7 @@
     <node pkg="hector_trajectory_server" type="hector_trajectory_server"
         name="hector_trajectory_server">
         <param name="source_frame_name" value="base_link"/>
-        <param name="target_frame_name" value="odom"/>
+        <param name="target_frame_name" value="golfcartlw/base_link"/>
         <param name="trajectory_publish_rate" value="4"/>
         <remap from="/trajectory" to="/path"/>
     </node>

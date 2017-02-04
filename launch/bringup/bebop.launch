@@ -9,6 +9,7 @@
     <!-- starts joystick control -->
     <include file="$(find bebop_tools)/launch/joy_teleop.launch">
         <arg name="joy_dev" value="/dev/input/js0"/>
+        <arg name="joy_config" value="xbox360"/>
     </include>
 
     <arg name="upper_limit" value="1"/>
