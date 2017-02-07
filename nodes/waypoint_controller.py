@@ -13,7 +13,7 @@ import numpy as np
 from foresight.msg import PoseArrayWithTimes
 from foresight.msg import PoseStampedWithTime
 
-n = roshelper.Node("waypoint_test_node", anonymous=False)
+n = roshelper.Node("waypoint_controller", anonymous=False)
 
 @n.entry_point()
 class WaypointController(object):

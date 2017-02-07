@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <!-- starts bebop driver -->
-    <node pkg="foresight" type="waypoint_test.py" name="waypoint_test_node" output="screen" />
-
-    <node pkg="foresight" type="publish_trajectory.py" name="trajectory_node" output="screen" />
-</launch>

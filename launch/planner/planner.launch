@@ -5,19 +5,6 @@
     <arg name="camera_frame_id" default="camera_base_link_dummy"/>
     <arg name="scan_topic" default="/scan"/>
 
-    <!-- <node pkg="foresight" type="blind_spots.py" name="blind_spots" -->
-    <!--     output="screen"> -->
-    <!--     <param name="scan_break_thresh" value="1.0"/> -->
-    <!--     <remap from="/scan" to="$(arg scan_topic)"/> -->
-    <!--  -->
-    <!--     <!&#45;&#45; Frame ids &#45;&#45;> -->
-    <!--     <param name="map_frame" value="$(arg car_frame_id)"/> -->
-    <!--     <param name="quad_frame" value="$(arg quad_frame_id)"/> -->
-    <!--     <param name="camera_frame" value="$(arg camera_frame_id)"/> -->
-    <!-- </node> -->
-
-    <!-- <node pkg="foresight" type="waypoint_test.py" name="waypoint_test_node" output="screen" /> -->
-
     <node pkg="foresight" type="info_planner.py" name="info_planner"
         output="screen">
         <param name="optimality_threshold" value="0.7"/>

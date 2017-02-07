@@ -67,6 +67,7 @@
     <node name="position_controller" pkg="foresight"
         type="position_controller.py" output="screen"/>
 
-    <node pkg="foresight" type="waypoint_test.py" name="waypoint_test_node" output="screen" />
+    <node pkg="foresight" type="waypoint_controller.py" name="waypoint_controller"
+        output="screen" />
 
 </launch>
