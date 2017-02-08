@@ -140,4 +140,5 @@ target/
 
 .ropeproject/
 data/
-# models/
+third_party/
+*.swp

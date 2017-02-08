@@ -13,7 +13,7 @@ import numpy as np
 from foresight.msg import PoseArrayWithTimes
 from foresight.msg import PoseStampedWithTime
 
-n = roshelper.Node("waypoint_test_node", anonymous=False)
+n = roshelper.Node("waypoint_controller", anonymous=False)
 
 @n.entry_point()
 class WaypointController(object):
@@ -25,6 +25,7 @@ class WaypointController(object):
         self.y = 0
         self.z = 0
         self.yaw = 0
+        self.current_pose = Pose()
         self.waypoints = None
         self.wait_times = []
         self.prev_traj = None
@@ -34,6 +35,7 @@ class WaypointController(object):
         self.step_size = 0.2
         self.made_target = False
         self.start_time = 0.0
+        self.fixed_frame_id = None
         # min yaw distance is from the sin value of 18 degrees
         self.min_yaw_dist = abs(math.sin(math.pi/10.0))
 
@@ -41,7 +43,7 @@ class WaypointController(object):
     def pub_setpoint(self):
         goal = self.traj.pose_array.poses[self.index]
         time = self.traj.wait_times[self.index]
-        
+
         dist = self.dist([self.x,self.y,self.z], [goal.position.x,goal.position.y,goal.position.z])
         yaw_dist = abs(math.sin(self.yaw - self.yaw_from_pose(goal)))
         #print "distance: %f" % dist
@@ -58,9 +60,9 @@ class WaypointController(object):
                 if self.index < len(self.traj.pose_array.poses) - 1:
                     self.index = self.index + 1
                     goal = self.traj.pose_array.poses[self.index]
-            
+
         ps = PoseStamped()
-        ps.header.frame_id = "odom"
+        ps.header.frame_id = self.fixed_frame_id
         ps.pose = goal
         return ps
 
@@ -85,7 +87,8 @@ class WaypointController(object):
     def traj_sub(self, waypoints):
         if not self.waypoints == waypoints.pose_array.poses:
             self.waypoints = waypoints.pose_array.poses
-            self.wait_times = waypoints.wait_times
+            self.fixed_frame_id = waypoints.pose_array.header.frame_id
+            self.wait_times = list(waypoints.wait_times)
             self.index = 0
             self.traj = self.process_waypoints(self.waypoints, self.wait_times)
 
@@ -93,6 +96,10 @@ class WaypointController(object):
         prev = None
         traj = []
         times = []
+        new_waypoints = []
+        wait_times = [0.1] + wait_times
+        waypoints = [self.current_pose] + waypoints
+
         for k in range(len(waypoints)):
             waypoint = waypoints[k]
             if k == 0:
@@ -131,31 +138,29 @@ class WaypointController(object):
                     times.append(wait_times[k])
                 prev = waypoint
         new_trajectory = PoseArrayWithTimes()
-        new_trajectory.pose_array.header.frame_id = "odom"
+        new_trajectory.pose_array.header.frame_id = self.fixed_frame_id
         new_trajectory.pose_array.poses = traj
         new_trajectory.wait_times = times
         return new_trajectory
 
-    @n.subscriber("/bebop/odom", Odometry)
+    @n.subscriber("/odometry/filtered", Odometry)
     def odom_sub(self, odom):
-        try:
-            ps = PoseStamped()
-            ps.header = odom.header
-            ps.pose = odom.pose.pose
-            # self.listener.waitForTransform(ps.header.frame_id, self.frame_id,
-            #                                rospy.Time(), rospy.Duration(1))
-            # ps_tf = self.listener.transformPose(self.frame_id, ps)
-            self.x = ps.pose.position.x
-            self.y = ps.pose.position.y
-            self.z = ps.pose.position.z
+        ps = PoseStamped()
+        ps.header = odom.header
+        ps.pose = odom.pose.pose
+        # self.listener.waitForTransform(ps.header.frame_id, self.fixed_frame_id,
+        #                             rospy.Time(), rospy.Duration(1))
+        # ps = self.listener.transformPose(self.fixed_frame_id, ps)
+        self.x = ps.pose.position.x
+        self.y = ps.pose.position.y
+        self.z = ps.pose.position.z
 
-            quat = ps.pose.orientation
-            quat = self.quat_to_list(quat)
-            euler = tf.transformations.euler_from_quaternion(quat)
-            self.yaw = euler[2]
+        quat = ps.pose.orientation
+        quat = self.quat_to_list(quat)
+        euler = tf.transformations.euler_from_quaternion(quat)
+        self.yaw = euler[2]
 
-        except:
-            print "tf error"
+        self.current_pose = ps.pose
 
     def quat_to_list(self, quat):
         return [quat.x, quat.y, quat.z, quat.w]

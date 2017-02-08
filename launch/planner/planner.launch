@@ -3,30 +3,20 @@
     <arg name="car_frame_id" default="odom"/>
     <arg name="quad_frame_id" default="base_link"/>
     <arg name="camera_frame_id" default="camera_base_link_dummy"/>
-
-    <node pkg="foresight" type="blind_spots.py" name="blind_spots"
-        output="screen">
-        <param name="scan_break_thresh" value="1.0"/>
-
-        <!-- Frame ids -->
-        <param name="map_frame" value="$(arg car_frame_id)"/>
-        <param name="quad_frame" value="$(arg quad_frame_id)"/>
-        <param name="camera_frame" value="$(arg camera_frame_id)"/>
-    </node>
-
-    <node pkg="foresight" type="waypoint_test.py" name="waypoint_test_node" output="screen" />
+    <arg name="scan_topic" default="/scan"/>
 
     <node pkg="foresight" type="info_planner.py" name="info_planner"
         output="screen">
         <param name="optimality_threshold" value="0.7"/>
-        <param name="max_execution_time" value="5.0"/>
+        <param name="max_execution_time" value="6.0"/>
         <param name="max_speed" value="1.0"/>
         <param name="timeout" value="0.2"/>
-        <param name="neighbour_dist" value="0.3"/>
+        <param name="neighbour_dist" value="1"/>
         <param name="fov_v" value="0.628"/>
         <param name="fov_h" value="0.628"/>
-        <param name="altitude" value="1.5"/>
+        <param name="altitude" value="2.0"/>
         <param name="wait_time" value="2.0"/>
+        <param name="buffer_dist" value="0.8"/>
 
         <!-- Frame ids -->
         <param name="map_frame" value="$(arg car_frame_id)"/>
