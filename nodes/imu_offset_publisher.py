@@ -20,13 +20,12 @@ class ImuOffsetPublisher(object):
 
     def __init__(self):
         self.yaw_zero = None
+        self.car_frame_id = rospy.param("car_frame_id", "golfcartlw/base_link")
+        self.frame_id = rospy.param("frame_id", "base_link")
         self.odom_offset = Odometry()
         self.odom = Odometry()
-        self.odom_offset.header.frame_id = "golfcartlw/base_link"
-        self.odom_offset.child_frame_id = "base_link"
-        self.x0 = rospy.get_param("~x0")
-        self.y0 = rospy.get_param("~y0")
-        self.z0 = rospy.get_param("~z0")
+        self.odom_offset.header.frame_id = self.car_frame_id
+        self.odom_offset.child_frame_id = self.frame_id
         self.tfl = tf.TransformListener()
 
     def rotate_xy(self, x, y, rad):
@@ -61,7 +60,7 @@ class ImuOffsetPublisher(object):
         ps = PoseStamped()
         ps.header = ps_cov.header
         ps.pose = ps_cov.pose.pose
-        ps_tf = self.tfl.transformPose(self.odom_offset.header.frame_id, ps)
+        ps_tf = self.tfl.transformPose(self.car_frame_id, ps)
         x = ps_tf.pose.position.x  # + self.x0
         y = ps_tf.pose.position.y  # + self.y0
         z = self.odom.pose.pose.position.z  # + self.z0

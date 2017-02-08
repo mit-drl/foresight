@@ -2,7 +2,6 @@
 <launch>
 
     <arg name="car_frame_id" default="odom"/>
-    <arg name="map_frame_id" default="map"/>
     <arg name="quad_frame_id" default="base_link"/>
 
     <!-- Because bebop doesn't publish the odom with a covariance -->
@@ -25,6 +24,14 @@
         <arg name="cov_x" value="0.45"/>
         <arg name="cov_y" value="0.45"/>
     </include>
+
+    <!-- Publishes the imu offset -->
+    <node pkg="foresight" type="imu_offset_publisher.py"
+        name="imu_offset_publisher"
+        output="screen">
+        <param name="car_frame_id" value="$(arg car_frame_id)"/>
+        <param name="frame_id" value="$(arg quad_frame_id)"/>
+    </node>
 
     <!-- Fuses UWB position estimate with the odometry -->
     <node pkg="robot_localization" type="ukf_localization_node"

@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="car_frame_id" default="golfcartlw/base_link"/>
-    <arg name="map_frame_id" default="golfcartlw/map"/>
     <arg name="quad_frame_id" default="base_link"/>
     <arg name="camera_frame_id" default="camera_base_link_dummy"/>
     <arg name="scan_topic" default="/golfcartlw/front_bottom_scan_filtered"/>
@@ -10,19 +9,9 @@
     <node pkg="tf" type="static_transform_publisher" name="quad_to_camera"
         args="0 0 0 0 2.4 0 $(arg quad_frame_id) $(arg camera_frame_id) 100" />
 
-    <!-- Publishes the imu offset -->
-    <node pkg="foresight" type="imu_offset_publisher.py"
-        name="imu_offset_publisher"
-        output="screen">
-        <param name="x0" value="3.29"/>
-        <param name="y0" value="0"/>
-        <param name="z0" value="0"/>
-    </node>
-
     <!-- Uses the UWBs and the odometry to localize the bebop -->
     <include file="$(find foresight)/launch/localization/localize_bebop.launch">
 	    <arg name="car_frame_id" value="$(arg car_frame_id)"/>
-	    <arg name="map_frame_id" value="$(arg map_frame_id)"/>
 	    <arg name="quad_frame_id" value="$(arg quad_frame_id)"/>
     </include>
 
