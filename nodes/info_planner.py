@@ -273,7 +273,7 @@ class InfoPlanner(object):
         args = (list(pt), polys)
         options = {"disp": False, "maxiter": None}
         kwargs = {"options": options, "method": "Bounded", "args": args,
-                  "bounds": (0, 2 * math.pi)}
+                  "bounds": (0.0, 2 * math.pi)}
         opt_res = opt.minimize_scalar(self.yaw_objective, init, **kwargs)
         return opt_res
 
