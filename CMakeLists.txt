@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  dynamic_reconfigure
 )
 
 add_message_files(
@@ -22,10 +21,6 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   geometry_msgs std_msgs
-)
-
-generate_dynamic_reconfigure_options(
-  cfg/PID.cfg
 )
 
 catkin_package(

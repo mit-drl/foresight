@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find foresight)/launch/planner/planner.launch">
+        <arg name="car_frame_id" value="body"/>
+        <arg name="quad_frame_id" value="base_link"/>
+        <arg name="camera_frame_id" value="camera_base_link_dummy"/>
+        <arg name="scan_topic" value="/white_prius/front_scan_changed_range"/>
+        <arg name="planner_config" value="$(find foresight)/param/planner.yaml"/>
+    </include>
+</launch>

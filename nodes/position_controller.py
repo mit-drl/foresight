@@ -33,6 +33,7 @@ class PositionController(object):
                        "/pid_z/control_effort": 2,
                        "/pid_yaw/control_effort": 3}
         self.land = False
+        self.set_yaw = 0
 
     @n.publisher("/bebop/cmd_vel", Twist)
     def publish_cmd_vel(self, vx, vy, vz, vyaw):
@@ -44,13 +45,10 @@ class PositionController(object):
             self.made_target = True
             self.start_time = rospy.Time.now()
 
-        # elif self.made_target == True:
-        #     if rospy.Time.now() - self.start_time < rospy.Duration(self.wait_time):
-        #         print "waiting"
-        #         vel.linear.x = 0.0
-        #         vel.linear.y = 0.0
-        #         vel.linear.z = 0.0
-        vel.angular.z = vyaw
+        if abs(self.yaw - self.set_yaw) > math.pi:
+            vel.angular.z = -vyaw
+        else:
+            vel.angular.z = vyaw
         return vel
 
     @n.publisher(Float64)
@@ -81,7 +79,6 @@ class PositionController(object):
         quat = self.quat_to_list(quat)
         euler = tf.transformations.euler_from_quaternion(quat)
         yaw = euler[2]
-
         self.yaw = yaw
         self.float_pub(yaw).publish("/pid_yaw/state")
         self.pose = odom.pose.pose
@@ -107,6 +104,7 @@ class PositionController(object):
         self.float_pub(ps_tf.pose.position.y).publish("/pid_y/setpoint")
         self.float_pub(ps_tf.pose.position.z).publish("/pid_z/setpoint")
         yaw = self.yaw_from_tf(ps)
+        self.set_yaw = yaw
         self.float_pub(yaw).publish("/pid_yaw/setpoint")
         # print "setpoint yaw: %f" % yaw
         #except:

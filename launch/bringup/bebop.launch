@@ -52,7 +52,7 @@
     </node>
 
     <node name="pid_yaw" pkg="pid" type="controller" ns="pid_yaw">
-        <param name="Kp" value="0.5" />
+        <param name="Kp" value="0.45" />
         <param name="Ki" value="0.0" />
         <param name="Kd" value="0.1" />
         <param name="upper_limit" value="$(arg upper_limit)" />
@@ -61,7 +61,8 @@
         <param name="diagnostic_period" value="0.25" />
         <param name="max_loop_frequency" value="100.0" />
         <param name="min_loop_frequency" value="100.0" />
-        <param name="angle_error" value="True" />
+        <param name="angle_error" value="true" />
+        <!-- <param name="angle_wrap" value="3.14159"/> -->
     </node>
 
     <node name="position_controller" pkg="foresight"

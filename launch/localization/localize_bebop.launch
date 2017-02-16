@@ -21,8 +21,8 @@
     <include file="$(find decawave_localization)/launch/localize_bebop4.launch">
         <arg name="car_frame_id" value="$(arg car_frame_id)"/>
         <arg name="pose_cov_topic" value="uwb_pose_cov"/>
-        <arg name="cov_x" value="0.45"/>
-        <arg name="cov_y" value="0.45"/>
+        <arg name="cov_x" value="0.35"/>
+        <arg name="cov_y" value="0.35"/>
     </include>
 
     <!-- Publishes the imu offset -->
@@ -83,7 +83,7 @@
     <node pkg="hector_trajectory_server" type="hector_trajectory_server"
         name="hector_trajectory_server">
         <param name="source_frame_name" value="base_link"/>
-        <param name="target_frame_name" value="golfcartlw/base_link"/>
+        <param name="target_frame_name" value="$(arg car_frame_id)"/>
         <param name="trajectory_publish_rate" value="4"/>
         <remap from="/trajectory" to="/path"/>
     </node>

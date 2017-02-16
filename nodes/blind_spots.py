@@ -5,10 +5,12 @@ import rospy
 import math
 import planar
 import tf
+import tf2_ros
+import time
 from foresight.msg import PolygonArray
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point
-from geometry_msgs.msg import PointStamped
+from tf2_geometry_msgs import PointStamped
 from geometry_msgs.msg import Polygon
 from geometry_msgs.msg import PolygonStamped
 from visualization_msgs.msg import Marker
@@ -41,7 +43,8 @@ class BlindSpotPublisher(object):
         self.scan_break_thresh = rospy.get_param(
             "~scan_break_thresh", SCAN_BREAK_THRESH)
         self.polys = None
-        self.tfl = tf.TransformListener()
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tfl = tf2_ros.TransformListener(self.tf_buffer)
 
     @n.subscriber(SCAN_TOPIC, LaserScan)
     def laser_sub(self, scan):
@@ -106,15 +109,17 @@ class BlindSpotPublisher(object):
 
     def get_laser_pts(self, scan):
         pts = list()
-        self.tfl.waitForTransform(scan.header.frame_id, self.map_frame,
-                                  rospy.Time(), rospy.Duration(1))
+        # print self.map_frame
+        # self.tfl.waitForTransform(scan.header.frame_id, self.map_frame,
+        #                           rospy.Time(), rospy.Duration(1))
+        # print scan.header.frame_id, self.map_frame
         for i, r in enumerate(scan.ranges):
             if r < scan.range_max and r > scan.range_min:
                 angle = scan.angle_min + i * scan.angle_increment
                 x = r * math.cos(angle)
                 y = r * math.sin(angle)
                 pt = self.make_point_stamped(x, y, scan.header.frame_id)
-                pt_tf = self.tfl.transformPoint(self.map_frame, pt)
+                pt_tf = self.tf_buffer.transform(pt, self.map_frame)
                 cur_pt = planar.Vec2(pt_tf.point.x, pt_tf.point.y)
                 pts.append(cur_pt)
         return pts
