@@ -40,9 +40,9 @@
     </node>
 
     <node name="pid_z" pkg="pid" type="controller" ns="pid_z">
-        <param name="Kp" value="0.3" />
+        <param name="Kp" value="0.08" />
         <param name="Ki" value="0.0" />
-        <param name="Kd" value="0.1" />
+        <param name="Kd" value="0.17" />
         <param name="upper_limit" value="$(arg upper_limit)" />
         <param name="lower_limit" value="$(arg lower_limit)" />
         <param name="windup_limit" value="0.05" />
@@ -70,5 +70,8 @@
 
     <node pkg="foresight" type="waypoint_controller.py" name="waypoint_controller"
         output="screen" />
+
+    <param name="quad_robot_description"
+        command="$(find xacro)/xacro $(find hector_quadrotor_description)/urdf/quadrotor.urdf.xacro" />
 
 </launch>

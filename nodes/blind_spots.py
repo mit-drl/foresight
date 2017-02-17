@@ -6,7 +6,7 @@ import math
 import planar
 import tf
 import tf2_ros
-import time
+import shapely.geometry as geom
 from foresight.msg import PolygonArray
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point
@@ -49,10 +49,11 @@ class BlindSpotPublisher(object):
     @n.subscriber(SCAN_TOPIC, LaserScan)
     def laser_sub(self, scan):
         pts = self.get_laser_pts(scan)
-        self.polys = self.get_blind_polys(pts)
+        bounding_poly = geom.Polygon(pts)
+        self.pub_bounding_poly(pts)
+        self.polys = self.get_blind_polys(pts, bounding_poly)
         self.pub_blind_spot_markers(self.polys)
         self.pub_blind_polys(self.polys)
-        self.pub_bounding_poly(pts)
 
     @n.publisher(BLIND_SPOT_MARKERS_TOPIC, MarkerArray)
     def pub_blind_spot_markers(self, polys):
@@ -100,19 +101,21 @@ class BlindSpotPublisher(object):
     def run(self):
         pass
 
-    def get_blind_polys(self, pts):
+    def get_blind_polys(self, pts, bounding_poly):
         polys = list()
         for p, q in self.get_laser_breaks(pts):
             dr = (p - q).perpendicular().scaled_to(0.2 * p.distance_to(q))
-            polys.append([p, q, q + dr, p + dr])
+            poly_arr = [p, q, q + dr, p + dr]
+            g_poly = geom.Polygon(poly_arr)
+            poly = g_poly - bounding_poly
+            try:
+                polys.append(self.geom_to_vecs(poly.exterior.coords.xy))
+            except:
+                pass
         return polys
 
     def get_laser_pts(self, scan):
         pts = list()
-        # print self.map_frame
-        # self.tfl.waitForTransform(scan.header.frame_id, self.map_frame,
-        #                           rospy.Time(), rospy.Duration(1))
-        # print scan.header.frame_id, self.map_frame
         for i, r in enumerate(scan.ranges):
             if r < scan.range_max and r > scan.range_min:
                 angle = scan.angle_min + i * scan.angle_increment
@@ -143,6 +146,13 @@ class BlindSpotPublisher(object):
         p.point.x = x
         p.point.y = y
         return p
+
+    def geom_to_vecs(self, arrs):
+        pts = list()
+        xs, ys = arrs
+        for x, y in zip(xs, ys):
+            pts.append(planar.Vec2(x, y))
+        return pts
 
 
 if __name__ == "__main__":

@@ -22,13 +22,16 @@ class ImuOffsetPublisher(object):
 
     def __init__(self):
         self.yaw_zero = None
-        self.car_frame_id = rospy.get_param("car_frame_id",
+        self.car_frame_id = rospy.get_param("~car_frame_id",
                                             "body")
-        self.frame_id = rospy.get_param("frame_id", "base_link")
+        self.frame_id = rospy.get_param("~frame_id", "base_link")
         self.odom_offset = Odometry()
+        self.odom_offset_2d = Odometry()
         self.odom = Odometry()
         self.odom_offset.header.frame_id = self.car_frame_id
         self.odom_offset.child_frame_id = self.frame_id
+        self.odom_offset_2d.header.frame_id = self.car_frame_id
+        self.odom_offset_2d.child_frame_id = self.frame_id
         self.tf_buffer = tf2_ros.Buffer()
         self.tfl = tf2_ros.TransformListener(self.tf_buffer)
 
@@ -59,15 +62,18 @@ class ImuOffsetPublisher(object):
         # pos = odom.pose.pose.position
         # self.odom_offset_pub(pos, quat)
 
-    @n.subscriber("/uwb_pose_cov", PoseWithCovarianceStamped)
-    def uwb_pose_cov_sub(self, ps_cov):
+    @n.subscriber("/uwb_pose_cov_3d", PoseWithCovarianceStamped)
+    def uwb_pose_cov_sub_3d(self, ps_cov):
+        if self.yaw_zero is None:
+            return
+
         ps = tf2_geom.PoseStamped()
         ps.header = ps_cov.header
         ps.pose = ps_cov.pose.pose
         ps_tf = self.tf_buffer.transform(ps, self.car_frame_id)
         x = ps_tf.pose.position.x  # + self.x0
         y = ps_tf.pose.position.y  # + self.y0
-        z = self.odom.pose.pose.position.z  # + self.z0
+        z = ps_tf.pose.position.z
         self.odom_offset.header.stamp = rospy.Time.now()
         self.odom_offset.pose.pose.position.x = x
         self.odom_offset.pose.pose.position.y = y
@@ -77,11 +83,38 @@ class ImuOffsetPublisher(object):
         self.odom_offset.pose.pose.orientation.z = self.relative_quat[2]
         self.odom_offset.pose.pose.orientation.w = self.relative_quat[3]
         self.odom_offset.pose.covariance = self.cov_mat(ps_cov, self.odom)
-        self.pub_odom_offset()
+        self.pub_odom_offset_3d()
 
-    @n.publisher("/odom_offset_cov", Odometry)
-    def pub_odom_offset(self):
+    @n.subscriber("/uwb_pose_cov_2d", PoseWithCovarianceStamped)
+    def uwb_pose_cov_sub_2d(self, ps_cov):
+        if self.yaw_zero is None:
+            return
+
+        ps = tf2_geom.PoseStamped()
+        ps.header = ps_cov.header
+        ps.pose = ps_cov.pose.pose
+        ps_tf = self.tf_buffer.transform(ps, self.car_frame_id)
+        x = ps_tf.pose.position.x  # + self.x0
+        y = ps_tf.pose.position.y  # + self.y0
+        z = self.odom.pose.pose.position.z  # + self.z0
+        self.odom_offset_2d.header.stamp = rospy.Time.now()
+        self.odom_offset_2d.pose.pose.position.x = x
+        self.odom_offset_2d.pose.pose.position.y = y
+        self.odom_offset_2d.pose.pose.position.z = z
+        self.odom_offset_2d.pose.pose.orientation.x = self.relative_quat[0]
+        self.odom_offset_2d.pose.pose.orientation.y = self.relative_quat[1]
+        self.odom_offset_2d.pose.pose.orientation.z = self.relative_quat[2]
+        self.odom_offset_2d.pose.pose.orientation.w = self.relative_quat[3]
+        self.odom_offset_2d.pose.covariance = self.cov_mat(ps_cov, self.odom)
+        self.pub_odom_offset_2d()
+
+    @n.publisher("/odom_offset_cov_3d", Odometry)
+    def pub_odom_offset_3d(self):
         return self.odom_offset
+
+    @n.publisher("/odom_offset_cov_2d", Odometry)
+    def pub_odom_offset_2d(self):
+        return self.odom_offset_2d
 
     # @n.publisher("/odom_offset_cov", Odometry)
     def odom_offset_pub_old(self, pos, quat):
