@@ -6,6 +6,7 @@ import math
 import tf
 import tf2_ros
 import tf2_geometry_msgs as tf2_geom
+from bebop_msgs.msg import Ardrone3PilotingStateAltitudeChanged
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from geometry_msgs.msg import PoseStamped
@@ -13,12 +14,12 @@ from tf.transformations import euler_from_quaternion
 from tf.transformations import quaternion_from_euler
 
 
-NODE_NAME = "imu_offset_publisher"
+NODE_NAME = "relative_odom_publisher"
 n = roshelper.Node(NODE_NAME, anonymous=False)
 
 
 @n.entry_point()
-class ImuOffsetPublisher(object):
+class RelativeOdomPublisher(object):
 
     def __init__(self):
         self.yaw_zero = None
@@ -27,11 +28,14 @@ class ImuOffsetPublisher(object):
         self.frame_id = rospy.get_param("~frame_id", "base_link")
         self.odom_offset = Odometry()
         self.odom_offset_2d = Odometry()
+        self.odom_offset_alt = Odometry()
         self.odom = Odometry()
         self.odom_offset.header.frame_id = self.car_frame_id
         self.odom_offset.child_frame_id = self.frame_id
         self.odom_offset_2d.header.frame_id = self.car_frame_id
         self.odom_offset_2d.child_frame_id = self.frame_id
+        self.odom_offset_alt.header.frame_id = "odom"
+        self.odom_offset_alt.child_frame_id = self.frame_id
         self.tf_buffer = tf2_ros.Buffer()
         self.tfl = tf2_ros.TransformListener(self.tf_buffer)
 
@@ -59,8 +63,16 @@ class ImuOffsetPublisher(object):
         quat = quaternion_from_euler(r, p, dyaw)
         self.relative_quat = quat
         self.odom = odom
-        # pos = odom.pose.pose.position
-        # self.odom_offset_pub(pos, quat)
+
+    @n.subscriber("/bebop/states/ardrone3/PilotingState/AltitudeChanged",
+                  Ardrone3PilotingStateAltitudeChanged)
+    def altitude_sub(self, alt):
+        cov = [0] * 36
+        cov[17] = 0.05
+        self.odom_offset_alt.header.stamp = rospy.Time.now()
+        self.odom_offset_alt.pose.pose.position.z = alt.altitude
+        self.odom_offset_alt.pose.covariance = cov
+        self.pub_odom(self.odom_offset_alt).publish("/odom_alt")
 
     @n.subscriber("/uwb_pose_cov_3d", PoseWithCovarianceStamped)
     def uwb_pose_cov_sub_3d(self, ps_cov):
@@ -83,7 +95,7 @@ class ImuOffsetPublisher(object):
         self.odom_offset.pose.pose.orientation.z = self.relative_quat[2]
         self.odom_offset.pose.pose.orientation.w = self.relative_quat[3]
         self.odom_offset.pose.covariance = self.cov_mat(ps_cov, self.odom)
-        self.pub_odom_offset_3d()
+        self.pub_odom(self.odom_offset).publish("/odom_uwb_3d")
 
     @n.subscriber("/uwb_pose_cov_2d", PoseWithCovarianceStamped)
     def uwb_pose_cov_sub_2d(self, ps_cov):
@@ -106,28 +118,11 @@ class ImuOffsetPublisher(object):
         self.odom_offset_2d.pose.pose.orientation.z = self.relative_quat[2]
         self.odom_offset_2d.pose.pose.orientation.w = self.relative_quat[3]
         self.odom_offset_2d.pose.covariance = self.cov_mat(ps_cov, self.odom)
-        self.pub_odom_offset_2d()
+        self.pub_odom(self.odom_offset_2d).publish("/odom_uwb_2d")
 
-    @n.publisher("/odom_offset_cov_3d", Odometry)
-    def pub_odom_offset_3d(self):
-        return self.odom_offset
-
-    @n.publisher("/odom_offset_cov_2d", Odometry)
-    def pub_odom_offset_2d(self):
-        return self.odom_offset_2d
-
-    # @n.publisher("/odom_offset_cov", Odometry)
-    def odom_offset_pub_old(self, pos, quat):
-        dx, dy = self.rotate_xy(pos.x, pos.y, -self.yaw_zero)
-        self.odom_offset.header.stamp = rospy.Time.now()
-        self.odom_offset.pose.pose.position.x = self.x0 + dx
-        self.odom_offset.pose.pose.position.y = self.y0 + dy
-        self.odom_offset.pose.pose.position.z = pos.z + self.z0
-        self.odom_offset.pose.pose.orientation.x = quat[0]
-        self.odom_offset.pose.pose.orientation.y = quat[1]
-        self.odom_offset.pose.pose.orientation.z = quat[2]
-        self.odom_offset.pose.pose.orientation.w = quat[3]
-        return self.odom_offset
+    @n.publisher(Odometry)
+    def pub_odom(self, odom):
+        return odom
 
     @n.main_loop(frequency=30)
     def run(self):

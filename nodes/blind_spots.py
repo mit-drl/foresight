@@ -49,11 +49,12 @@ class BlindSpotPublisher(object):
     @n.subscriber(SCAN_TOPIC, LaserScan)
     def laser_sub(self, scan):
         pts = self.get_laser_pts(scan)
-        bounding_poly = geom.Polygon(pts)
-        self.pub_bounding_poly(pts)
-        self.polys = self.get_blind_polys(pts, bounding_poly)
-        self.pub_blind_spot_markers(self.polys)
-        self.pub_blind_polys(self.polys)
+        if pts:
+            bounding_poly = geom.Polygon(pts)
+            self.pub_bounding_poly(pts)
+            self.polys = self.get_blind_polys(pts, bounding_poly)
+            self.pub_blind_spot_markers(self.polys)
+            self.pub_blind_polys(self.polys)
 
     @n.publisher(BLIND_SPOT_MARKERS_TOPIC, MarkerArray)
     def pub_blind_spot_markers(self, polys):
@@ -122,7 +123,11 @@ class BlindSpotPublisher(object):
                 x = r * math.cos(angle)
                 y = r * math.sin(angle)
                 pt = self.make_point_stamped(x, y, scan.header.frame_id)
-                pt_tf = self.tf_buffer.transform(pt, self.map_frame)
+                try:
+                    pt_tf = self.tf_buffer.transform(pt, self.map_frame)
+                except tf2_ros.LookupException:
+                    rospy.logerr("TF tree is not ready yet")
+                    return None
                 cur_pt = planar.Vec2(pt_tf.point.x, pt_tf.point.y)
                 pts.append(cur_pt)
         return pts

@@ -32,7 +32,7 @@ class WaypointController(object):
         self.traj = None
         self.index = 0
         self.min_dist = 0.15
-        self.step_size = 0.2
+        self.step_size = 10
         self.made_target = False
         self.start_time = 0.0
         self.fixed_frame_id = None

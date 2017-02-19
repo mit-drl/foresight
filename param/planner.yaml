@@ -6,5 +6,5 @@ neighbour_dist: 1
 fov_v: 0.628
 fov_h: 0.628
 altitude: 1.5
-wait_time: 2.0
-buffer_dist: 0.8
+wait_time: 0.5
+buffer_dist: 0.4
