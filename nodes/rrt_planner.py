@@ -24,7 +24,7 @@ import networkx as nx
 NODE_NAME = "rrt_planner"
 n = roshelper.Node(NODE_NAME, anonymous=False)
 
-SETPOINT_TOPIC = "/move_base_simple/goal"
+SETPOINT_TOPIC = "/setpoint_goal"
 ODOM_TOPIC = "/odometry/filtered"
 POLYGON_TOPIC = "/bounding_poly"
 RRT_TOPIC = "/rrt_path"

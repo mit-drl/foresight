@@ -133,7 +133,6 @@ class InfoPlanner(object):
 
     @n.main_loop(frequency=30)
     def run(self):
-        # self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
         self.update_publishing_path()
         if self.opt_tsr is not None and self.enabled:
             self.publish_next_pose(self.opt_tsr_pubbing.path)
