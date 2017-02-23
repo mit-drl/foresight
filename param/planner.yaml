@@ -1,10 +1,10 @@
 optimality_threshold: 0.7
-max_execution_time: 6.0
+max_execution_time: 10
 max_speed: 1.0
 timeout: 0.2
-neighbour_dist: 1
+neighbour_dist: 0.4
 fov_v: 0.628
 fov_h: 0.628
 altitude: 1.5
-wait_time: 2.0
-buffer_dist: 0.8
+wait_time: 0.5
+buffer_dist: 0.4

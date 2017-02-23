@@ -9,28 +9,75 @@
         name="odom_covariance" output="screen">
         <remap from="odom_input" to="/bebop/odom" />
         <remap from="odom_output" to="bebop/odom_cov" />
-        <param name="px" value="0.01" />
-        <param name="py" value="0.01" />
-        <param name="pz" value="0.01" />
+        <param name="px" value="0.05" />
+        <param name="py" value="0.05" />
+        <param name="pz" value="0.05" />
         <param name="rx" value="0.0001" />
         <param name="ry" value="0.0001" />
         <param name="rz" value="0.0001" />
     </node>
 
     <!-- Provides a pose from the car to the bebop -->
-    <include file="$(find decawave_localization)/launch/localize_bebop4.launch">
+    <include file="$(find decawave_localization)/launch/uwb_localize.launch">
         <arg name="car_frame_id" value="$(arg car_frame_id)"/>
         <arg name="pose_cov_topic" value="uwb_pose_cov"/>
-        <arg name="cov_x" value="0.35"/>
-        <arg name="cov_y" value="0.35"/>
+        <arg name="sensor_noise" value="0.0003"/>
+        <arg name="cov_x_2d" value="7.0"/>
+        <arg name="cov_y_2d" value="7.0"/>
+        <arg name="cov_z_2d" value="7.0"/>
+        <arg name="cov_x_3d" value="10.0"/>
+        <arg name="cov_y_3d" value="10.0"/>
+        <arg name="cov_z_3d" value="40.0"/>
     </include>
 
     <!-- Publishes the imu offset -->
-    <node pkg="foresight" type="imu_offset_publisher.py"
-        name="imu_offset_publisher"
+    <node pkg="foresight" type="relative_odom_publisher.py"
+        name="relative_odom_publisher"
         output="screen">
         <param name="car_frame_id" value="$(arg car_frame_id)"/>
         <param name="frame_id" value="$(arg quad_frame_id)"/>
+    </node>
+
+    <!-- Estimates Bebop's odometry -->
+    <node pkg="robot_localization" type="ukf_localization_node"
+        name="odom_ukf_localization" clear_params="true">
+
+        <param name="frequency" value="100"/>
+        <param name="sensor_timeout" value="0.2"/>
+        <param name="two_d_mode" value="false"/>
+
+        <param name="map_frame" value="$(arg car_frame_id)"/>
+        <param name="odom_frame" value="odom"/>
+        <param name="base_link_frame" value="$(arg quad_frame_id)"/>
+        <param name="world_frame" value="odom"/>
+
+        <param name="transform_time_offset" value="0.0"/>
+
+        <param name="odom0" value="/bebop/odom_cov"/>
+        <param name="odom1" value="/odom_alt"/>
+
+        <rosparam param="odom0_config">[false, false, false,
+                                        true, true, true,
+                                        true, true, true,
+                                        false, false, false,
+                                        false, false, false]</rosparam>
+
+        <rosparam param="odom1_config">[false, false, true,
+                                        false, false, false,
+                                        false, false, false,
+                                        false, false, false,
+                                        false, false, false]</rosparam>
+
+        <param name="odom0_differential" value="false"/>
+        <param name="odom1_differential" value="false"/>
+        <param name="odom0_relative" value="true"/>
+        <param name="odom1_relative" value="false"/>
+        <param name="print_diagnostics" value="true"/>
+
+        <param name="odom0_queue_size" value="1"/>
+        <param name="odom1_queue_size" value="1"/>
+        <param name="debug"           value="false"/>
+        <remap from="odometry/filtered" to="bebop/odom_filtered"/>
     </node>
 
     <!-- Fuses UWB position estimate with the odometry -->
@@ -38,7 +85,7 @@
         name="ukf_localization" clear_params="true">
 
         <param name="frequency" value="30"/>
-        <param name="sensor_timeout" value="0.1"/>
+        <param name="sensor_timeout" value="0.2"/>
         <param name="two_d_mode" value="false"/>
 
         <param name="map_frame" value="$(arg car_frame_id)"/>
@@ -46,12 +93,13 @@
         <param name="base_link_frame" value="$(arg quad_frame_id)"/>
         <param name="world_frame" value="$(arg car_frame_id)"/>
 
-        <param name="transform_time_offset" value="1"/>
+        <param name="transform_time_offset" value="0.0"/>
 
-        <param name="odom0" value="/bebop/odom_cov"/>
-        <param name="odom1" value="/odom_offset_cov"/>
+        <param name="odom0" value="/bebop/odom_filtered"/>
+        <param name="odom1" value="/odom_uwb_2d"/>
+        <param name="odom2" value="/odom_uwb_3d"/>
 
-        <rosparam param="odom0_config">[false, false, true,
+        <rosparam param="odom0_config">[false, false, false,
                                         false, false, false,
                                         true, true, true,
                                         false, false, false,
@@ -63,18 +111,27 @@
                                         false, false, false,
                                         false, false, false]</rosparam>
 
+        <rosparam param="odom2_config">[false, false, false,
+                                        false, false, false,
+                                        false, false, false,
+                                        false, false, false,
+                                        false, false, false]</rosparam>
+
         <param name="odom0_differential" value="false"/>
         <param name="odom1_differential" value="false"/>
+        <param name="odom2_differential" value="false"/>
 
         <param name="odom0_relative" value="false"/>
         <param name="odom1_relative" value="false"/>
+        <param name="odom2_relative" value="false"/>
 
         <!-- <param name="odom0_pose_rejection_threshold" value="100"/> -->
 
         <param name="print_diagnostics" value="true"/>
 
-        <param name="odom0_queue_size" value="2"/>
-        <param name="odom1_queue_size" value="2"/>
+        <param name="odom0_queue_size" value="1"/>
+        <param name="odom1_queue_size" value="1"/>
+        <param name="odom2_queue_size" value="1"/>
 
         <param name="debug"           value="false"/>
     </node>

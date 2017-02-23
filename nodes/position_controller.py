@@ -10,7 +10,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Pose
-from geometry_msgs.msg import  Quaternion
+from geometry_msgs.msg import Quaternion
 
 NODE_NAME = "position_controller"
 n = roshelper.Node(NODE_NAME, anonymous=False)
@@ -35,7 +35,7 @@ class PositionController(object):
         self.land = False
         self.set_yaw = 0
 
-    @n.publisher("/bebop/cmd_vel", Twist)
+    @n.publisher("/setpoint_vel", Twist)
     def publish_cmd_vel(self, vx, vy, vz, vyaw):
         vel = Twist()
         if self.dist_to_goal() > 0.15:
@@ -45,10 +45,10 @@ class PositionController(object):
             self.made_target = True
             self.start_time = rospy.Time.now()
 
-        if abs(self.yaw - self.set_yaw) > math.pi:
-            vel.angular.z = -vyaw
-        else:
-            vel.angular.z = vyaw
+            if abs(self.yaw - self.set_yaw) > math.pi:
+                vel.angular.z = -vyaw
+            else:
+                vel.angular.z = vyaw
         return vel
 
     @n.publisher(Float64)
@@ -64,12 +64,11 @@ class PositionController(object):
 
     @n.subscriber("/odometry/filtered", Odometry)
     def odom_sub(self, odom):
-        # try:
         ps = PoseStamped()
         ps.header.frame_id = odom.header.frame_id
         ps.pose = odom.pose.pose
         self.listener.waitForTransform(ps.header.frame_id, self.frame_id,
-                                        rospy.Time(), rospy.Duration(1))
+                                       rospy.Time(), rospy.Duration(1))
         ps_tf = self.listener.transformPose(self.frame_id, ps)
         self.float_pub(ps_tf.pose.position.x).publish("/pid_x/state")
         self.float_pub(ps_tf.pose.position.y).publish("/pid_y/state")
@@ -82,8 +81,6 @@ class PositionController(object):
         self.yaw = yaw
         self.float_pub(yaw).publish("/pid_yaw/state")
         self.pose = odom.pose.pose
-        # except tf.ExtrapolationException:
-        #     print "fucking error"
 
     def quat_to_list(self, quat):
         return [quat.x, quat.y, quat.z, quat.w]
@@ -111,7 +108,7 @@ class PositionController(object):
         #    print "tf error"
 
     def dist_to_goal(self):
-        if not self.setpoint == None:
+        if not self.setpoint is None:
             pos = self.pose.position
             spos = self.setpoint.position
             x_dist = pow(pos.x - spos.x, 2)
@@ -125,10 +122,10 @@ class PositionController(object):
     def on_land(self, empty):
         self.land = True
 
-    @n.main_loop(frequency=30)
+    @n.main_loop(frequency=100)
     def run(self):
         if not self.land:
-            if not self.setpoint == None:
+            if not self.setpoint is None:
                 self.publish_cmd_vel(*self.efforts)
 
 

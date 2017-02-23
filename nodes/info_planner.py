@@ -59,7 +59,7 @@ class InfoPlanner(object):
         self.poly = None
         self.last_opt = None
         self.opt_tsr_pubbing = None
-        self.added_opt_thresh = 1.1
+        self.added_opt_thresh = 1.0
 
     def init_planner(self):
         self.perc_opt_thresh = rospy.get_param("~optimality_threshold", 0.7)
@@ -84,6 +84,9 @@ class InfoPlanner(object):
         self.tfl = tf.TransformListener()
 
     def update_publishing_path(self):
+        self.opt_tsr_pubbing = self.opt_tsr
+        return True
+
         if self.opt_tsr is None:
             return False
 
@@ -165,8 +168,11 @@ class InfoPlanner(object):
     @n.publisher(POSE_ARRAY_WITH_TIMES_TOPIC, PoseArrayWithTimes)
     def publish_pose_array_with_times(self, pa):
         pawt = PoseArrayWithTimes()
-        pawt.pose_array = pa
-        pawt.wait_times = [self.wait_time] * len(pa.poses)
+        # pawt.pose_array = pa
+        # pawt.wait_times = [self.wait_time] * len(pa.poses)
+        pawt.pose_array.header = pa.header
+        pawt.pose_array.poses.append(pa.poses[1])
+        pawt.wait_times = [self.wait_time]
         return pawt
 
     @n.publisher(PATH_TOPIC, Path, queue_size=1)
