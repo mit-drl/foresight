@@ -5,8 +5,10 @@ import rospy
 import tf
 import roshelper
 import random
+import time
 
 from geometry_msgs.msg import PoseArray
+from geometry_msgs.msg import PoseArrayWithTimes
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PolygonStamped
@@ -22,33 +24,45 @@ import networkx as nx
 NODE_NAME = "landing_node"
 n = roshelper.Node(NODE_NAME, anonymous=False)
 
+GOING_HOME = 0
+WAITING = 1
+LANDING = 2
+
 SETPOINT_TOPIC = "/setpoint_pose"
 ODOM_TOPIC = "/odometry/filtered"
 POLYGON_TOPIC = "/bounding_poly"
-LANDING_TOPIC = "/landing_path"
+RRT_TOPIC = "/rrt_path"
 
 @n.entry_point()
 class Landing(object):
 
 	def __init__(self):
 
+		self.frame_id = rospy.get_param("frame_id", "base_link")
+
 		self.polygon = None
 		self.pose = None
 		self.setpoint = None
 		self.path = None
 
-		self.land = True
+		self.mode = GOING_HOME
+		self.start_time = 0
+		self.waiting_time = 3
 
 		self.graph = nx.Graph()
 		self.delta_q = 1
 		self.step_size = 0.05
+
+		self.odom_msg = None
+		self.polygon_msg = None
+		self.setpoint_msg = None
 
 		# self.br = tf.TransformBroadcaster()
 		# self.frame_id = rospy.get_param("frame_id", "base_link")
 		# self.listener = tf.TransformListener()
 
 
-	@n.publisher(LANDING_TOPIC, Path)
+	@n.publisher(RRT_TOPIC, Path)
 	def publish_rrt(self):
 
 		polygon = self.polygon
@@ -76,8 +90,24 @@ class Landing(object):
 				new_pose.header.frame_id = "map"
 				new_pose.pose.position.x = x
 				new_pose.pose.position.y = y
+				new_pose.pose.position.z = 1.5
 				path.poses.append(new_pose)
+
+			self.publish_pawt(path)
 			return path
+
+	@n.publisher("/waypoints", PoseArrayWithTimes)
+	def publish_pawt(self, path):
+		pawt = PoseArrayWithTimes()
+		for ps in path.poses:
+			pose = ps.pose
+			pawt.pose_array.poses.append(pose)
+			pawt.wait_times.append(0.1)
+		return pawt
+
+	@n.publisher("/bebop/land", Empty)
+	def land(self):
+		return Empty()
 
 	def path_from_graph(self,graph,start,end):
 		try:
@@ -242,7 +272,7 @@ class Landing(object):
 
 	@n.subscriber(ODOM_TOPIC, Odometry)
 	def odom_sub(self, odom):
-		self.odom_msg = odom
+		self.odom_msg = odom.pose
 		self.pose = Point(odom.pose.pose.position.x, odom.pose.pose.position.y)
 
 		# try:
@@ -253,11 +283,28 @@ class Landing(object):
 		# 								rospy.Time(), rospy.Duration(1))
 		# ps_tf = self.listener.transformPose(self.frame_id, ps)
 
+    def dist_to_goal(self):
+        pos = self.odom_msg.pose.position
+        spos = self.setpoint_msg.pose.position
+        x_dist = pow(pos.x - spos.x, 2)
+        y_dist = pow(pos.y - spos.y, 2)
+        z_dist = pow(pos.z - spos.z, 2)
+        return math.sqrt(x_dist + y_dist + z_dist)
+
 	@n.main_loop(frequency=15)
 	def run(self):
-		if self.land:
-			if not self.setpoint == None:
+		if self.mode == GOING_HOME:
+			if self.odom_msg is not None and self.setpoint_msg is not None and self.dist_to_goal() < 0.1:
+				self.mode = WAITING
+				self.start_time = time.time()
+			elif not self.setpoint == None:
 				self.publish_rrt()
+		if self.mode == WAITING:
+			if time.time() - self.start_time > self.waiting_time:
+				self.mode = LANDING
+				self.land()
+		if self.mode == LANDING:
+			self.land()
 
 
 if __name__ == "__main__":
