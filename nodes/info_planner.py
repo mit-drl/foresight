@@ -18,6 +18,7 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PoseArray
+from std_msgs.msg import Bool
 from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
@@ -44,6 +45,7 @@ OPT_INFO_TOPIC = "/optimization_info"
 PROJECTION_MARKERS_TOPIC = "/projection_markers"
 POSE_ARRAY_WITH_TIMES_TOPIC = "/waypoints"
 SETPOINT_POSE_TOPIC = "/setpoint_pose"
+PLANNER_ENABLED_TOPIC = "/planner_enabled"
 
 NODE_NAME = "info_planner"
 n = roshelper.Node(NODE_NAME, anonymous=False)
@@ -77,6 +79,7 @@ class InfoPlanner(object):
                      (-step, -step)]
         self.next_pose_dist = rospy.get_param("~next_pose_dist", self.step)
         self.num_nbrs = rospy.get_param("~num_neighbours", 8)
+        self.enabled = False
         # self.nbrs = self.get_neighbours()
 
     def init_camera_projection(self):
@@ -132,13 +135,16 @@ class InfoPlanner(object):
     def run(self):
         # self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
         self.update_publishing_path()
-        if self.opt_tsr is not None:
-            self.publish_pose_array(self.opt_tsr_pubbing.path)
+        if self.opt_tsr is not None and self.enabled:
             self.publish_next_pose(self.opt_tsr_pubbing.path)
-            # self.publish_pose_array_with_times(pa)
+            self.publish_pose_array(self.opt_tsr_pubbing.path)
             self.publish_path(self.opt_tsr_pubbing.path)
             self.publish_opt_info(self.opt_tsr_pubbing)
             self.publish_opt_proj_markers(self.opt_tsr_pubbing.path)
+
+    @n.subscriber(PLANNER_ENABLED_TOPIC, Bool)
+    def planner_enabled_sub(self, enabled):
+        self.enabled = enabled.data
 
     @n.subscriber(SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
     def scan_polygon_cb(self, ps):
@@ -180,16 +186,6 @@ class InfoPlanner(object):
             pose = self.point_yaw_to_pose(shv.point, shv.yaw)
             pa.poses.append(pose)
         return pa
-
-    @n.publisher(POSE_ARRAY_WITH_TIMES_TOPIC, PoseArrayWithTimes)
-    def publish_pose_array_with_times(self, pa):
-        pawt = PoseArrayWithTimes()
-        # pawt.pose_array = pa
-        # pawt.wait_times = [self.wait_time] * len(pa.poses)
-        pawt.pose_array.header = pa.header
-        pawt.pose_array.poses.append(pa.poses[1])
-        pawt.wait_times = [self.wait_time]
-        return pawt
 
     @n.publisher(SETPOINT_POSE_TOPIC, PoseStamped)
     def publish_next_pose(self, shvs):

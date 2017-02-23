@@ -69,6 +69,9 @@
     <node name="position_controller" pkg="foresight"
         type="position_controller.py" output="screen"/>
 
+    <node name="joystick_command_center" pkg="foresight"
+        type="joystick_command_center" output="screen"/>
+
     <!-- <node pkg="foresight" type="waypoint_controller.py" name="waypoint_controller" -->
     <!--     output="screen" /> -->
 
