@@ -51,10 +51,10 @@ class Lander(object):
         center_pose.position.x = 4.5
         center_pose.position.y = 0
         center_pose.position.z = 1.5
-        pawt.pose_array.poses.append(center_pose)
+        # pawt.pose_array.poses.append(center_pose)
         pawt.pose_array.poses.append(self.home.pose)
         pawt.pose_array.header = self.home.header
-        pawt.wait_times.append(0.1)
+        # pawt.wait_times.append(0.1)
         pawt.wait_times.append(0.1)
         return pawt
 
