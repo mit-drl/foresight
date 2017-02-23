@@ -97,10 +97,10 @@ class RRT_Planner(object):
 
     @n.publisher("/setpoint_pose", PoseStamped)
     def publish_setpoint_pose(self, path):
-            first_point = Point(path.poses[0].position.x,path.poses[0].position.y)
-            next_point = Point(path.poses[1].position.x,path.poses[1].position.y)
+            first_point = Point(path.poses[0].pose.position.x,path.poses[0].pose.position.y)
+            next_point = Point(path.poses[1].pose.position.x,path.poses[1].pose.position.y)
             if first_point.distance(next_point) > 0.5:
-                setp = self.new_conf(first_point, next_point, 0.5):
+                setp = self.new_conf(first_point, next_point, 0.5)
                 new_pose = PoseStamped()
                 new_pose.header.frame_id = self.fixed_frame_id
                 new_pose.pose.position.x = setp.x
