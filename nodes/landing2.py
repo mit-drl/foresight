@@ -288,28 +288,10 @@ class Landing(object):
             self.odom_msg = ps_tf
             self.pose = Point(ps_tf.pose.position.x, ps_tf.pose.position.y)
 
-    def dist_to_goal(self):
-        pos = self.odom_msg.pose.position
-        spos = self.setpoint_msg.pose.position
-        x_dist = pow(pos.x - spos.x, 2)
-        y_dist = pow(pos.y - spos.y, 2)
-        z_dist = pow(pos.z - spos.z, 2)
-        return math.sqrt(x_dist + y_dist + z_dist)
-
-    @n.main_loop(frequency=15)
+    @n.main_loop(frequency=30)
     def run(self):
-        if self.mode == GOING_HOME:
-            if self.odom_msg is not None and self.setpoint_msg is not None and self.dist_to_goal() < 0.1:
-                self.mode = WAITING
-                self.start_time = time.time()
-            elif not self.setpoint == None:
-                self.publish_rrt()
-        if self.mode == WAITING:
-            if time.time() - self.start_time > self.waiting_time:
-                self.mode = LANDING
-                self.land()
-        if self.mode == LANDING:
-            self.land()
+        if self.setpoint is not None and self.pose is not None:
+            self.publish_rrt()
 
 
 if __name__ == "__main__":
