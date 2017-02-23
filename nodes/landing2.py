@@ -8,12 +8,13 @@ import random
 import time
 
 from geometry_msgs.msg import PoseArray
-from geometry_msgs.msg import PoseArrayWithTimes
+from foresight.msg import PoseArrayWithTimes
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PolygonStamped
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
+from std_msgs.msg import Empty
 
 from shapely.geometry import Polygon
 #from shapely.geometry import Point
@@ -28,8 +29,8 @@ GOING_HOME = 0
 WAITING = 1
 LANDING = 2
 
-SETPOINT_TOPIC = "/setpoint_goal"
-ODOM_TOPIC = "/bebop/odom_filtered"
+SETPOINT_TOPIC = "/move_base_simple/goal"
+ODOM_TOPIC = "/odometry/filtered"
 POLYGON_TOPIC = "/bounding_poly"
 RRT_TOPIC = "/rrt_path"
 
@@ -58,7 +59,6 @@ class Landing(object):
         self.polygon_msg = None
         self.setpoint_msg = None
 
-        # self.br = tf.TransformBroadcaster()
         self.listener = tf.TransformListener()
 
 
@@ -272,6 +272,8 @@ class Landing(object):
 
             self.setpoint_msg = ps_tf
             self.setpoint = Point(ps_tf.pose.position.x, ps_tf.pose.position.y)
+        except tf.Exception:
+            rospy.logerr("Setpoint sub tf error")
 
 
     @n.subscriber(ODOM_TOPIC, Odometry)
@@ -287,6 +289,8 @@ class Landing(object):
 
             self.odom_msg = ps_tf
             self.pose = Point(ps_tf.pose.position.x, ps_tf.pose.position.y)
+        except tf.Exception:
+            rospy.logerr("Odom sub tf error")
 
     @n.main_loop(frequency=30)
     def run(self):
