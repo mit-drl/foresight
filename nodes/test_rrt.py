@@ -17,10 +17,10 @@ from nav_msgs.msg import Odometry
 NODE_NAME = "test_rrt_node"
 n = roshelper.Node(NODE_NAME, anonymous=False)
 
-SETPOINT_TOPIC = "/setpoint_pose"
+SETPOINT_TOPIC = "/setpoint_goal"
 ODOM_TOPIC = "/odometry/filtered"
 POLYGON_TOPIC = "/bounding_poly"
-LANDING_TOPIC = "/landing_path"
+
 
 @n.entry_point()
 class Landing(object):
@@ -46,8 +46,10 @@ class Landing(object):
             self.polygon2.polygon.points.append(new_point)
 
         self.pose = Odometry()
+        self.pose.header.frame_id = "map"
         self.pose.pose.pose.position.x = 5
         self.pose.pose.pose.position.y = 1
+
         self.setpoint = PoseStamped()
         self.setpoint.header.frame_id = "map"
         self.setpoint.pose.position.x = 5

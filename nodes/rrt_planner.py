@@ -65,7 +65,9 @@ class RRT_Planner(object):
 
         if polygon is not None and pose is not None and setpoint is not None:
             if self.path is not None:
-                self.path.remove(0)
+                print "removing and adding pose/setpoint"
+                print len(self.path)
+                self.path.pop(0)
                 self.path.insert(0, pose)
                 self.path.pop()
                 self.path.append(setpoint)
