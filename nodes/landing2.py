@@ -59,9 +59,7 @@ class Landing(object):
         self.polygon_msg = None
         self.setpoint_msg = None
 
-        # self.br = tf.TransformBroadcaster()
-        # self.frame_id = rospy.get_param("frame_id", "base_link")
-        # self.listener = tf.TransformListener()
+        self.listener = tf.TransformListener()
 
 
     @n.publisher(RRT_TOPIC, Path)
@@ -70,8 +68,6 @@ class Landing(object):
         polygon = self.polygon
         setpoint = self.setpoint
         pose = self.pose
-        print pose
-        print setpoint
 
 
         if polygon is not None and pose is not None and setpoint is not None:
@@ -269,23 +265,32 @@ class Landing(object):
 
     @n.subscriber(SETPOINT_TOPIC, PoseStamped)
     def setpoint_sub(self, ps):
-        self.setpoint_msg = ps
-        self.setpoint = Point(ps.pose.position.x, ps.pose.position.y)
+        try:
+            self.listener.waitForTransform(ps.header.frame_id, self.fixed_frame_id,
+                                            rospy.Time(), rospy.Duration(1))
+            ps_tf = self.listener.transformPose(self.fixed_frame_id, ps)
 
-        #ps_tf = self.listener.transformPose(self.frame_id, ps)
+            self.setpoint_msg = ps_tf
+            self.setpoint = Point(ps_tf.pose.position.x, ps_tf.pose.position.y)
+        except tf.Exception:
+            rospy.logerr("Setpoint sub tf error")
+
 
     @n.subscriber(ODOM_TOPIC, Odometry)
     def odom_sub(self, odom):
-        self.odom_msg = odom.pose
-        self.pose = Point(odom.pose.pose.position.x, odom.pose.pose.position.y)
+        try:
+            ps = PoseStamped()
+            ps.header.frame_id = odom.header.frame_id
+            ps.pose = odom.pose.pose
+            self.listener.waitForTransform(ps.header.frame_id, self.fixed_frame_id,
+                                            rospy.Time(), rospy.Duration(1))
+            ps_tf = self.listener.transformPose(self.fixed_frame_id, ps)
 
-        # try:
-        # ps = PoseStamped()
-        # ps.header.frame_id = odom.header.frame_id
-        # ps.pose = odom.pose.pose
-        # self.listener.waitForTransform(ps.header.frame_id, self.frame_id,
-        #                               rospy.Time(), rospy.Duration(1))
-        # ps_tf = self.listener.transformPose(self.frame_id, ps)
+
+            self.odom_msg = ps_tf
+            self.pose = Point(ps_tf.pose.position.x, ps_tf.pose.position.y)
+        except tf.Exception:
+            rospy.logerr("Odom sub tf error")
 
     def dist_to_goal(self):
         pos = self.odom_msg.pose.position
