@@ -97,7 +97,18 @@ class RRT_Planner(object):
 
     @n.publisher("/setpoint_pose", PoseStamped)
     def publish_setpoint_pose(self, path):
-            return path.poses[1]
+            first_point = Point(path.poses[0].pose.position.x,path.poses[0].pose.position.y)
+            next_point = Point(path.poses[1].pose.position.x,path.poses[1].pose.position.y)
+            if first_point.distance(next_point) > 0.5:
+                setp = self.new_conf(first_point, next_point, 0.5)
+                new_pose = PoseStamped()
+                new_pose.header.frame_id = self.fixed_frame_id
+                new_pose.pose.position.x = setp.x
+                new_pose.pose.position.y = setp.y
+                new_pose.pose.position.z = 1.5
+                return new_pose
+            else:
+                return path.poses[1]
 
     def path_from_graph(self,graph,start,end):
         try:
