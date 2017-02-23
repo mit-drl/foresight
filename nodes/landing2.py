@@ -28,8 +28,8 @@ GOING_HOME = 0
 WAITING = 1
 LANDING = 2
 
-SETPOINT_TOPIC = "/setpoint_pose"
-ODOM_TOPIC = "/odometry/filtered"
+SETPOINT_TOPIC = "/setpoint_goal"
+ODOM_TOPIC = "/bebop/odom_filtered"
 POLYGON_TOPIC = "/bounding_poly"
 RRT_TOPIC = "/rrt_path"
 
@@ -38,7 +38,8 @@ class Landing(object):
 
 	def __init__(self):
 
-		self.frame_id = rospy.get_param("frame_id", "base_link")
+		self.frame_id = rospy.get_param("~frame_id", "base_link")
+		self.fixed_frame_id = rospy.get_param("~fixed_frame_id", "body")
 
 		self.polygon = None
 		self.pose = None
@@ -69,7 +70,7 @@ class Landing(object):
 		setpoint = self.setpoint
 		pose = self.pose
 
-		
+
 		if polygon is not None and pose is not None and setpoint is not None:
 			if self.path is not None:
 				print "repairng path"
@@ -80,14 +81,14 @@ class Landing(object):
 				self.path = self.path_from_graph(self.graph,pose,setpoint)
 
 			path = Path()
-			path.header.frame_id = "map"
+			path.header.frame_id = self.fixed_frame_id
 			path.header.stamp = rospy.Time.now()
 
 			for point in self.path:
 				x = point.x
 				y = point.y
 				new_pose = PoseStamped()
-				new_pose.header.frame_id = "map"
+				new_pose.header.frame_id = self.fixed_frame_id
 				new_pose.pose.position.x = x
 				new_pose.pose.position.y = y
 				new_pose.pose.position.z = 1.5
