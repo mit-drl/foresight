@@ -202,7 +202,6 @@ class RRT_Planner(object):
             q_new = self.new_conf(q_near, q_rand, delta_q)
 
             if polygon.contains(q_new):
-                print "it contains q_new"
                 if self.is_there_collision(polygon, q_new, q_near, step_size, delta_q) is False:
                     #print "adding point x: %f y: %f" % (q_new.x, q_new.y)
                     graph.add_node(q_new)

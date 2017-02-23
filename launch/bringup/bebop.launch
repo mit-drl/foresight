@@ -75,9 +75,6 @@
     <!-- <node name="rrt_planner" pkg="foresight" -->
     <!--     type="rrt_planner.py" output="screen"/> -->
 
-    <!-- <node pkg="foresight" type="waypoint_controller.py" name="waypoint_controller" -->
-    <!--     output="screen" /> -->
-
     <param name="quad_robot_description"
         command="$(find xacro)/xacro $(find hector_quadrotor_description)/urdf/quadrotor.urdf.xacro" />
 
