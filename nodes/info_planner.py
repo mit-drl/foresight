@@ -8,6 +8,7 @@ import numpy as np
 import scipy.optimize as opt
 import shapely.geometry as geom
 import heapq
+import planar
 import roshelper
 from tf.transformations import euler_matrix
 from tf.transformations import euler_from_quaternion
@@ -42,6 +43,7 @@ PATH_TOPIC = "/plan_path"
 OPT_INFO_TOPIC = "/optimization_info"
 PROJECTION_MARKERS_TOPIC = "/projection_markers"
 POSE_ARRAY_WITH_TIMES_TOPIC = "/waypoints"
+SETPOINT_POSE_TOPIC = "/setpoint_pose"
 
 NODE_NAME = "info_planner"
 n = roshelper.Node(NODE_NAME, anonymous=False)
@@ -68,10 +70,14 @@ class InfoPlanner(object):
         self.timeout = rospy.get_param("~timeout", 0.2)
         self.wait_time = rospy.get_param("~wait_time", 2.0)
         self.buffer_dist = rospy.get_param("~buffer_dist", 0)
-        step = rospy.get_param("~neighbour_dist", 0.3)
+        self.step = rospy.get_param("~neighbour_dist", 0.3)
+        step = self.step
         self.nbrs = [(step, 0), (0, step), (-step, 0), (0, -step),
                      (step, step), (-step, step), (step, -step),
                      (-step, -step)]
+        self.next_pose_dist = rospy.get_param("~next_pose_dist", self.step)
+        self.num_nbrs = rospy.get_param("~num_neighbours", 8)
+        # self.nbrs = self.get_neighbours()
 
     def init_camera_projection(self):
         fov_v = rospy.get_param("~fov_v", 0.2 * math.pi)
@@ -82,6 +88,15 @@ class InfoPlanner(object):
         self.camera_frame = rospy.get_param("~camera_frame", CAM_FRAME)
         self.altitude = rospy.get_param("~altitude", 1)
         self.tfl = tf.TransformListener()
+
+    def get_neighbours(self):
+        nbrs = list()
+        for i in xrange(self.num_nbrs):
+            angle = i * 2 * math.pi / self.num_nbrs
+            x = self.step * math.cos(angle)
+            y = self.step * math.sin(angle)
+            nbrs.append((x, y))
+        return nbrs
 
     def update_publishing_path(self):
         self.opt_tsr_pubbing = self.opt_tsr
@@ -118,8 +133,9 @@ class InfoPlanner(object):
         # self.pose = self.get_relative_pose(self.map_frame, self.quad_frame)
         self.update_publishing_path()
         if self.opt_tsr is not None:
-            pa = self.publish_pose_array(self.opt_tsr_pubbing.path)
-            self.publish_pose_array_with_times(pa)
+            self.publish_pose_array(self.opt_tsr_pubbing.path)
+            self.publish_next_pose(self.opt_tsr_pubbing.path)
+            # self.publish_pose_array_with_times(pa)
             self.publish_path(self.opt_tsr_pubbing.path)
             self.publish_opt_info(self.opt_tsr_pubbing)
             self.publish_opt_proj_markers(self.opt_tsr_pubbing.path)
@@ -174,6 +190,17 @@ class InfoPlanner(object):
         pawt.pose_array.poses.append(pa.poses[1])
         pawt.wait_times = [self.wait_time]
         return pawt
+
+    @n.publisher(SETPOINT_POSE_TOPIC, PoseStamped)
+    def publish_next_pose(self, shvs):
+        ps = PoseStamped()
+        # ps.header.stamp = rospy.Time.now()
+        ps.header.frame_id = self.map_frame
+        cur_pt = self.geom_point_to_vec(shvs[0].point)
+        next_pt = self.geom_point_to_vec(shvs[1].point)
+        inter_pt = cur_pt + (next_pt - cur_pt).scaled_to(self.next_pose_dist)
+        ps.pose = self.point_yaw_to_pose(inter_pt, shvs[1].yaw)
+        return ps
 
     @n.publisher(PATH_TOPIC, Path, queue_size=1)
     def publish_path(self, shvs):
@@ -380,6 +407,9 @@ class InfoPlanner(object):
 
     def pose_to_geom_point(self, ps):
         return Point(ps.pose.position.x, ps.pose.position.y)
+
+    def geom_point_to_vec(self, pt):
+        return planar.Vec2(pt.x, pt.y)
 
     def points_to_arrs(self, ps):
         arrs = np.zeros((len(ps), 2))

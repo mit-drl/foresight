@@ -93,9 +93,7 @@ class PositionController(object):
 
     @n.subscriber("/setpoint_pose", PoseStamped)
     def setpoint_sub(self, ps):
-        #self.made_target = False
         self.setpoint = ps.pose
-        #try:
         ps_tf = self.listener.transformPose(self.frame_id, ps)
         self.float_pub(ps_tf.pose.position.x).publish("/pid_x/setpoint")
         self.float_pub(ps_tf.pose.position.y).publish("/pid_y/setpoint")
@@ -103,9 +101,6 @@ class PositionController(object):
         yaw = self.yaw_from_tf(ps)
         self.set_yaw = yaw
         self.float_pub(yaw).publish("/pid_yaw/setpoint")
-        # print "setpoint yaw: %f" % yaw
-        #except:
-        #    print "tf error"
 
     def dist_to_goal(self):
         if not self.setpoint is None:
