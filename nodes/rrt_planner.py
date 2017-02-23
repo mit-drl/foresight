@@ -8,7 +8,6 @@ import random
 import time
 
 from geometry_msgs.msg import PoseArray
-from foresight.msg import PoseArrayWithTimes
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PolygonStamped
@@ -22,12 +21,8 @@ from point import Point
 
 import networkx as nx
 
-NODE_NAME = "landing_node"
+NODE_NAME = "rrt_planner"
 n = roshelper.Node(NODE_NAME, anonymous=False)
-
-GOING_HOME = 0
-WAITING = 1
-LANDING = 2
 
 SETPOINT_TOPIC = "/move_base_simple/goal"
 ODOM_TOPIC = "/odometry/filtered"
@@ -35,7 +30,7 @@ POLYGON_TOPIC = "/bounding_poly"
 RRT_TOPIC = "/rrt_path"
 
 @n.entry_point()
-class Landing(object):
+class RRT_Planner(object):
 
     def __init__(self):
 
@@ -47,7 +42,6 @@ class Landing(object):
         self.setpoint = None
         self.path = None
 
-        self.mode = GOING_HOME
         self.start_time = 0
         self.waiting_time = 3
 
@@ -69,10 +63,13 @@ class Landing(object):
         setpoint = self.setpoint
         pose = self.pose
 
-
         if polygon is not None and pose is not None and setpoint is not None:
             if self.path is not None:
-                print "repairng path"
+                self.path.remove(0)
+                self.path.insert(0, pose)
+                self.path.pop()
+                self.path.append(setpoint)
+                print "repairing path"
                 self.path = self.repair2(self.path,polygon,self.step_size, self.delta_q)
             if self.path is None:
                 print "starting path afresh"
@@ -93,21 +90,12 @@ class Landing(object):
                 new_pose.pose.position.z = 1.5
                 path.poses.append(new_pose)
 
-            self.publish_pawt(path)
+            self.publish_setpoint_pose(path)
             return path
 
-    @n.publisher("/waypoints", PoseArrayWithTimes)
-    def publish_pawt(self, path):
-        pawt = PoseArrayWithTimes()
-        for ps in path.poses:
-            pose = ps.pose
-            pawt.pose_array.poses.append(pose)
-            pawt.wait_times.append(0.1)
-        return pawt
-
-    @n.publisher("/bebop/land", Empty)
-    def land(self):
-        return Empty()
+    @n.publisher("/setpoint_pose", PoseStamped)
+    def publish_setpoint_pose(self, path):
+            return path.poses[1]
 
     def path_from_graph(self,graph,start,end):
         try:
@@ -214,7 +202,6 @@ class Landing(object):
                     k = k + 1
 
             #else:
-
                 #print "point x: %f y: %f was not in polygon" % (q_new.x, q_new.y)
 
         return graph
