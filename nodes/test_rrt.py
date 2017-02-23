@@ -50,6 +50,11 @@ class Landing(object):
         self.pose.pose.pose.position.x = 5
         self.pose.pose.pose.position.y = 1
 
+        self.pose2 = Odometry()
+        self.pose2.header.frame_id = "map"
+        self.pose2.pose.pose.position.x = 4.9
+        self.pose2.pose.pose.position.y = 1.1
+
         self.setpoint = PoseStamped()
         self.setpoint.header.frame_id = "map"
         self.setpoint.pose.position.x = 5
@@ -60,7 +65,10 @@ class Landing(object):
 
     @n.publisher(ODOM_TOPIC, Odometry)
     def publish_pose(self):
-        return self.pose
+        if self.ticker % 40 < 20:
+            return self.pose
+        else:
+            return self.pose2
 
     @n.publisher(POLYGON_TOPIC, PolygonStamped)
     def publish_poly(self):
