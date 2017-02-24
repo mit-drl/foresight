@@ -7,80 +7,16 @@
     </include>
 
     <!-- starts joystick control -->
+    <remap from="/bebop/cmd_vel" to="/setpoint_vel"/>
     <include file="$(find bebop_tools)/launch/joy_teleop.launch">
         <arg name="joy_dev" value="/dev/input/js0"/>
         <arg name="joy_config" value="xbox360"/>
-        <remap from="/bebop/cmd_vel" to="/setpoint_vel"/>
     </include>
 
-    <arg name="upper_limit" value="1"/>
-    <arg name="lower_limit" value="-1"/>
-
-    <node name="pid_x" pkg="pid" type="controller" ns="pid_x">
-        <param name="Kp" value="0.3" />
-        <param name="Ki" value="0.01" />
-        <param name="Kd" value="0.17" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="0.05" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-    </node>
-
-    <node name="pid_y" pkg="pid" type="controller" ns="pid_y">
-        <param name="Kp" value="0.3" />
-        <param name="Ki" value="0.01" />
-        <param name="Kd" value="0.17" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="0.05" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-    </node>
-
-    <node name="pid_z" pkg="pid" type="controller" ns="pid_z">
-        <param name="Kp" value="0.5" />
-        <param name="Ki" value="0.0" />
-        <param name="Kd" value="0.17" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="0.05" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-    </node>
-
-    <node name="pid_yaw" pkg="pid" type="controller" ns="pid_yaw">
-        <param name="Kp" value="0.8" />
-        <param name="Ki" value="0.0" />
-        <param name="Kd" value="0.1" />
-        <param name="upper_limit" value="$(arg upper_limit)" />
-        <param name="lower_limit" value="$(arg lower_limit)" />
-        <param name="windup_limit" value="1" />
-        <param name="diagnostic_period" value="0.25" />
-        <param name="max_loop_frequency" value="100.0" />
-        <param name="min_loop_frequency" value="100.0" />
-        <param name="angle_error" value="true" />
-        <!-- <param name="angle_wrap" value="3.14159"/> -->
-    </node>
-
-    <node name="position_controller" pkg="foresight"
-        type="position_controller.py" output="screen"/>
-
-    <node name="joystick_command_center" pkg="foresight"
-        type="joystick_command_center.py" output="screen"/>
-
-    <!-- <node name="rrt_planner" pkg="foresight" -->
-    <!--     type="rrt_planner.py" output="screen"/> -->
+    <arg name="quad_xacro"
+        default="$(find hector_quadrotor_description)/urdf/quadrotor.urdf.xacro"/>
 
     <param name="quad_robot_description"
-        command="$(find xacro)/xacro $(find hector_quadrotor_description)/urdf/quadrotor.urdf.xacro" />
-
-    <include file="$(find bebop_vel_ctrl)/launch/bebop_vel_ctrl.launch">
-        <arg name="input_topic" value="/setpoint_vel"/>
-        <arg name="output_topic" value="/bebop/cmd_vel"/>
-    </include>
+        command="$(find xacro)/xacro $(arg quad_xacro)" />
 
 </launch>

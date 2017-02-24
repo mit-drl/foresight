@@ -7,7 +7,14 @@
 
     <!-- Dummy transform from the quad to the camera -->
     <node pkg="tf" type="static_transform_publisher" name="quad_to_camera"
-        args="0 0 0 0 2.4 0 $(arg quad_frame_id) $(arg camera_frame_id) 100" />
+        args="0 0 0 0 2.4 0 $(arg quad_frame_id) $(arg camera_frame_id) 100"/>
+
+    <!-- Allows us to control the experiment's state with the joystick -->
+    <node name="joystick_command_center" pkg="foresight"
+        type="joystick_command_center.py" output="screen"/>
+
+    <!-- Runs the velocity, position, and path controllers -->
+    <include file="$(find foresight)/launch/bringup/controllers.launch"/>
 
     <!-- Uses the UWBs and the odometry to localize the bebop -->
     <include file="$(find foresight)/launch/localization/localize_bebop.launch">
@@ -27,4 +34,19 @@
         <param name="camera_frame" value="$(arg camera_frame_id)"/>
     </node>
 
+    <!-- Launches the planner -->
+    <include file="$(find foresight)/launch/planner/planner.launch">
+        <arg name="car_frame_id" value="$(arg car_frame_id)"/>
+        <arg name="quad_frame_id" value="$(arg quad_frame_id)"/>
+        <arg name="camera_frame_id" value="$(arg camera_frame_id)"/>
+        <arg name="scan_topic" value="$(arg scan_topic)"/>
+        <arg name="planner_config" value="$(find foresight)/param/planner.yaml"/>
+    </include>
+
+    <!-- Will land the quadrotor when the land command is sent -->
+    <node pkg="foresight" type="land.py" name="lander">
+        <param name="fixed_frame_id" value="$(arg car_frame_id)"/>
+        <param name="frame_id" value="$(arg quad_frame_id)"/>
+        <param name="dist_thresh" value="0.1"/>
+    </node>
 </launch>

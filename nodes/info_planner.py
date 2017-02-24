@@ -18,7 +18,6 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PoseArray
-from std_msgs.msg import Bool
 from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
@@ -26,6 +25,7 @@ from visualization_msgs.msg import MarkerArray
 from foresight.msg import PolygonArray
 from foresight.msg import TreeSearchResultMsg
 from foresight.msg import PoseArrayWithTimes
+from foresight.msg import ForesightState
 from point import Point
 from search import SpaceHeapValue
 from search import TreeSearchResult
@@ -45,7 +45,7 @@ OPT_INFO_TOPIC = "/optimization_info"
 PROJECTION_MARKERS_TOPIC = "/projection_markers"
 POSE_ARRAY_WITH_TIMES_TOPIC = "/waypoints"
 SETPOINT_POSE_TOPIC = "/setpoint_pose"
-PLANNER_ENABLED_TOPIC = "/planner_enabled"
+STATE_TOPIC = "/state"
 
 NODE_NAME = "info_planner"
 n = roshelper.Node(NODE_NAME, anonymous=False)
@@ -141,9 +141,9 @@ class InfoPlanner(object):
             self.publish_opt_info(self.opt_tsr_pubbing)
             self.publish_opt_proj_markers(self.opt_tsr_pubbing.path)
 
-    @n.subscriber(PLANNER_ENABLED_TOPIC, Bool)
-    def planner_enabled_sub(self, enabled):
-        self.enabled = enabled.data
+    @n.subscriber(STATE_TOPIC, ForesightState)
+    def planner_enabled_sub(self, fs):
+        self.enabled = fs.state == ForesightState.PLANNER
 
     @n.subscriber(SCAN_POLYGON_TOPIC, PolygonStamped, queue_size=1)
     def scan_polygon_cb(self, ps):
