@@ -72,11 +72,12 @@ class RRT_Planner(object):
                 self.path.pop()
                 self.path.append(setpoint)
 
-                if len(self.path) > 1:
+                if len(self.path) >= 1:
                     if self.path[0].distance(self.path[1]) < 0.2:
                         self.path.pop(0)
-                    print "repairing path"
-                    self.path = self.repair2(self.path,polygon,self.step_size, self.delta_q)
+                        if len(self.path) > 1:
+                            print "repairing path"
+                            self.path = self.repair2(self.path,polygon,self.step_size, self.delta_q)
                 else:
                     self.path = None
             if self.path is None:
