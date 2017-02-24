@@ -23,6 +23,8 @@ class RelativeOdomPublisher(object):
 
     def __init__(self):
         self.yaw_zero = None
+        self.car_yaw_zero = None
+        self.car_dyaw = 0
         self.car_frame_id = rospy.get_param("~car_frame_id",
                                             "body")
         self.frame_id = rospy.get_param("~frame_id", "base_link")
@@ -59,10 +61,22 @@ class RelativeOdomPublisher(object):
         if self.yaw_zero is None:
             self.yaw_zero = yaw
 
-        dyaw = yaw - self.yaw_zero
+        dyaw = yaw - self.yaw_zero - self.car_dyaw
+        print self.car_dyaw
         quat = quaternion_from_euler(r, p, dyaw)
         self.relative_quat = quat
         self.odom = odom
+
+    @n.subscriber("/white_prius/odometry/filtered/odom", Odometry)
+    def car_odom_sub(self, odom):
+        ori = odom.pose.pose.orientation
+        ori_quat = [ori.x, ori.y, ori.z, ori.w]
+        _, _, yaw = euler_from_quaternion(ori_quat)
+
+        if self.car_yaw_zero is None:
+            self.car_yaw_zero = yaw
+
+        self.car_dyaw = yaw - self.car_yaw_zero
 
     @n.subscriber("/bebop/states/ardrone3/PilotingState/AltitudeChanged",
                   Ardrone3PilotingStateAltitudeChanged)
@@ -76,7 +90,7 @@ class RelativeOdomPublisher(object):
 
     @n.subscriber("/uwb_pose_cov_3d", PoseWithCovarianceStamped)
     def uwb_pose_cov_sub_3d(self, ps_cov):
-        if self.yaw_zero is None:
+        if self.yaw_zero is None or self.car_yaw_zero is None:
             return
 
         ps = tf2_geom.PoseStamped()
@@ -99,7 +113,7 @@ class RelativeOdomPublisher(object):
 
     @n.subscriber("/uwb_pose_cov_2d", PoseWithCovarianceStamped)
     def uwb_pose_cov_sub_2d(self, ps_cov):
-        if self.yaw_zero is None:
+        if self.yaw_zero is None or self.car_yaw_zero is None:
             return
 
         ps = tf2_geom.PoseStamped()

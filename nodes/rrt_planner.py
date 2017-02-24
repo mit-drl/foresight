@@ -65,23 +65,23 @@ class RRT_Planner(object):
 
         if polygon is not None and pose is not None and setpoint is not None:
             if self.path is not None:
-                print "removing and adding pose/setpoint"
-                print len(self.path)
+                # print "removing and adding pose/setpoint"
+                # print len(self.path)
                 self.path.pop(0)
                 self.path.insert(0, pose)
                 self.path.pop()
                 self.path.append(setpoint)
 
-                if len(self.path) >= 1:
+                if len(self.path) > 1:
                     if self.path[0].distance(self.path[1]) < 0.2:
                         self.path.pop(0)
                         if len(self.path) > 1:
-                            print "repairing path"
+                            # print "repairing path"
                             self.path = self.repair2(self.path,polygon,self.step_size, self.delta_q)
                 else:
                     self.path = None
             if self.path is None:
-                print "starting path afresh"
+                # print "starting path afresh"
                 self.graph = self.make_rrt(polygon,pose,setpoint,self.step_size,self.delta_q,200)
                 self.path = self.path_from_graph(self.graph,pose,setpoint)
 
@@ -124,7 +124,7 @@ class RRT_Planner(object):
         try:
             path = nx.shortest_path(self.graph, source=start,target=end)
         except nx.NetworkXError:
-            print "Error converting graph into path"
+            rospy.logerr("Error converting graph into path")
             path = []
         return path
 
@@ -144,18 +144,18 @@ class RRT_Planner(object):
 
     def repair(self,path,polygon,step_size,delta_q):
         def repair_nodes(start, index):
-            print "repair nodes"
+            # print "repair nodes"
             if index > len(path) - 1:
                 return [index, None]
             end = Point(path[index])
-            print "does polygon contain x: %f y: %f  ?" % (end.x, end.y)
+            # print "does polygon contain x: %f y: %f  ?" % (end.x, end.y)
             if polygon.contains(end):
-                print "yes"
+                # print "yes"
                 if self.is_there_collision(polygon, end, start, step_size, start.distance(end)):
-                    print "IT HAPPENED"
+                    # print "IT HAPPENED"
                     # need to repair link between start and next points
                     graph = self.make_rrt(polygon,start,end,step_size,delta_q/4.0,100)
-                    print "RRT DONE"
+                    # print "RRT DONE"
                     new_path = self.path_from_graph(graph,start,end)
                     if len(new_path) == 0:
                         return repair_nodes(start, index+1)
@@ -166,23 +166,23 @@ class RRT_Planner(object):
                     new_path = [start, end]
                     return [index, []]
             else:
-                print "no"
+                # print "no"
                 return repair_nodes(start, index+1)
 
         repaired_path = path
 
         i = 1
         while i < len(path):
-            print "start is %d" % i
+            # print "start is %d" % i
             start_point = Point(path[i])
 
             [i, new_path] = repair_nodes(start_point,i)
             if new_path is None:
-                print "none"
+                # print "none"
                 return None
             else:
                 #[i, new_path] = repair_info
-                print new_path
+                # print new_path
                 if len(new_path) > 0:
                     new_path.pop(0)
                     new_path.pop()
