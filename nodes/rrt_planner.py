@@ -81,7 +81,7 @@ class RRT_Planner(object):
                     self.path = None
             if self.path is None:
                 print "starting path afresh"
-                self.graph = self.make_rrt(polygon,pose,setpoint,self.step_size,self.delta_q,1000)
+                self.graph = self.make_rrt(polygon,pose,setpoint,self.step_size,self.delta_q,200)
                 self.path = self.path_from_graph(self.graph,pose,setpoint)
 
             path = Path()
@@ -197,12 +197,12 @@ class RRT_Planner(object):
     def make_rrt(self, polygon, start, target, step_size, delta_q, max_k):
         k = 0
         graph = nx.DiGraph()
-        graph.add_node(start)
+        graph.add_node(start, cost=0)
         unfinished = True
         if self.attempt_to_complete(polygon,start,target,step_size):
             distance = start.distance(target)
-            graph.add_node(target)
-            graph.add_edge(start,target, weight = distance, cost = distance)
+            graph.add_node(target, cost=distance)
+            graph.add_edge(start,target, weight = distance)
             unfinished = False
 
         while k < max_k and unfinished:
@@ -217,31 +217,46 @@ class RRT_Planner(object):
 
             q_near = self.find_nearest(q_rand, graph)
             q_new = self.new_conf(q_near, q_rand, delta_q)
+            q_near = self.choose_parent(q_near, q_new, graph)
 
             if polygon.contains(q_new):
                 if self.is_there_collision(polygon, q_new, q_near, step_size, delta_q) is False:
                     #print "adding point x: %f y: %f" % (q_new.x, q_new.y)
                     distance = q_near.distance(q_new)
-                    graph.add_node(q_new)
-                    preds = graph.predecessors(q_near)
-                    prev_cost = 0
-                    if len(preds) is not 0:
-                        pred = preds[0]
-                        prev_cost = graph[pred][q_near]['cost']
+                    prev_cost = graph.node[q_near]['cost']
                     new_cost = prev_cost + distance
-                    graph.add_edge(q_near, q_new, weight=distance, cost=new_cost)
+                    graph.add_node(q_new, cost=new_cost)
+                    graph.add_edge(q_near, q_new, weight=distance)
+
+                    graph = self.rewire(graph,q_new, polygon, step_size)
 
                     if self.attempt_to_complete(polygon, q_new, target, step_size):
                         distance = q_new.distance(target)
-                        graph.add_node(target)
-                        prev_cost = graph[q_near][q_new]['cost']
-                        graph.add_edge(q_new, target, weight = distance, cost = prev_cost + distance)
-                        unfinished = False
+                        prev_cost = graph.node[q_near]['cost']
+                        new_cost = prev_cost + distance
+                        graph.add_node(target, cost = new_cost)
+                        graph.add_edge(q_new, target, weight = distance)
+                        unfinished = True
+                        k = k + k/2.0
                     k = k + 1
 
             #else:
                 #print "point x: %f y: %f was not in polygon" % (q_new.x, q_new.y)
 
+        return graph
+
+    def rewire(self,graph,q_new, polygon,step_size):
+        for p in graph.nodes():
+            RADIUS = 1.2
+            q_parents = graph.predecessors(q_new)
+            if p not in q_parents and p.distance(q_new) < RADIUS and graph.node[q_new]['cost']+p.distance(q_new) < graph.node[p]['cost']:
+                if self.is_there_collision(polygon, q_new, p, step_size, p.distance(q_new)) is False:
+                    p_parent = graph.predecessors(p)[0]
+                    #if len(p_parents) > 0:
+                    #p_parent = p_parents[0]
+                    graph.remove_edge(p_parent,p)
+                    graph.add_edge(q_new,p,weight = p.distance(q_new))
+                    graph.node[p]['cost'] = graph.node[q_new]['cost']+p.distance(q_new)
         return graph
 
     def attempt_to_complete(self, polygon, q_new, setpoint, step_size):
@@ -260,13 +275,15 @@ class RRT_Planner(object):
         return False
 
     def new_conf(self, q_near, q_rand, delta_q):
-        diff_x = q_rand.x - q_near.x
-        diff_y = q_rand.y - q_near.y
-        dist = q_rand.distance(q_near)
-        new_x = q_near.x + delta_q*(diff_x/dist)
-        new_y = q_near.y + delta_q*(diff_y/dist)
-
-        return Point(new_x,new_y)
+        if q_rand.distance(q_near) < delta_q:
+            return q_rand
+        else:
+            diff_x = q_rand.x - q_near.x
+            diff_y = q_rand.y - q_near.y
+            dist = q_rand.distance(q_near)
+            new_x = q_near.x + delta_q*(diff_x/dist)
+            new_y = q_near.y + delta_q*(diff_y/dist)
+            return Point(new_x,new_y)
 
     def find_nearest(self, q_rand, graph):
         q_near = None
@@ -275,6 +292,14 @@ class RRT_Planner(object):
                 q_near = point
             elif q_rand.distance(point) < q_rand.distance(q_near):
                 q_near = point
+        return q_near
+
+
+    def choose_parent(self, q_near,q_new,graph):
+        RADIUS = 1.2
+        for p in graph.nodes():
+            if p.distance(q_new) < RADIUS and graph.node[p]['cost']+p.distance(q_new) < graph.node[q_near]['cost']+q_near.distance(q_new):
+                q_near = p
         return q_near
 
     @n.subscriber(POLYGON_TOPIC, PolygonStamped)
