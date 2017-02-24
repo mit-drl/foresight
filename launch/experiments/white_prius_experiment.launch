@@ -49,4 +49,10 @@
         <param name="frame_id" value="$(arg quad_frame_id)"/>
         <param name="dist_thresh" value="0.1"/>
     </node>
+
+    <node pkg="foresight" type="hovering.py" name="hovering">
+        <param name="fixed_frame_id" value="$(arg car_frame_id)"/>
+        <param name="frame_id" value="$(arg quad_frame_id)"/>
+    </node>
+
 </launch>
