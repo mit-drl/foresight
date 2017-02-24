@@ -24,7 +24,7 @@ import networkx as nx
 NODE_NAME = "rrt_planner"
 n = roshelper.Node(NODE_NAME, anonymous=False)
 
-SETPOINT_TOPIC = "/move_base_simple/goal"
+SETPOINT_TOPIC = "/setpoint_goal"
 ODOM_TOPIC = "/odometry/filtered"
 POLYGON_TOPIC = "/bounding_poly"
 RRT_TOPIC = "/rrt_path"
@@ -207,7 +207,6 @@ class RRT_Planner(object):
             q_new = self.new_conf(q_near, q_rand, delta_q)
 
             if polygon.contains(q_new):
-                print "it contains q_new"
                 if self.is_there_collision(polygon, q_new, q_near, step_size, delta_q) is False:
                     #print "adding point x: %f y: %f" % (q_new.x, q_new.y)
                     graph.add_node(q_new)

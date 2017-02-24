@@ -25,9 +25,8 @@ class PositionController(object):
         self.efforts = [0, 0, 0, 0]
         self.pose = Pose()
         self.setpoint = None
-        self.wait_time = 0.0
-        self.start_time = rospy.Time()
-        #self.made_target = False
+        self.setpoint_timeout = 0.3
+        self.last_setpoint_time = None
         self.topics = {"/pid_x/control_effort": 0,
                        "/pid_y/control_effort": 1,
                        "/pid_z/control_effort": 2,
@@ -93,6 +92,7 @@ class PositionController(object):
 
     @n.subscriber("/setpoint_pose", PoseStamped)
     def setpoint_sub(self, ps):
+        self.last_setpoint_time = rospy.Time.now()
         self.setpoint = ps.pose
         ps_tf = self.listener.transformPose(self.frame_id, ps)
         self.float_pub(ps_tf.pose.position.x).publish("/pid_x/setpoint")
@@ -121,7 +121,11 @@ class PositionController(object):
     def run(self):
         if not self.land:
             if not self.setpoint is None:
-                self.publish_cmd_vel(*self.efforts)
+                dt = (rospy.Time.now() - self.last_setpoint_time).to_sec()
+                if dt < self.setpoint_timeout:
+                    self.publish_cmd_vel(*self.efforts)
+                else:
+                    self.publish_cmd_vel(0, 0, 0, 0)
 
 
 if __name__ == "__main__":
