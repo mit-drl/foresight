@@ -47,7 +47,7 @@ class Landing(object):
 
         self.pose = Odometry()
         self.pose.header.frame_id = "map"
-        self.pose.pose.pose.position.x = 5
+        self.pose.pose.pose.position.x = 5.5
         self.pose.pose.pose.position.y = 1
 
         self.pose2 = Odometry()
@@ -57,7 +57,7 @@ class Landing(object):
 
         self.setpoint = PoseStamped()
         self.setpoint.header.frame_id = "map"
-        self.setpoint.pose.position.x = 5
+        self.setpoint.pose.position.x = 5.5
         self.setpoint.pose.position.y = 5
 
         self.ticker = 0

@@ -72,8 +72,9 @@ class RRT_Planner(object):
                 self.path.pop()
                 self.path.append(setpoint)
 
-                if self.path[0].distance(self.path[1]) > 0.2:
-
+                if len(self.path) > 1:
+                    if self.path[0].distance(self.path[1]) < 0.2:
+                        self.path.pop(0)
                     print "repairing path"
                     self.path = self.repair2(self.path,polygon,self.step_size, self.delta_q)
                 else:
@@ -102,6 +103,7 @@ class RRT_Planner(object):
 
     @n.publisher("/setpoint_pose", PoseStamped)
     def publish_setpoint_pose(self, path):
+        if len(path.poses) > 1:
             first_point = Point(path.poses[0].pose.position.x,path.poses[0].pose.position.y)
             next_point = Point(path.poses[1].pose.position.x,path.poses[1].pose.position.y)
             if first_point.distance(next_point) > 0.5:
@@ -114,6 +116,8 @@ class RRT_Planner(object):
                 return new_pose
             else:
                 return path.poses[1]
+        else:
+            return path.poses[0]
 
     def path_from_graph(self,graph,start,end):
         try:
@@ -192,10 +196,18 @@ class RRT_Planner(object):
 
     def make_rrt(self, polygon, start, target, step_size, delta_q, max_k):
         k = 0
-        graph = nx.Graph()
+        graph = nx.DiGraph()
         graph.add_node(start)
         unfinished = True
+        if self.attempt_to_complete(polygon,start,target,step_size):
+            distance = start.distance(target)
+            graph.add_node(target)
+            graph.add_edge(start,target, weight = distance, cost = distance)
+            unfinished = False
+
         while k < max_k and unfinished:
+
+
             (minx, miny, maxx, maxy) = polygon.bounds
 
             rand_x = random.uniform(minx, maxx)
@@ -209,12 +221,21 @@ class RRT_Planner(object):
             if polygon.contains(q_new):
                 if self.is_there_collision(polygon, q_new, q_near, step_size, delta_q) is False:
                     #print "adding point x: %f y: %f" % (q_new.x, q_new.y)
+                    distance = q_near.distance(q_new)
                     graph.add_node(q_new)
-                    graph.add_edge(q_near, q_new, weight=q_near.distance(q_new))
+                    preds = graph.predecessors(q_near)
+                    prev_cost = 0
+                    if len(preds) is not 0:
+                        pred = preds[0]
+                        prev_cost = graph[pred][q_near]['cost']
+                    new_cost = prev_cost + distance
+                    graph.add_edge(q_near, q_new, weight=distance, cost=new_cost)
 
                     if self.attempt_to_complete(polygon, q_new, target, step_size):
+                        distance = q_new.distance(target)
                         graph.add_node(target)
-                        graph.add_edge(q_new, target, weight = q_new.distance(target))
+                        prev_cost = graph[q_near][q_new]['cost']
+                        graph.add_edge(q_new, target, weight = distance, cost = prev_cost + distance)
                         unfinished = False
                     k = k + 1
 
