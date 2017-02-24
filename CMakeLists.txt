@@ -16,6 +16,7 @@ add_message_files(
   TreeSearchResultMsg.msg
   PoseArrayWithTimes.msg
   PoseStampedWithTime.msg
+  ForesightState.msg
 )
 
 generate_messages(

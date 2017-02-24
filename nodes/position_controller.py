@@ -7,6 +7,7 @@ import tf
 from std_msgs.msg import Float64
 from std_msgs.msg import Empty
 from nav_msgs.msg import Odometry
+from foresight.msg import ForesightState
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Pose
@@ -22,6 +23,7 @@ class PositionController(object):
     def __init__(self):
         self.frame_id = rospy.get_param("frame_id", "base_link")
         self.listener = tf.TransformListener()
+        self.enabled = False
         self.efforts = [0, 0, 0, 0]
         self.pose = Pose()
         self.setpoint = None
@@ -117,15 +119,17 @@ class PositionController(object):
     def on_land(self, empty):
         self.land = True
 
+    @n.subscriber("/state", ForesightState)
+    def update_controller_enabled(self, fs):
+        self.enabled = not (fs.state == ForesightState.JOYSTICK)
+
     @n.main_loop(frequency=100)
     def run(self):
         if not self.land:
             if not self.setpoint is None:
                 dt = (rospy.Time.now() - self.last_setpoint_time).to_sec()
-                if dt < self.setpoint_timeout:
+                if dt < self.setpoint_timeout and self.enabled:
                     self.publish_cmd_vel(*self.efforts)
-                else:
-                    self.publish_cmd_vel(0, 0, 0, 0)
 
 
 if __name__ == "__main__":
