@@ -105,7 +105,7 @@ class BlindSpotPublisher(object):
     def get_blind_polys(self, pts, bounding_poly):
         polys = list()
         for p, q in self.get_laser_breaks(pts):
-            dr = (p - q).perpendicular().scaled_to(0.2 * p.distance_to(q))
+            dr = (p - q).perpendicular().scaled_to(0.2)
             poly_arr = [p, q, q + dr, p + dr]
             g_poly = geom.Polygon(poly_arr)
             poly = g_poly - bounding_poly

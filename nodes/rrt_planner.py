@@ -52,6 +52,8 @@ class RRT_Planner(object):
         self.odom_msg = None
         self.polygon_msg = None
         self.setpoint_msg = None
+        self.last_goal_update = None
+        self.goal_timeout = rospy.get_param("~goal_timeout", 0.3)
 
         self.listener = tf.TransformListener()
 
@@ -62,8 +64,11 @@ class RRT_Planner(object):
         polygon = self.polygon
         setpoint = self.setpoint
         pose = self.pose
+        dt = time.time() - self.last_goal_update
 
-        if polygon is not None and pose is not None and setpoint is not None:
+        if polygon is not None and pose is not None \
+                and setpoint is not None \
+                and dt < self.goal_timeout:
             if self.path is not None:
                 # print "removing and adding pose/setpoint"
                 # print len(self.path)
@@ -107,8 +112,8 @@ class RRT_Planner(object):
         if len(path.poses) > 1:
             first_point = Point(path.poses[0].pose.position.x,path.poses[0].pose.position.y)
             next_point = Point(path.poses[1].pose.position.x,path.poses[1].pose.position.y)
-            if first_point.distance(next_point) > 0.5:
-                setp = self.new_conf(first_point, next_point, 0.5)
+            if first_point.distance(next_point) > 0.7:
+                setp = self.new_conf(first_point, next_point, 0.7)
                 new_pose = PoseStamped()
                 new_pose.header.frame_id = self.fixed_frame_id
                 new_pose.pose.position.x = setp.x
@@ -323,6 +328,7 @@ class RRT_Planner(object):
 
             self.setpoint_msg = ps_tf
             self.setpoint = Point(ps_tf.pose.position.x, ps_tf.pose.position.y)
+            self.last_goal_update = time.time()
         except tf.Exception:
             rospy.logerr("Setpoint sub tf error")
 
