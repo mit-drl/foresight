@@ -67,8 +67,7 @@ class RRT_Planner(object):
         dt = time.time() - self.last_goal_update
 
         if polygon is not None and pose is not None \
-                and setpoint is not None \
-                and dt < self.goal_timeout:
+                and setpoint is not None:
             if self.path is not None:
                 # print "removing and adding pose/setpoint"
                 # print len(self.path)
@@ -104,7 +103,8 @@ class RRT_Planner(object):
                 new_pose.pose.position.z = 1.5
                 path.poses.append(new_pose)
 
-            self.publish_setpoint_pose(path)
+            if dt < self.goal_timeout:
+                self.publish_setpoint_pose(path)
             return path
 
     @n.publisher("/setpoint_pose", PoseStamped)

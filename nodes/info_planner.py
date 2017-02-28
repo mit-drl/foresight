@@ -108,11 +108,14 @@ class InfoPlanner(object):
         return nbrs
 
     def update_publishing_path(self, tsr):
+        if tsr is None:
+            return False
+
         if self.opt_tsr is None:
             self.opt_tsr = tsr
             return True
 
-        for shv in self.opt_tsr:
+        for shv in self.opt_tsr.path:
             if not self.poly.contains(shv.point):
                 self.opt_tsr = tsr
                 return True
@@ -174,8 +177,7 @@ class InfoPlanner(object):
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
         tsr = self.find_path(multi_polygon)
-        if tsr is not None:
-            self.opt_tsr = tsr
+        self.update_publishing_path(tsr)
 
     @n.publisher(PolygonStamped)
     def pub_proj(self, proj):
@@ -208,18 +210,21 @@ class InfoPlanner(object):
             if min_dist is None or dist < min_dist:
                 min_dist = dist
                 cur_i = i
-        return cur_i, cur_pt
+        if cur_i == len(shvs) - 1:
+            next_i = cur_i
+        else:
+            next_i = cur_i + 1
+        return cur_pt, next_i
 
     @n.publisher(SETPOINT_POSE_TOPIC, PoseStamped)
     def publish_next_pose(self, shvs):
         ps = PoseStamped()
         ps.header.frame_id = self.map_frame
-        cur_i, cur_pt = self.find_next_pose_in_path(shvs)
+        cur_pt, next_i = self.find_next_pose_in_path(shvs)
         cur_pt = self.geom_point_to_vec(cur_pt)
-        # cur_pt = self.geom_point_to_vec(shvs[0].point)
-        next_pt = self.geom_point_to_vec(shvs[cur_i + 1].point)
+        next_pt = self.geom_point_to_vec(shvs[next_i].point)
         inter_pt = cur_pt + (next_pt - cur_pt).scaled_to(self.next_pose_dist)
-        ps.pose = self.point_yaw_to_pose(inter_pt, shvs[cur_i + 1].yaw)
+        ps.pose = self.point_yaw_to_pose(inter_pt, shvs[next_i].yaw)
         return ps
 
     @n.publisher(PATH_TOPIC, Path, queue_size=1)
