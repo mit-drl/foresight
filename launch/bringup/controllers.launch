@@ -56,8 +56,8 @@
     <node name="position_controller" pkg="foresight"
         type="position_controller.py" output="screen"/>
 
-    <!-- <node name="rrt_planner" pkg="foresight" -->
-    <!--     type="rrt_planner.py" output="screen"/> -->
+    <node name="rrt_planner" pkg="foresight"
+        type="rrt_planner.py" output="screen"/>
 
     <include file="$(find bebop_vel_ctrl)/launch/bebop_vel_ctrl.launch">
         <arg name="input_topic" value="/setpoint_vel"/>

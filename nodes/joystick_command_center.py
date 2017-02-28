@@ -6,9 +6,7 @@ import rospy
 import tf
 import time
 from sensor_msgs.msg import Joy
-from std_msgs.msg import Bool
 from foresight.msg import ForesightState
-from enum import Enum
 
 NODE_NAME = "joystick_command_center"
 n = roshelper.Node(NODE_NAME, anonymous=False)
@@ -47,22 +45,28 @@ class JoystickCommandCenter(object):
         if joy.buttons[Buttons.LB] > 0:
             self.on_button_click(joy, Buttons.A, self.toggle_landing_state)
             self.on_button_click(joy, Buttons.Y, self.toggle_planner_state)
+            self.on_button_click(joy, Buttons.X, self.toggle_hovering_state)
         self.last_joy = joy
+
+    def toggle_state(self, desired, default=ForesightState.JOYSTICK):
+        if self.fs.state == desired:
+            self.fs.state = default
+        else:
+            self.fs.state = desired
 
     @n.publisher(STATE_TOPIC, ForesightState)
     def toggle_planner_state(self):
-        if self.fs.state == ForesightState.PLANNER:
-            self.fs.state = ForesightState.JOYSTICK
-        else:
-            self.fs.state = ForesightState.PLANNER
+        self.toggle_state(ForesightState.PLANNER)
         return self.fs
 
     @n.publisher(STATE_TOPIC, ForesightState)
     def toggle_landing_state(self):
-        if self.fs.state == ForesightState.LANDING:
-            self.fs.state = ForesightState.JOYSTICK
-        else:
-            self.fs.state = ForesightState.LANDING
+        self.toggle_state(ForesightState.LANDING)
+        return self.fs
+
+    @n.publisher(STATE_TOPIC, ForesightState)
+    def toggle_hovering_state(self):
+        self.toggle_state(ForesightState.HOVERING)
         return self.fs
 
     @n.main_loop(frequency=100)

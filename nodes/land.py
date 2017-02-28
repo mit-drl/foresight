@@ -50,7 +50,7 @@ class Lander(object):
 
     @n.subscriber(STATE_TOPIC, ForesightState)
     def state_sub(self, fs):
-        self.enabled = self.fs.state == ForesightState.LANDING
+        self.enabled = fs.state == ForesightState.LANDING
 
     @n.publisher("/setpoint_goal", PoseStamped)
     def go_home(self):

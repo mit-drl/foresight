@@ -45,6 +45,7 @@ OPT_INFO_TOPIC = "/optimization_info"
 PROJECTION_MARKERS_TOPIC = "/projection_markers"
 POSE_ARRAY_WITH_TIMES_TOPIC = "/waypoints"
 SETPOINT_POSE_TOPIC = "/setpoint_pose"
+ODOMETRY_TOPIC = "/odometry/filtered"
 STATE_TOPIC = "/state"
 
 NODE_NAME = "info_planner"
@@ -79,6 +80,11 @@ class InfoPlanner(object):
                      (-step, -step)]
         self.next_pose_dist = rospy.get_param("~next_pose_dist", self.step)
         self.num_nbrs = rospy.get_param("~num_neighbours", 8)
+        self.moved_thresh_dist = rospy.get_param("~moved_thresh_dist", 1.0)
+        self.moved_thresh_yaw = rospy.get_param(
+            "~moved_thresh_yaw", abs(math.sin(math.pi / 5.0)))
+        self.last_pose = None
+        self.seen_polygon = None
         self.enabled = False
         # self.nbrs = self.get_neighbours()
 
@@ -125,11 +131,25 @@ class InfoPlanner(object):
 
         return False
 
-    @n.subscriber("/odometry/filtered", Odometry)
+    @n.subscriber(ODOMETRY_TOPIC, Odometry)
     def odom_sub(self, odom):
-        self.pose = PoseStamped()
+        if self.pose is None:
+            self.pose = PoseStamped()
+            self.last_pose = PoseStamped()
         self.pose.header = odom.header
         self.pose.pose = odom.pose.pose
+
+        dist = self.pose_dist(self.last_pose, self.pose)
+        yaw_dist = self.yaw_dist(self.last_pose, self.pose)
+        if dist < self.moved_thresh_dist and yaw_dist < self.moved_thresh_yaw:
+            self.last_pose = self.pose
+            projection = self.get_current_projection()
+            proj = np.array(projection).reshape(4, 2)
+            proj_poly = geom.Polygon(proj)
+            # if self.seen_polygon is None:
+            #     self.seen_polygon = proj_poly
+            # else:
+            #     self.seen_polygon = self.seen_polygon.union(proj_poly)
 
     @n.main_loop(frequency=30)
     def run(self):
@@ -246,7 +266,12 @@ class InfoPlanner(object):
         projection = self.get_projection(state)
         proj = np.array(projection).reshape(4, 2)
         proj_poly = geom.Polygon(proj)
-        return polys.difference(proj_poly)
+        if self.seen_polygon is None:
+            res_polys = polys.difference(proj_poly)
+        else:
+            res_polys = polys.difference(proj_poly)\
+                .difference(self.seen_polygon)
+        return res_polys
 
     def find_path(self, bs_polys):
         if bs_polys is None or self.pose is None:
@@ -399,6 +424,24 @@ class InfoPlanner(object):
         pose_mq.orientation.z = quat[2]
         pose_mq.orientation.w = quat[3]
         return pose_mq
+
+    def pose_dist(self, p, q):
+        pvec = planar.Vec2(p.pose.position.x, p.pose.position.y)
+        qvec = planar.Vec2(q.pose.position.x, q.pose.position.y)
+        return pvec.distance_to(qvec)
+
+    def yaw_dist(self, p, q):
+        p_quat = [p.pose.orientation.x,
+                  p.pose.orientation.y,
+                  p.pose.orientation.z,
+                  p.pose.orientation.w]
+        q_quat = [q.pose.orientation.x,
+                  q.pose.orientation.y,
+                  q.pose.orientation.z,
+                  q.pose.orientation.w]
+        _, _, p_yaw = euler_from_quaternion(p_quat)
+        _, _, q_yaw = euler_from_quaternion(q_quat)
+        return abs(math.sin(p_yaw - q_yaw))
 
     def pose_to_geom_point(self, ps):
         return Point(ps.pose.position.x, ps.pose.position.y)

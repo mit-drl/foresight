@@ -82,6 +82,21 @@ Visualization Manager:
       Topic: /odom_offset_cov
       Value: false
     - Alpha: 1
+      Axes Length: 0.5
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: false
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
+      Name: UWB Pose
+      Shaft Length: 1
+      Shaft Radius: 0.0500000007
+      Shape: Axes
+      Topic: /uwb_pose_2d
+      Unreliable: false
+      Value: false
+    - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -248,21 +263,6 @@ Visualization Manager:
       Topic: /path
       Unreliable: false
       Value: true
-    - Alpha: 1
-      Axes Length: 0.5
-      Axes Radius: 0.100000001
-      Class: rviz/Pose
-      Color: 255; 25; 0
-      Enabled: false
-      Head Length: 0.300000012
-      Head Radius: 0.100000001
-      Name: UWB Pose
-      Shaft Length: 1
-      Shaft Radius: 0.0500000007
-      Shape: Axes
-      Topic: /uwb_pose_2d
-      Unreliable: false
-      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /bebop/image_raw
@@ -445,7 +445,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 23.7116489
+      Distance: 16.8897228
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -459,10 +459,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.56979632
+      Pitch: 1.28979754
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.42181587
+      Yaw: 3.11184025
     Saved: ~
 Window Geometry:
   Bebop Camera:
