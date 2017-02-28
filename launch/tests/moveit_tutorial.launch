@@ -1,0 +1,8 @@
+<launch>
+
+  <include file="$(find foresight)/launch/tests/helper_moveit.launch"/>
+
+  <node name="moveit_test" pkg="foresight" type="moveit_test.py" respawn="false" output="screen">
+  </node>
+
+</launch>
