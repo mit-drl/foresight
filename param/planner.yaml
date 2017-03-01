@@ -1,8 +1,8 @@
 optimality_threshold: 0.7
 max_execution_time: 6.0
 max_speed: 1.0
-timeout: 0.2
-neighbour_dist: 1.5
+timeout: 0.5
+neighbour_dist: 1.0
 num_neighbours: 8
 fov_v: 0.628
 fov_h: 0.628

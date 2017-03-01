@@ -107,26 +107,23 @@ class InfoPlanner(object):
             nbrs.append((x, y))
         return nbrs
 
-    def update_publishing_path(self):
-        self.opt_tsr_pubbing = self.opt_tsr
-        return True
-
-        if self.opt_tsr is None:
+    def update_publishing_path(self, tsr):
+        if tsr is None:
             return False
 
-        if self.opt_tsr_pubbing is None:
-            self.opt_tsr_pubbing = self.opt_tsr
+        if self.opt_tsr is None:
+            self.opt_tsr = tsr
             return True
 
-        for shv in self.opt_tsr_pubbing.path:
+        for shv in self.opt_tsr.path:
             if not self.poly.contains(shv.point):
-                self.opt_tsr_pubbing = self.opt_tsr
+                self.opt_tsr = tsr
                 return True
 
-        n_opt = self.opt_tsr.optimality
-        c_opt = self.opt_tsr_pubbing.optimality
+        n_opt = tsr.optimality
+        c_opt = self.opt_tsr.optimality
         if n_opt > self.added_opt_thresh * c_opt:
-            self.opt_tsr_pubbing = self.opt_tsr
+            self.opt_tsr = tsr
             return True
 
         return False
@@ -153,13 +150,12 @@ class InfoPlanner(object):
 
     @n.main_loop(frequency=30)
     def run(self):
-        self.update_publishing_path()
         if self.opt_tsr is not None and self.enabled:
-            self.publish_next_pose(self.opt_tsr_pubbing.path)
-            self.publish_pose_array(self.opt_tsr_pubbing.path)
-            self.publish_path(self.opt_tsr_pubbing.path)
-            self.publish_opt_info(self.opt_tsr_pubbing)
-            self.publish_opt_proj_markers(self.opt_tsr_pubbing.path)
+            self.publish_next_pose(self.opt_tsr.path)
+            self.publish_pose_array(self.opt_tsr.path)
+            self.publish_path(self.opt_tsr.path)
+            self.publish_opt_info(self.opt_tsr)
+            self.publish_opt_proj_markers(self.opt_tsr.path)
 
     @n.subscriber(STATE_TOPIC, ForesightState)
     def planner_enabled_sub(self, fs):
@@ -181,8 +177,7 @@ class InfoPlanner(object):
             else:
                 multi_polygon = multi_polygon.union(geom_poly)
         tsr = self.find_path(multi_polygon)
-        if tsr is not None:
-            self.opt_tsr = tsr
+        self.update_publishing_path(tsr)
 
     @n.publisher(PolygonStamped)
     def pub_proj(self, proj):
@@ -206,15 +201,30 @@ class InfoPlanner(object):
             pa.poses.append(pose)
         return pa
 
+    def find_next_pose_in_path(self, shvs):
+        min_dist = None
+        cur_i = 0
+        cur_pt = self.pose_to_geom_point(self.pose)
+        for i, shv in enumerate(shvs):
+            dist = shv.point.distance(cur_pt)
+            if min_dist is None or dist < min_dist:
+                min_dist = dist
+                cur_i = i
+        if cur_i == len(shvs) - 1:
+            next_i = cur_i
+        else:
+            next_i = cur_i + 1
+        return cur_pt, next_i
+
     @n.publisher(SETPOINT_POSE_TOPIC, PoseStamped)
     def publish_next_pose(self, shvs):
         ps = PoseStamped()
-        # ps.header.stamp = rospy.Time.now()
         ps.header.frame_id = self.map_frame
-        cur_pt = self.geom_point_to_vec(shvs[0].point)
-        next_pt = self.geom_point_to_vec(shvs[1].point)
+        cur_pt, next_i = self.find_next_pose_in_path(shvs)
+        cur_pt = self.geom_point_to_vec(cur_pt)
+        next_pt = self.geom_point_to_vec(shvs[next_i].point)
         inter_pt = cur_pt + (next_pt - cur_pt).scaled_to(self.next_pose_dist)
-        ps.pose = self.point_yaw_to_pose(inter_pt, shvs[1].yaw)
+        ps.pose = self.point_yaw_to_pose(inter_pt, shvs[next_i].yaw)
         return ps
 
     @n.publisher(PATH_TOPIC, Path, queue_size=1)

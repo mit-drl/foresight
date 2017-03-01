@@ -33,8 +33,8 @@ POSE_ARRAY_TOPIC = "/moveit_pose_array"
 class MoveItPlanner(object):
 
     def __init__(self):
-        self.frame_id = rospy.get_param("~frame_id", "odom")
-        self.fixed_frame_id = rospy.get_param("~fixed_frame_id", "base_link")
+        self.frame_id = rospy.get_param("~frame_id", "base_link")
+        self.fixed_frame_id = rospy.get_param("~fixed_frame_id", "body")
 
         self.robot = moveit_commander.RobotCommander("moveit/robot_description")
         self.scene = moveit_commander.PlanningSceneInterface()
@@ -74,7 +74,7 @@ class MoveItPlanner(object):
         transform.translation = translation
 
         self.current_state = RobotState()
-        self.current_state.multi_dof_joint_state.header.frame_id = "base_link"
+        self.current_state.multi_dof_joint_state.header.frame_id = odom.header.frame_id
         self.current_state.multi_dof_joint_state.header.stamp = rospy.Time.now()
         self.current_state.multi_dof_joint_state.joint_names.append("odom_to_base_link_joint")
         self.current_state.multi_dof_joint_state.transforms.append(transform)
@@ -84,7 +84,7 @@ class MoveItPlanner(object):
     @n.publisher(POSE_TARGET_TOPIC, PoseStamped)
     def target_pub(self):
         pose_target = geometry_msgs.msg.PoseStamped()
-        pose_target.header.frame_id = "base_link"
+        pose_target.header.frame_id = "body"
         pose_target.pose.orientation.w = 1.0
         pose_target.pose.position.x = 0.7
         pose_target.pose.position.y = -0.05
@@ -92,7 +92,7 @@ class MoveItPlanner(object):
         return pose_target
 
     @n.subscriber(POSE_TARGET_TOPIC, PoseStamped)
-    def pose_target_sub(self,ps):
+    def pose_target_sub(self, ps):
         if self.current_state is not None:
             #self.group.set_start_state(RobotState())
             self.listener.waitForTransform(ps.header.frame_id, self.fixed_frame_id,
@@ -116,7 +116,7 @@ class MoveItPlanner(object):
     @n.publisher(PATH_TOPIC, Path)
     def plan_pub(self, plan):
         path = Path()
-        path.header = plan.multi_dof_joint_trajectory.header
+        path.header.frame_id = self.fixed_frame_id
         points = plan.multi_dof_joint_trajectory.points
         for point in points:
             transform = point.transforms[0]
@@ -153,7 +153,7 @@ class MoveItPlanner(object):
             #print self.robot.get_group_names()
 
             #print "============"
-            # plan to a random location 
+            # plan to a random location
             #self.group.clear_pose_targets()
             #self.group.set_start_state(RobotState())
             #r = self.group.get_random_joint_values()

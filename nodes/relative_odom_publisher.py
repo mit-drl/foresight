@@ -62,7 +62,6 @@ class RelativeOdomPublisher(object):
             self.yaw_zero = yaw
 
         dyaw = yaw - self.yaw_zero - self.car_dyaw
-        print self.car_dyaw
         quat = quaternion_from_euler(r, p, dyaw)
         self.relative_quat = quat
         self.odom = odom
