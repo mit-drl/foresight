@@ -6,6 +6,7 @@
   <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
   <include file="$(find quad_moveit_config)/launch/planning_context.launch">
     <arg name="load_robot_description" value="true"/>
+    <param name="robot_description" value="moveit/robot_description"/>
   </include>
 
   <!-- If needed, broadcast static tf for robot root -->

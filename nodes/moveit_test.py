@@ -36,7 +36,7 @@ class MoveItPlanner(object):
         self.frame_id = rospy.get_param("~frame_id", "odom")
         self.fixed_frame_id = rospy.get_param("~fixed_frame_id", "base_link")
 
-        self.robot = moveit_commander.RobotCommander()
+        self.robot = moveit_commander.RobotCommander("moveit/robot_description")
         self.scene = moveit_commander.PlanningSceneInterface()
         self.group = self.robot.quad_body
         #self.group = moveit_commander.MoveGroupCommander("quad_body")
