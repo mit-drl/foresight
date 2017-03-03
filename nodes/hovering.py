@@ -23,6 +23,7 @@ class Hovering(object):
         self.home.pose.position.x = 4.500
         self.home.pose.position.y = 0.0
         self.home.pose.position.z = 1.5
+        self.home.pose.orientation.w = 1
         self.enabled = False
 
     @n.subscriber(STATE_TOPIC, ForesightState)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import time
 import copy
 import rospy
 import roshelper
@@ -25,7 +26,7 @@ n = roshelper.Node(NODE_NAME, anonymous=False)
 
 POSE_TARGET_TOPIC = "/setpoint_goal"
 JOINT_STATE_TOPIC = "/joint_state"
-ODOM_TOPIC = "/odometry_filtered"
+ODOM_TOPIC = "/odometry/filtered"
 PATH_TOPIC = "/moveit_path"
 POSE_ARRAY_TOPIC = "/moveit_pose_array"
 
@@ -38,15 +39,15 @@ class MoveItPlanner(object):
 
         self.robot = moveit_commander.RobotCommander("moveit/robot_description")
         self.scene = moveit_commander.PlanningSceneInterface()
-        self.group = self.robot.quad_body
-        #self.group = moveit_commander.MoveGroupCommander("quad_body")
+        # self.group = self.robot.quad_body
+        self.group = moveit_commander.MoveGroupCommander("quad_body")
         self.display_trajectory_publisher = rospy.Publisher(
                                     '/move_group/display_planned_path',
                                     moveit_msgs.msg.DisplayTrajectory,
                                     queue_size=20)
+        self.group.set_workspace([-50, -50, -1, 50, 50, 10])
 
         print "============ Waiting for RVIZ..."
-        rospy.sleep(7)
         print "============ Starting tutorial "
 
         self.listener = tf.TransformListener()
@@ -54,8 +55,6 @@ class MoveItPlanner(object):
         self.pose_target = []
 
         self.plan = None
-
-        self.ticker = 0
 
         self.current_state = None
 
@@ -92,12 +91,12 @@ class MoveItPlanner(object):
         return pose_target
 
     @n.subscriber(POSE_TARGET_TOPIC, PoseStamped)
-    def pose_target_sub(self, ps):
+    def pose_target_sub(self, ps_tf):
         if self.current_state is not None:
             #self.group.set_start_state(RobotState())
-            self.listener.waitForTransform(ps.header.frame_id, self.fixed_frame_id,
-                                            rospy.Time(), rospy.Duration(1))
-            ps_tf = self.listener.transformPose(self.fixed_frame_id, ps)
+            # self.listener.waitForTransform(ps.header.frame_id, self.fixed_frame_id,
+            #                                 rospy.Time(), rospy.Duration(1))
+            # ps_tf = self.listener.transformPose(self.fixed_frame_id, ps)
             # self.pose_target = ps_tf
             # self.group.set_pose_target(ps_tf.pose)
             self.pose_target = []
@@ -108,9 +107,9 @@ class MoveItPlanner(object):
             self.pose_target.append(ps_tf.pose.orientation.y)
             self.pose_target.append(ps_tf.pose.orientation.z)
             self.pose_target.append(ps_tf.pose.orientation.w)
+            start = time.time()
             self.plan = self.group.plan(self.pose_target)
-            print self.plan
-
+            print time.time() - start
             self.plan_pub(self.plan)
 
     @n.publisher(PATH_TOPIC, Path)
@@ -140,39 +139,9 @@ class MoveItPlanner(object):
     def turn_off_moveit(self):
         self.moveit_commander.roscpp_shutdown()
 
-    @n.main_loop(frequency=30)
+    @n.main_loop(frequency=100)
     def run(self):
-        #self.joint_state_pub()
-        self.ticker = self.ticker % 30
-        if self.ticker == 1:
-            self.target_pub()
-
-            #print "============ Planning frame: %s" % self.group.get_planning_frame()
-            #print "============ End effector frame: %s" % self.group.get_end_effector_link()
-            #print "============ Robot Groups:"
-            #print self.robot.get_group_names()
-
-            #print "============"
-            # plan to a random location
-            #self.group.clear_pose_targets()
-            #self.group.set_start_state(RobotState())
-            #r = self.group.get_random_joint_values()
-            #print "Planning to random joint position: "
-
-
-        # print "============ Printing robot state"
-        # print self.robot.get_current_state()
-
-            # print joint_state
-
-            # self.group.set_pose_target(pose_target, "base_link")
-            # self.group.plan()
-
-            #p = self.group.plan(pose_target)
-            #print "Solution:"
-            #print p
-        self.ticker = self.ticker + 1
-
+        pass
 
 
 if __name__ == "__main__":
