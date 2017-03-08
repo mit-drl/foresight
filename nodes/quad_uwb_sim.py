@@ -77,7 +77,7 @@ class Sim(object):
         new_odom = Odometry()
         new_odom.header = odom.header
         new_odom.twist = odom.twist
-        return new_odom
+        return odom
 
     @n.publisher(ALT_TOPIC, Ardrone3PilotingStateAltitudeChanged)
     def alt_pub(self, odom):

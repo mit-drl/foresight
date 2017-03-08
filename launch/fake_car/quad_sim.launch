@@ -2,6 +2,10 @@
 <launch>
     <arg name="car_frame_id" value="body"/>
     <arg name="quad_frame_id" value="base_link"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="map_to_car"
+        args="0 0 0.1 0 0.0 0 map $(arg car_frame_id) 100"/>
+
     <!-- Provides a pose from the car to the bebop -->
     <include file="$(find decawave_localization)/launch/uwb_sim.launch">
         <arg name="car_frame_id" value="$(arg car_frame_id)"/>
