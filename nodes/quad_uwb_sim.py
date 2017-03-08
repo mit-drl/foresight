@@ -38,6 +38,7 @@ class Sim(object):
         self.listener = tf.TransformListener()
         [self.tag_pos, self.tag_pub] = self.get_tag_transforms()
         #print self.tag_pos
+        self.start_time = rospy.Time.now().to_sec()
 
     def get_tag_transforms(self):
         tag_pos = dict()
@@ -74,9 +75,13 @@ class Sim(object):
 
     @n.publisher(BEBOP_ODOM_TOPIC, Odometry)
     def odom_pub(self, odom):
-        new_odom = Odometry()
-        new_odom.header = odom.header
-        new_odom.twist = odom.twist
+        # new_odom = Odometry()
+        # new_odom.header = odom.header
+        # new_odom.twist = odom.twist
+        dt = rospy.Time.now().to_sec() - self.start_time
+        odom.pose.pose.position.x += 0.01*dt
+        odom.pose.pose.position.y += 0.012*dt
+        odom.pose.pose.position.z += 0.008*dt
         return odom
 
     @n.publisher(ALT_TOPIC, Ardrone3PilotingStateAltitudeChanged)
