@@ -97,7 +97,7 @@
 
         <param name="odom0" value="/bebop/odom_filtered"/>
         <param name="odom1" value="/odom_uwb_2d"/>
-        <!-- <param name="odom2" value="/odom_uwb_3d"/> -->
+        <param name="odom2" value="/odom_uwb_3d"/>
 
         <rosparam param="odom0_config">[false, false, false,
                                         false, false, false,
@@ -111,19 +111,19 @@
                                         false, false, false,
                                         false, false, false]</rosparam>
 
-        <!-- <rosparam param="odom2_config">[false, false, false, -->
-        <!--                                 false, false, false, -->
-        <!--                                 false, false, false, -->
-        <!--                                 false, false, false, -->
-        <!--                                 false, false, false]</rosparam> -->
+        <rosparam param="odom2_config">[true, true, true,
+                                        false, false, false,
+                                        false, false, false,
+                                        false, false, false,
+                                        false, false, false]</rosparam>
 
         <param name="odom0_differential" value="false"/>
         <param name="odom1_differential" value="false"/>
-        <!-- <param name="odom2_differential" value="false"/> -->
+        <param name="odom2_differential" value="true"/>
 
         <param name="odom0_relative" value="false"/>
         <param name="odom1_relative" value="false"/>
-        <!-- <param name="odom2_relative" value="false"/> -->
+        <param name="odom2_relative" value="false"/>
 
         <!-- <param name="odom0_pose_rejection_threshold" value="100"/> -->
 
@@ -131,7 +131,7 @@
 
         <param name="odom0_queue_size" value="1"/>
         <param name="odom1_queue_size" value="1"/>
-        <!-- <param name="odom2_queue_size" value="1"/> -->
+        <param name="odom2_queue_size" value="1"/>
 
         <param name="debug"           value="false"/>
     </node>

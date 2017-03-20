@@ -98,7 +98,7 @@ class Sim(object):
         time = rospy.Time.now().to_sec()
         z = 0.2*math.cos(time) + 1.5 + random.gauss(0, 0.05)
         dz = -0.2*math.sin(time) + random.gauss(0, 0.03)
-        x = math.cos(time) + 1 + random.gauss(0, 0.05)
+        x = math.cos(time) + 10 + random.gauss(0, 0.05)
         dx = -math.sin(time) + random.gauss(0, 0.03)
         y = math.sin(time) + random.gauss(0, 0.05)
         dy = math.cos(time) + random.gauss(0, 0.03)

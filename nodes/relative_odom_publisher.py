@@ -40,6 +40,7 @@ class RelativeOdomPublisher(object):
         self.odom_offset_alt.child_frame_id = self.frame_id
         self.tf_buffer = tf2_ros.Buffer()
         self.tfl = tf2_ros.TransformListener(self.tf_buffer)
+        self.z = 0
 
     def rotate_xy(self, x, y, rad):
         xp = x * math.cos(rad) - y * math.sin(rad)
@@ -85,6 +86,7 @@ class RelativeOdomPublisher(object):
         self.odom_offset_alt.header.stamp = rospy.Time.now()
         self.odom_offset_alt.pose.pose.position.z = alt.altitude
         self.odom_offset_alt.pose.covariance = cov
+        self.z = alt.altitude
         self.pub_odom(self.odom_offset_alt).publish("/odom_alt")
 
     @n.subscriber("/uwb_pose_cov_3d", PoseWithCovarianceStamped)
@@ -121,11 +123,11 @@ class RelativeOdomPublisher(object):
         ps_tf = self.tf_buffer.transform(ps, self.car_frame_id)
         x = ps_tf.pose.position.x  # + self.x0
         y = ps_tf.pose.position.y  # + self.y0
-        z = self.odom.pose.pose.position.z  # + self.z0
+        #z = self.odom.pose.pose.position.z  # + self.z0
         self.odom_offset_2d.header.stamp = rospy.Time.now()
         self.odom_offset_2d.pose.pose.position.x = x
         self.odom_offset_2d.pose.pose.position.y = y
-        self.odom_offset_2d.pose.pose.position.z = z
+        self.odom_offset_2d.pose.pose.position.z = self.z
         self.odom_offset_2d.pose.pose.orientation.x = self.relative_quat[0]
         self.odom_offset_2d.pose.pose.orientation.y = self.relative_quat[1]
         self.odom_offset_2d.pose.pose.orientation.z = self.relative_quat[2]
