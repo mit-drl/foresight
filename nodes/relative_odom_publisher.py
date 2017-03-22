@@ -52,7 +52,7 @@ class RelativeOdomPublisher(object):
         mat[8:] = odom.pose.covariance[8:]
         return mat
 
-    @n.subscriber("/bebop/odom_cov", Odometry)
+    @n.subscriber("/bebop/odom_filtered", Odometry)
     def odom_sub(self, odom):
         ori = odom.pose.pose.orientation
         ori_quat = [ori.x, ori.y, ori.z, ori.w]
@@ -89,7 +89,7 @@ class RelativeOdomPublisher(object):
 
     @n.subscriber("/uwb_pose_cov_3d", PoseWithCovarianceStamped)
     def uwb_pose_cov_sub_3d(self, ps_cov):
-        if self.yaw_zero is None or self.car_yaw_zero is None:
+        if self.yaw_zero is None:
             return
 
         ps = tf2_geom.PoseStamped()
@@ -112,7 +112,7 @@ class RelativeOdomPublisher(object):
 
     @n.subscriber("/uwb_pose_cov_2d", PoseWithCovarianceStamped)
     def uwb_pose_cov_sub_2d(self, ps_cov):
-        if self.yaw_zero is None or self.car_yaw_zero is None:
+        if self.yaw_zero is None:
             return
 
         ps = tf2_geom.PoseStamped()

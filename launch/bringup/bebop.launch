@@ -10,7 +10,8 @@
     <remap from="/bebop/cmd_vel" to="/setpoint_vel"/>
     <include file="$(find bebop_tools)/launch/joy_teleop.launch">
         <arg name="joy_dev" value="/dev/input/js0"/>
-        <arg name="joy_config" value="xbox360"/>
+        <!-- <arg name="joy_config" value="xbox360"/> -->
+        <arg name="joy_config" value="log710"/>
     </include>
 
     <arg name="quad_xacro"
